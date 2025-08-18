@@ -13,6 +13,7 @@ interface CategoryCardProps {
   index: number
 }
 
+// The individual CategoryCard component remains the same as it's already generic.
 function CategoryCard({ title, description, image, href, index }: CategoryCardProps) {
   return (
     <motion.div
@@ -32,10 +33,7 @@ function CategoryCard({ title, description, image, href, index }: CategoryCardPr
             className="object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div
-            className="absolute inset-0 opacity-0"
-            style={{
-              background: `linear-gradient(135deg, var(--theme-primary), transparent)`,
-            }}
+            className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"
           />
           <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">
             <motion.h3 whileHover={{ x: 10 }} className="text-2xl font-serif font-bold mb-2">
@@ -60,25 +58,42 @@ interface CategoryCardsProps {
 }
 
 export function CategoryCards({ gender }: CategoryCardsProps) {
+  // --- MODIFICATION START ---
+  // The data now contains separate image paths for each gender.
   const categories = [
     {
       title: "Silver Jewellery",
       description: "Elegant sterling silver pieces for every occasion",
-      image: "/silver-women-necklace.jpg",
+      images: {
+        women: "/silver-women-necklace.jpg",
+        men: "/silver-bracelet-men.jpg", // Example image for men
+      },
       href: `/collections/${gender}?category=silver`,
     },
     {
       title: "Artificial Jewellery",
       description: "Trendy and affordable fashion jewelry",
-      image: "/artificial-women-earing.jpg",
+      images: {
+        women: "/artificial-women-earing.jpg",
+        men: "/leather-bracelet-men.jpg", // Example image for men
+      },
       href: `/collections/${gender}?category=artificial`,
     },
   ]
+  // --- MODIFICATION END ---
 
   return (
     <div className="grid md:grid-cols-2 gap-8">
       {categories.map((category, index) => (
-        <CategoryCard key={category.title} {...category} index={index} />
+        <CategoryCard
+          key={category.title}
+          title={category.title}
+          description={category.description}
+          // The correct image is selected based on the gender prop
+          image={category.images[gender]}
+          href={category.href}
+          index={index}
+        />
       ))}
     </div>
   )

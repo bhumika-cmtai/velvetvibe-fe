@@ -7,6 +7,8 @@ import { Testimonials } from "@/components/Testimonials"
 import { ContactForm } from "@/components/ContactForm"
 import { Footer } from "@/components/Footer"
 import { menProducts } from "@/lib/data"
+import Link from "next/link" // Import Link
+import { Button } from "@/components/ui/button" // Import Button
 
 const heroSlides = [
   {
@@ -36,19 +38,21 @@ const heroSlides = [
 ]
 
 export default function MenHomePage() {
+  // --- MODIFICATION START: Filtered data for new sections ---
   const newArrivals = menProducts.slice(0, 4)
+  const silverJewellery = menProducts.filter((p) => p.category === "silver").slice(0, 4)
+  const artificialJewellery = menProducts.filter((p) => p.category === "artificial").slice(0, 4)
+  // --- MODIFICATION END ---
 
   return (
     <div className="min-h-screen">
       <Navbar />
 
       <main className="space-y-20">
-        {/* --- MODIFICATION START --- */}
-        {/* Hero Section - Removed container classes to make it full width */}
+        {/* Hero Section */}
         <section>
           <HeroCarousel slides={heroSlides} />
         </section>
-        {/* --- MODIFICATION END --- */}
 
         {/* New Arrivals */}
         <section className="container mx-auto px-4">
@@ -61,6 +65,55 @@ export default function MenHomePage() {
             {newArrivals.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
             ))}
+          </div>
+          <div className="mt-12 text-center">
+            <Link href="/collections/men">
+              <Button variant="outline" size="lg" className="px-8 py-6 text-base">
+                View All New Arrivals
+              </Button>
+            </Link>
+          </div>
+        </section>
+        
+        {/* --- NEW SECTION: Silver Jewellery --- */}
+        <section className="container mx-auto px-4">
+          <SectionTitle
+            title="Silver Excellence"
+            subtitle="Refined sterling silver accessories for a sharp, polished look"
+            className="mb-12"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {silverJewellery.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+          </div>
+          <div className="mt-12 text-center">
+            <Link href="/collections/men?category=silver">
+              <Button variant="outline" size="lg" className="px-8 py-6 text-base">
+                View All Silver Products
+              </Button>
+            </Link>
+          </div>
+        </section>
+
+        {/* --- NEW SECTION: Artificial Jewellery --- */}
+        <section className="container mx-auto px-4">
+          <SectionTitle
+            title="Modern Statements"
+            subtitle="Bold and contemporary pieces to express your unique style"
+            className="mb-12"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {artificialJewellery.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+          </div>
+          <div className="mt-12 text-center">
+            <Link href="/collections/men?category=artificial">
+              <Button variant="outline" size="lg" className="px-8 py-6 text-base">
+                View All Artificial Products
+              </Button>
+            </Link>
           </div>
         </section>
 
