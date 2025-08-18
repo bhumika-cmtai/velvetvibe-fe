@@ -7,6 +7,8 @@ import { Testimonials } from "@/components/Testimonials"
 import { ContactForm } from "@/components/ContactForm"
 import { Footer } from "@/components/Footer"
 import { womenProducts } from "@/lib/data"
+import Link from "next/link" // Import Link
+import { Button } from "@/components/ui/button" // Import Button
 
 const heroSlides = [
   {
@@ -37,13 +39,16 @@ const heroSlides = [
 
 export default function WomenHomePage() {
   const newArrivals = womenProducts.slice(0, 4)
+  const silverJewellery = womenProducts.filter((p) => p.category === "silver").slice(0, 4)
+  const artificialJewellery = womenProducts.filter((p) => p.category === "artificial").slice(0, 4)
+  const festivePicks = womenProducts.filter((p) => p.tags?.includes("festive")).slice(0, 4)
 
   return (
     <div className="min-h-screen">
       <Navbar />
 
       <main className="space-y-20">
-        {/* Hero Section - Now Full Width */}
+        {/* Hero Section */}
         <section>
           <HeroCarousel slides={heroSlides} />
         </section>
@@ -60,6 +65,36 @@ export default function WomenHomePage() {
               <ProductCard key={product.id} product={product} index={index} />
             ))}
           </div>
+          {/* --- "View All" Button --- */}
+          <div className="mt-12 text-center">
+            <Link href="/collections/women">
+              <Button variant="outline" size="lg" className="px-8 py-6 text-base">
+                View All New Arrivals
+              </Button>
+            </Link>
+          </div>
+        </section>
+
+        {/* Festive Favourites */}
+        <section className="container mx-auto px-4">
+          <SectionTitle
+            title="Festive Favourites"
+            subtitle="Dazzle this season with our specially curated festive collection"
+            className="mb-12"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {festivePicks.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+          </div>
+          {/* --- "View All" Button --- */}
+          <div className="mt-12 text-center">
+            <Link href="/collections/women?tag=festive">
+              <Button variant="outline" size="lg" className="px-8 py-6 text-base">
+                View All Festive Favourites
+              </Button>
+            </Link>
+          </div>
         </section>
 
         {/* Shop by Category */}
@@ -72,6 +107,51 @@ export default function WomenHomePage() {
           <CategoryCards gender="women" />
         </section>
 
+        {/* Shine in Silver */}
+        <section className="container mx-auto px-4">
+          <SectionTitle
+            title="Shine in Silver"
+            subtitle="Elegant and timeless silver pieces for a sophisticated look"
+            className="mb-12"
+            isSparkling={true}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {silverJewellery.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+          </div>
+          {/* --- "View All" Button --- */}
+          <div className="mt-12 text-center">
+            <Link href="/collections/silver-jewellery">
+              <Button variant="outline" size="lg" className="px-8 py-6 text-base">
+                View All Silver Jewellery
+              </Button>
+            </Link>
+          </div>
+        </section>
+
+        {/* Artificial Jewellery */}
+        <section className="container mx-auto px-4">
+          <SectionTitle
+            title="Modern Glamour"
+            subtitle="Stunning and affordable artificial jewellery for every occasion"
+            className="mb-12"
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {artificialJewellery.map((product, index) => (
+              <ProductCard key={product.id} product={product} index={index} />
+            ))}
+          </div>
+          {/* --- "View All" Button --- */}
+          <div className="mt-12 text-center">
+            <Link href="/collections/women?category=artificial">
+              <Button variant="outline" size="lg" className="px-8 py-6 text-base">
+                View All Artificial Jewellery
+              </Button>
+            </Link>
+          </div>
+        </section>
+        
         {/* Testimonials */}
         <section className="container mx-auto px-4">
           <Testimonials />

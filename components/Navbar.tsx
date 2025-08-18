@@ -13,8 +13,8 @@ import { useTheme } from "@/components/ThemeProvider"
 import { motion, AnimatePresence } from "framer-motion"
  
 const menuItems = [
-  { name: "Silver Jewellery", href: "/collections/women?category=silver" },
-  { name: "Artificial Jewellery", href: "/collections/women?category=artificial" },
+  { name: "Silver Jewellery", href: "/collections/women/silver-jewelery" },
+  { name: "Artificial Jewellery", href: "/collections/women/artificial-jewelery" },
   { name: "Collections", href: "/collections/women" },
 ]
 

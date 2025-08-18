@@ -12,7 +12,7 @@ import { womenProducts } from "@/lib/data"
 const heroSlides = [
   {
     id: 1,
-    image: "/slider3.jpg",
+    image: "/slider1.jpg",
     title: "Women's Collection",
     subtitle: "Discover our complete range of exquisite jewelry for women",
     cta: "Shop Now",
