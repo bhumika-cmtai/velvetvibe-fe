@@ -76,8 +76,8 @@
 
 /* Adding theme-specific CSS variables for women and men themes */
 [data-theme="women"] {
-  --theme-primary: #ff7a2f;
-  --theme-primary-light: #ffd7bf;
+  --theme-primary: #D09D13;
+  --theme-primary-light: #E0C978;
   --theme-accent: #fff5f0;
   --theme-text: #2d1810;
   --theme-bg: #ffffff;

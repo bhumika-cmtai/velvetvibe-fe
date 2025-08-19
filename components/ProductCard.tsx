@@ -3,10 +3,9 @@
 import type React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Heart, Star } from "lucide-react"
+import { Star, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/CartContext"
-import { useWishlist } from "@/context/WishlistContext" // 1. Import useWishlist
 import { useToast } from "@/hooks/use-toast"
 import type { Product } from "@/lib/data"
 import { motion } from "framer-motion"
@@ -16,30 +15,14 @@ interface ProductCardProps {
   index?: number
 }
 
-// A simple star rating component to mimic the design
-const StarRating = ({ reviews }: { reviews: number }) => (
-  <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-    <div className="flex items-center">
-      {[...Array(5)].map((_, i) => (
-        <Star key={i} className="h-4 w-4 fill-purple-400 text-purple-400" />
-      ))}
-    </div>
-    <span>{reviews} reviews</span>
-  </div>
-)
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
-  // 2. Remove local state and get everything from the contexts
   const { addToCart } = useCart()
-  const { addToWishlist, removeFromWishlist, isAddedToWishlist } = useWishlist()
   const { toast } = useToast()
-
-  // 3. Check if the product is in the wishlist using the context function
-  const isInWishlist = isAddedToWishlist(product.id)
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
-    e.stopPropagation() // Prevent link navigation when clicking the button
+    e.stopPropagation()
     addToCart(product)
     toast({
       title: "Added to cart",
@@ -47,105 +30,68 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
     })
   }
 
-  // 4. Update handleWishlist to use context functions
-  const handleWishlist = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation() // Prevent link navigation
-
-    if (isInWishlist) {
-      removeFromWishlist(product.id)
-      toast({
-        title: "Removed from wishlist",
-        description: `${product.name} has been removed from your wishlist.`,
-      })
-    } else {
-      addToWishlist(product)
-      toast({
-        title: "Added to wishlist",
-        description: `${product.name} has been added to your wishlist.`,
-      })
-    }
-  }
-
-  const hasDiscount = product.priceOriginal > product.priceDiscounted
+  // Check if there is a valid discount to display
+  const hasDiscount = product.priceDiscounted && product.priceDiscounted < product.priceOriginal
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 50 }}
       whileInView={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: (index || 0) * 0.1 }}
+      whileHover={{ scale: 1.02, y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.2, ease: "easeOut", delay: (index || 0) * 0.1 }}
       viewport={{ once: true }}
-      className="group relative flex h-full flex-col overflow-hidden rounded-md border bg-white"
+      className="flex h-full flex-col overflow-hidden rounded-lg border border-gray-200 bg-white border[1px]"
     >
-      <Link href={`/collections/${product.gender}/${product.slug}`} className="flex flex-grow flex-col">
-        <div className="relative aspect-square overflow-hidden">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.4 }}
-            className="h-full w-full"
-          >
-            <Image
-              src={product.images[0] || "/placeholder.svg"}
-              alt={product.name}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-            />
-          </motion.div>
-
-          <Button
-            size="icon"
-            variant="secondary"
-            className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white/80 shadow-md backdrop-blur-sm transition-all hover:bg-white"
-            onClick={handleWishlist}
-          >
-            {/* 5. The heart icon's style is now driven by the global state */}
-            <Heart
-              className={`h-5 w-5 transition-all ${
-                isInWishlist ? "fill-red-500 text-red-500" : "text-gray-500"
-              }`}
-            />
-          </Button>
+      <Link href={`/collections/${product.gender}/${product.slug}`} className="flex flex-grow flex-col p-4">
+        {/* Image Container */}
+        <div className="relative mb-4 aspect-square">
+          <Image
+            src={product.images[0] || "/placeholder.svg"}
+            alt={product.name}
+            fill
+            className="object-cover transition-transform duration-300"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
         </div>
 
-        <div className="flex flex-grow flex-col p-4 text-center">
-          <h3 className="mb-2 text-lg font-medium text-gray-800 line-clamp-2">{product.name}</h3>
+        {/* Details Container */}
+        <div className="flex flex-grow flex-col text-left">
+          <p className="mb-1 text-sm text-gray-500">{product.category || "Category"}</p>
+          <h3 className="mb-2 text-base font-bold text-gray-900 truncate">{product.name}</h3>
 
-          <div className="mt-auto flex items-baseline justify-center space-x-2">
-            {hasDiscount ? (
-              <>
+          <div className="mt-auto flex items-center justify-between">
+            <div className="flex flex-col items-start">
+              {hasDiscount ? (
+                <>
+                  <span className="text-lg font-bold text-gray-900">
+                    ₹{product.priceDiscounted.toLocaleString()}
+                  </span>
+                  <span className="text-sm text-gray-400 line-through">
+                  ₹{product.priceOriginal.toLocaleString()}
+                  </span>
+                </>
+              ) : (
                 <span className="text-lg font-bold text-gray-900">
-                  Rs. {product.priceDiscounted.toLocaleString()}
+                  ₹{product.priceOriginal.toLocaleString()}
                 </span>
-                <span className="text-md text-gray-400 line-through">
-                  Rs. {product.priceOriginal.toLocaleString()}
-                </span>
-              </>
-            ) : (
-              <span className="text-lg font-bold text-gray-900">
-                Rs. {product.priceOriginal.toLocaleString()}
-              </span>
-            )}
+              )}
+            </div>
+            {/* --- FIX START: Added motion wrapper for button animation --- */}
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <Button
+                size="icon"
+                className="h-10 w-10 rounded-full flex-shrink-0 hover:cursor-pointer"
+                style={{ backgroundColor: '#5B7F81' }}
+                onClick={handleAddToCart}
+              >
+                <ShoppingBag className="h-5 w-5 text-white" />
+              </Button>
+            </motion.div>
+            {/* --- FIX END --- */}
           </div>
         </div>
       </Link>
-
-      <div className="p-1 md:p-2  pt-0">
-        <motion.div
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
-        >
-          <Button
-            size="lg"
-            className="w-full md:h-12 text-sm md:text-md font-semibold hover:cursor-pointer"
-            style={{ backgroundColor: "var(--theme-primary, #8A2BE2)" }}
-            onClick={handleAddToCart}
-          >
-            ADD TO CART
-          </Button>
-        </motion.div>
-      </div>
     </motion.div>
   )
 }
