@@ -44,7 +44,7 @@ export default function WishlistPage() {
             <Link href="/">
               <Button
                 className="px-8 py-3 rounded-xl font-medium"
-                style={{ backgroundColor: "var(--theme-primary)", color: "white" }}
+                style={{ backgroundColor: "#AA7E3D", color: "white" }}
               >
                 Discover Products
               </Button>
@@ -75,7 +75,7 @@ export default function WishlistPage() {
               </Button>
             </Link>
             {/* Font and color changed to match the new design */}
-            <h1 className="text-2xl font-bold" style={{ color: "#F97316" }}>
+            <h1 className="text-2xl font-bold" style={{ color: "black" }}>
               My Wishlist ({totalItems} items)
             </h1>
           </div>
@@ -139,7 +139,7 @@ export default function WishlistPage() {
                     <Button
                       onClick={() => handleMoveToCart(item)}
                       className="flex-1 h-10 rounded-md font-medium text-white"
-                      style={{ backgroundColor: "#F97316" }}
+                      style={{ backgroundColor: "#AA7E3D" }}
                     >
                       Move to Cart
                     </Button>

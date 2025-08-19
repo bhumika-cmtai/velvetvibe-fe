@@ -76,7 +76,7 @@ export default function CartPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            <h1 className="text-2xl font-serif font-bold" style={{ color: "var(--theme-primary)" }}>
+            <h1 className="text-2xl font-serif font-bold" style={{ color: "black" }}>
               Shopping Cart ({totalItems} items)
             </h1>
           </div>
@@ -106,7 +106,7 @@ export default function CartPage() {
                         <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
                         <p className="text-sm text-gray-600">{item.material}</p>
                         <div className="flex items-center space-x-2 mt-1">
-                          <span className="font-semibold" style={{ color: "var(--theme-primary)" }}>
+                          <span className="font-semibold" style={{ color: "#AA7E3D" }}>
                             ₹{item.priceDiscounted.toLocaleString()}
                           </span>
                           {item.priceOriginal > item.priceDiscounted && (
@@ -153,7 +153,7 @@ export default function CartPage() {
 
                       {/* Item Total (with a fixed width for alignment) */}
                       <div className="text-right w-24">
-                        <p className="font-semibold" style={{ color: "var(--theme-primary)" }}>
+                        <p className="font-semibold" style={{ color: "#AA7E3D" }}>
                           ₹{(item.priceDiscounted * item.quantity).toLocaleString()}
                         </p>
                       </div>
@@ -229,7 +229,7 @@ export default function CartPage() {
               <Link href="/checkout">
                 <Button
                   className="w-full py-3 rounded-xl font-medium"
-                  style={{ backgroundColor: "var(--theme-primary)", color: "white" }}
+                  style={{ backgroundColor: "#AA7E3D", color: "white" }}
                 >
                   Proceed to Checkout
                 </Button>
