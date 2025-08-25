@@ -73,6 +73,7 @@ export function HeroCarousel({ slides, autoPlay = true, interval = 5000 }: HeroC
 
   return (
     <div className="relative h-[70vh] md:h-[80vh] overflow-hidden">
+      <Link href={slides[currentSlide].ctaLink}>
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.div
           key={page}
@@ -90,7 +91,7 @@ export function HeroCarousel({ slides, autoPlay = true, interval = 5000 }: HeroC
           }}
           // --- MODIFICATION END ---
           className="absolute inset-0"
-        >
+          >
           {/* Background Image with Next.js <Image> component */}
           <Image
             src={slides[currentSlide].image || "/placeholder.svg"}
@@ -98,49 +99,50 @@ export function HeroCarousel({ slides, autoPlay = true, interval = 5000 }: HeroC
             fill
             className="object-cover"
             priority
-          />
+            />
           
           {/* Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/30 to-transparent" />
+          <div className="absolute inset-0" />
           
           {/* Content layout and styling */}
-          <div className="relative h-full flex items-center">
+          {/* <div className="relative h-full flex items-center">
             <div className="container mx-auto px-4">
-              <div className="max-w-2xl">
-                <motion.h1
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.2 }}
-                  className="font-heading text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight"
-                >
-                  {slides[currentSlide].title}
-                </motion.h1>
-                
-                <motion.p
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.4 }}
-                  className="text-xl md:text-2xl text-white/90 mb-8 font-body"
-                >
-                  {slides[currentSlide].subtitle}
-                </motion.p>
-                
-                <motion.div
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: 0.6 }}
-                >
-                  <Link href={slides[currentSlide].ctaLink}>
-                    <Button size="lg" className="btn-luxury text-white font-semibold">
-                      {slides[currentSlide].cta}
-                    </Button>
-                  </Link>
-                </motion.div>
-              </div>
+            <div className="max-w-2xl">
+            <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="font-heading text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight"
+            >
+            {slides[currentSlide].title}
+            </motion.h1>
+            
+            <motion.p
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="text-xl md:text-2xl text-white/90 mb-8 font-body"
+            >
+            {slides[currentSlide].subtitle}
+            </motion.p>
+            
+            <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+            >
+            <Link href={slides[currentSlide].ctaLink}>
+            <Button size="lg" className="btn-luxury text-white font-semibold">
+            {slides[currentSlide].cta}
+            </Button>
+            </Link>
+            </motion.div>
             </div>
-          </div>
+            </div>
+            </div> */}
         </motion.div>
       </AnimatePresence>
+            </Link>
 
       {/* Navigation Arrows */}
       <Button
@@ -148,7 +150,7 @@ export function HeroCarousel({ slides, autoPlay = true, interval = 5000 }: HeroC
         size="icon"
         className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30 text-white z-10"
         onClick={prevSlide}
-      >
+        >
         <ChevronLeft className="h-6 w-6" />
       </Button>
 

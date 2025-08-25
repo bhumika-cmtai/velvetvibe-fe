@@ -2,16 +2,19 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation" 
 import { Search, User, Heart, ShoppingBag, Menu, X, Gem, Star, Shield, Circle, VenetianMask, Shell, Link2, GitBranch, Diamond, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetDescription } from "@/components/ui/sheet"
 import { useCart } from "@/context/CartContext"
 import { useWishlist } from "@/context/WishlistContext"
 import { useTheme } from "@/components/ThemeProvider"
 import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
+import { useSelector, useDispatch } from "react-redux"
+import { logout } from "@/lib/redux/slices/authSlice"
+import type { RootState } from "@/lib/redux/store"
 
 const navLinks = [
   { name: "Silver Jewellery", href: "/collections/women/silver-jewelery" },
@@ -33,11 +36,29 @@ const categoryItems = [
   { name: "Chain", icon: <Link2 size={20} /> },
 ];
 
+const accountMenuItems = [
+  { name: "My Account", href: "/account/user/profile" },
+  { name: "My Orders", href: "/account/user/order-history" },
+  { name: "Settings", href: "/account/user/settings" },
+  { name: "Sign Out", href: "#" }, 
+];
+
+const guestMenuItems = [
+  { name: "Login", href: "/login" },
+  { name: "Sign Up", href: "/signup" },
+];
+
 export function Navbar() {
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCategoryOpen, setIsCategoryOpen] = useState(false)
+  const [isAccountOpen, setIsAccountOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch();
+
   const { totalItems: totalCartItems } = useCart()
   const { totalItems: totalWishlistItems } = useWishlist()
   const { theme } = useTheme()
@@ -47,6 +68,13 @@ export function Navbar() {
 
   const logoSrc = theme === "men" ? "/GULLNAAZ-LOGO-PNG.png" : "/GULLNAAZ-BLACK-LOGO-PNG.png";
   const iconButtonHoverClass = theme === "men" ? "hover:bg-transparent focus-visible:bg-transparent hover:opacity-80" : "";
+  
+  const handleLogout = () => {
+    dispatch(logout());
+    setIsAccountOpen(false);
+    setIsMobileMenuOpen(false); // Close mobile menu on logout
+    router.push('/'); 
+  };
 
   return (
     <motion.header
@@ -91,11 +119,9 @@ export function Navbar() {
               onHoverEnd={() => setIsCategoryOpen(false)}
               className="relative"
             >
-              {/* --- FIX START: Added variant="ghost" to ensure transparent background --- */}
               <Button variant="ghost" className="text-base font-medium transition-colors text-[var(--theme-text)] hover:text-[#D09D13] p-0">
                 Categories
               </Button>
-              {/* --- FIX END --- */}
               <AnimatePresence>
                 {isCategoryOpen && (
                   <motion.div
@@ -103,7 +129,7 @@ export function Navbar() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 15 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white rounded-md shadow-lg p-4 z-10"
+                    className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-72 bg-white rounded-md shadow-lg p-4 z-50"
                   >
                     <ul className="space-y-1">
                       {categoryItems.map((item) => (
@@ -148,58 +174,126 @@ export function Navbar() {
             <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)} className={`hidden md:flex ${iconButtonHoverClass}`}>
               <Search className="h-6 w-6" style={{ color: "var(--theme-text)" }} />
             </Button>
-            <Button variant="ghost" size="icon" className={`hidden md:flex ${iconButtonHoverClass}`}>
-              <User className="h-6 w-6" style={{ color: "var(--theme-text)" }} />
-            </Button>
+            
             <Link href="/wishlist">
               <Button variant="ghost" size="icon" className={`hidden md:flex relative ${iconButtonHoverClass}`}>
                 <Heart className="h-6 w-6" style={{ color: "var(--theme-text)" }} />
                 {totalWishlistItems > 0 && (
-                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs font-medium flex items-center justify-center text-white" style={{ backgroundColor: "var(--theme-primary)" }}>
+                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs font-medium flex items-center justify-center text-black" style={{ backgroundColor: "#D09D13" }}>
                     {totalWishlistItems}
                   </motion.span>
                 )}
               </Button>
             </Link>
+            
             <Link href="/cart">
               <Button variant="ghost" size="icon" className={`relative ${iconButtonHoverClass}`}>
                 <ShoppingBag className="h-6 w-6" style={{ color: "var(--theme-text)" }} />
                 {totalCartItems > 0 && (
-                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs font-medium flex items-center justify-center text-white" style={{ backgroundColor: "var(--theme-primary)" }}>
+                  <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-1 -right-1 h-5 w-5 rounded-full text-xs font-medium flex items-center justify-center text-black" style={{ backgroundColor: "#D09D13" }}>
                     {totalCartItems}
                   </motion.span>
                 )}
               </Button>
             </Link>
+
+            <motion.div
+              onHoverStart={() => setIsAccountOpen(true)}
+              onHoverEnd={() => setIsAccountOpen(false)}
+              className="relative"
+            >
+              <Button variant="ghost" size="icon" className={`hidden md:flex ${iconButtonHoverClass}`}>
+                <User className="h-6 w-6" style={{ color: "var(--theme-text)" }} />
+              </Button>
+              <AnimatePresence>
+                {isAccountOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 15 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="absolute top-full right-0 mt-2 w-56 bg-white rounded-md shadow-lg p-2 z-50"
+                  >
+                    <ul className="space-y-1">
+                      {(isAuthenticated ? accountMenuItems : guestMenuItems).map((item) => (
+                        <li key={item.name}>
+                          {item.name === "Sign Out" ? (
+                            <button
+                              onClick={handleLogout}
+                              className="flex w-full items-center p-3 text-sm font-medium text-gray-800 hover:bg-gray-100 rounded-md transition-colors duration-200 text-left"
+                            >
+                              {item.name}
+                            </button>
+                          ) : (
+                            <Link href={item.href} className="flex w-full items-center p-3 text-sm font-medium text-gray-800 hover:bg-gray-100 rounded-md transition-colors duration-200">
+                              {item.name}
+                            </Link>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
                   <Menu className="h-6 w-6" style={{ color: "var(--theme-text)" }} />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full sm:w-96 p-8 [&_button:focus-visible]:ring-0">
+              <SheetContent side="right" className="flex w-full flex-col p-8 sm:w-96 [&_button:focus-visible]:ring-0">
                 <div>
-                  <h2 className="text-2xl font-serif font-bold" style={{ color: "var(--theme-primary)" }}>Luv Kush</h2>
+                  <SheetTitle className="text-2xl font-serif font-bold" style={{ color: "var(--theme-primary)" }}>
+                    Gullnaaz
+                  </SheetTitle>
+                  <SheetDescription className="sr-only">
+                    Mobile navigation menu
+                  </SheetDescription>
                 </div>
-                <div className="flex flex-col space-y-6 mt-12">
-                  {navLinks.map((item) => (
-                    <Link key={item.name} href={item.href} className="text-xl font-medium py-2 transition-colors hover:text-[#D09D13]" onClick={() => setIsMobileMenuOpen(false)}>
-                      {item.name}
-                    </Link>
-                  ))}
-                  <div>
-                    <h3 className="text-xl font-medium py-2 ">Categories</h3>
-                    <ul className="pl-4">
-                      {categoryItems.map((item) => (
-                        <li key={item.name}>
-                          <Link href="#" className="flex items-center py-2 text-gray-700 hover:text-[#D09D13] hover:bg-[#FFFDF6]" onClick={() => setIsMobileMenuOpen(false)}>
-                            <span className="mr-3" style={{ color: "var(--theme-primary)"}}>{item.icon}</span>
-                            <span>{item.name}</span>
-                            <ChevronRight size={20} className="ml-auto text-gray-400" />
+                <div className="mt-8 flex-1 overflow-y-auto pr-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  <div className="flex flex-col space-y-6">
+                    {navLinks.map((item) => (
+                      <Link key={item.name} href={item.href} className="text-xl font-medium py-2 transition-colors hover:text-[#D09D13]" onClick={() => setIsMobileMenuOpen(false)}>
+                        {item.name}
+                      </Link>
+                    ))}
+                    <div>
+                      <h3 className="text-xl font-medium py-2 ">Categories</h3>
+                      <ul className="pl-4">
+                        {categoryItems.map((item) => (
+                          <li key={item.name}>
+                            <Link href="#" className="flex items-center py-2 text-gray-700 hover:text-[#D09D13] hover:bg-[#FFFDF6]" onClick={() => setIsMobileMenuOpen(false)}>
+                              <span className="mr-3" style={{ color: "var(--theme-primary)"}}>{item.icon}</span>
+                              <span>{item.name}</span>
+                              <ChevronRight size={20} className="ml-auto text-gray-400" />
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    {/* --- FIX START: Added conditional sign-out button for mobile --- */}
+                    <div className="border-t pt-6">
+                      {isAuthenticated ? (
+                        <button
+                          onClick={handleLogout}
+                          className="w-full text-left text-xl font-medium py-2 transition-colors hover:text-red-500"
+                        >
+                          Sign Out
+                        </button>
+                      ) : (
+                        <div className="space-y-4">
+                           <Link href="/login" className="block text-xl font-medium py-2 transition-colors hover:text-[#D09D13]" onClick={() => setIsMobileMenuOpen(false)}>
+                            Login
                           </Link>
-                        </li>
-                      ))}
-                    </ul>
+                           <Link href="/signup" className="block text-xl font-medium py-2 transition-colors hover:text-[#D09D13]" onClick={() => setIsMobileMenuOpen(false)}>
+                            Sign Up
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                    {/* --- FIX END --- */}
                   </div>
                 </div>
               </SheetContent>

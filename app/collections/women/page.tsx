@@ -137,11 +137,26 @@ export default function WomenCollectionPage() {
 
     // Apply color filter
     if (selectedFilters.color?.length) {
-      filtered = filtered.filter((product) =>
-        selectedFilters.color.some((color) => product.color.toLowerCase().includes(color.replace("-", " "))),
-      )
+      filtered = filtered.filter((product) => {
+        // First, make sure the product actually has a color array.
+        // If product.color is missing or not an array, it cannot match.
+        if (!Array.isArray(product.color)) {
+          return false
+        }
+    
+        // Now, check if any selected filter color matches any of the product's colors.
+        // This is a "many-to-many" comparison.
+        return selectedFilters.color.some((filterColor) => {
+          const formattedFilterColor = filterColor.replace("-", " ") // Turns "rose-gold" into "rose gold"
+          // Check if any of the product's colors includes the formatted filter color
+          return (
+            product.color?.some((productColor) =>
+              productColor.toLowerCase().includes(formattedFilterColor),
+            ) ?? false
+          )
+        })
+      })
     }
-
     return filtered
   }, [selectedFilters])
 
@@ -151,12 +166,12 @@ export default function WomenCollectionPage() {
 
       <main>
         {/* Hero Section */}
-        <section className=" mx-auto  pt-8 mb-12">
+        {/* <section className=" mx-auto  pt-8 mb-12">
           <HeroCarousel slides={heroSlides} autoPlay={false} />
-        </section>
+        </section> */}
 
         {/* Products Section */}
-        <section id="products" className="container mx-auto px-4 pb-20">
+        <section id="products" className="container mx-auto px-4 py-20 ">
           <div className="flex gap-8">
             {/* Filters Sidebar */}
             <FiltersSidebar

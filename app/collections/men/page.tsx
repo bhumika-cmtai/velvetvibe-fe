@@ -134,11 +134,11 @@ export default function MenCollectionPage() {
     }
 
     // Apply color filter
-    if (selectedFilters.color?.length) {
-      filtered = filtered.filter((product) =>
-        selectedFilters.color.some((color) => product.color.toLowerCase().includes(color.replace("-", " "))),
-      )
-    }
+    // if (selectedFilters.color?.length) {
+    //   filtered = filtered.filter((product) =>
+    //     selectedFilters.color.some((color) => product.color.toLowerCase().includes(color.replace("-", " "))),
+    //   )
+    // }
 
     return filtered
   }, [selectedFilters])
@@ -149,12 +149,12 @@ export default function MenCollectionPage() {
 
       <main>
         {/* Hero Section */}
-        <section className=" pt-8 mb-12">
+        {/* <section className=" pt-8 mb-12">
           <HeroCarousel slides={heroSlides} autoPlay={false} />
-        </section>
+        </section> */}
 
         {/* Products Section */}
-        <section id="products" className="container mx-auto px-4 pb-20">
+        <section id="products" className="container mx-auto px-4 py-20">
           <div className="flex gap-8">
             {/* Filters Sidebar */}
             <FiltersSidebar

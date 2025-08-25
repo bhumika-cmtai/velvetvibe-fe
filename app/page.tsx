@@ -70,7 +70,7 @@ import ReelCard from "@/components/ReelCard"
 const heroSlides = [
   {
     id: 1,
-    image: "/slider1.jpg",
+    image: "/GULLNAAZ-BANNER-FOR-WOMAN-3.png",
     title: "Exquisite Jewelry Collection",
     subtitle: "Discover our stunning range of handcrafted jewelry pieces designed for the modern woman",
     cta: "Shop Women's Collection",
@@ -78,21 +78,69 @@ const heroSlides = [
   },
   {
     id: 2,
-    image: "/slider2.jpg",
+    image: "/GULLNAAZ-BANNER-FOR-WOMAN-1.png",
     title: "Timeless Elegance",
     subtitle: "From classic designs to contemporary styles, find the perfect piece for every occasion",
     cta: "Explore Earrings",
-    ctaLink: "/collections/women?category=earrings",
+    ctaLink: "/collections/women",
   },
   {
     id: 3,
-    image: "/slider3.jpg",
+    image: "/GULLNAAZ-BANNER-FOR-WOMAN-2.png",
     title: "Silver Sophistication",
     subtitle: "Premium sterling silver jewelry that combines tradition with modern aesthetics",
     cta: "View Silver Collection",
-    ctaLink: "/collections/women?category=silver",
+    ctaLink: "/collections/women",
   },
 ]
+
+const customDesigns = [
+  {
+    id: 1,
+    image: "/custom1.jpg", // Replace with your actual image path
+    title: "The Maharani's Statement Gold Kada",
+    description: "Embrace unparalleled grandeur with our Maharani's Statement Gold Kada"
+  },
+  {
+    id: 2,
+    image: "/custom2.jpg", // Replace with your actual image path
+    title: "Traditional Layered Gold Haar Necklace",
+    description: "Adorn your neckline with the divine elegance of the Empress's Gold Haar."
+  },
+  {
+    id: 3,
+    image: "/custom3.jpg", // Replace with your actual image path
+    title: "Enchanting Sterling Silver Payal",
+    description: "Let every step you take sing a song of grace with our Melody of the Ghungroo Silver Payal."
+  },
+  {
+    id: 4,
+    image: "/custom4.jpg", // Replace with your actual image path
+    title: "Majestic Royal Gold Jhumkas",
+    description: "One of Masterfully designed in brilliant gold for traditional royal look."
+  }
+];
+
+function CustomDesignCard({ image, title, description }: { image: string, title: string, description: string }) {
+  return (
+    <div className="group overflow-hidden rounded-lg border bg-white text-center shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
+      <div className="relative aspect-square w-full">
+        <Image 
+          src={image}
+          alt={title}
+          fill
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+      <div className="p-6">
+        <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
+        <p className="mt-2 text-sm text-gray-500">{description}</p>
+      </div>
+    </div>
+  );
+}
+
+
 
 export default function WomenHomePage() {
   const newArrivals = womenProducts.slice(0, 4)
@@ -271,28 +319,27 @@ export default function WomenHomePage() {
 
         <section id="contact" className="container mx-auto px-4">
           <SectionTitle
-            title="Bespoke Creations"
-            subtitle="Commission a one-of-a-kind piece, crafted exclusively for you"
-            className="mb-8 text-[#A77C38]"
+            title="Create Your Own Jewelry"
+            subtitle="Have a unique idea? We can craft a one-of-a-kind piece, made just for you. Explore some of our past custom designs for inspiration."
+            className="mb-12 text-[#A77C38]"
           />
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div className="space-y-4 text-center bg-gray-50 p-12 rounded-2xl border border-gray-200 shadow-sm">
-              <div className="flex justify-center mb-4">
-                <Gem className="h-12 w-12" style={{ color: "var(--theme-primary)" }} strokeWidth={1.5} />
-              </div>
-              <h3 className="text-4xl font-bold font-serif" style={{ color: "var(--theme-primary)" }}>
-                Commission Your Masterpiece
-              </h3>
-              <p className="text-lg leading-relaxed text-gray-600 max-w-md mx-auto">
-                From a simple sketch to a cherished idea, our artisans will bring your unique vision to life.
-              </p>
-              <p className="text-lg font-medium text-gray-800 pt-2">
-                Describe your ideal piece in the form to begin.
-              </p>
-            </div>
-            <div>
-              <ContactForm />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {customDesigns.map((design) => (
+              <Link href="/customize-for-you" key={design.id}>
+                <CustomDesignCard 
+                  image={design.image}
+                  title={design.title}
+                  description={design.description}
+                />
+              </Link>
+            ))}
+          </div>
+          <div className="mt-6 text-center">
+            <Link href="/customize-for-you">
+              <Button size="lg" className="bg-[#A77C38] px-10 py-7 text-lg hover:bg-[#966b2a]">
+                Start Your Custom Design
+              </Button>
+            </Link>
           </div>
         </section>
       </main>

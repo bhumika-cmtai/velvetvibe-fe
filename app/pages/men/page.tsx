@@ -14,7 +14,7 @@ import { Gem } from "lucide-react"
 const heroSlides = [
   {
     id: 1,
-    image: "/men-slide1.jpg",
+    image: "/GULLNAAZ-BANNER-FOR-MAN-1.png",
     title: "Distinguished Men's Collection",
     subtitle: "Elevate your style with our premium collection of men's jewelry and accessories",
     cta: "Shop Men's Collection",
@@ -22,19 +22,19 @@ const heroSlides = [
   },
   {
     id: 2,
-    image: "/men-slide2.jpg",
+    image: "/GULLNAAZ-BANNER-FOR-MAN-2.png",
     title: "Modern Sophistication",
     subtitle: "From sleek watches to elegant chains, discover pieces that define contemporary masculinity",
     cta: "Explore Watches",
-    ctaLink: "/collections/men?category=artificial",
+    ctaLink: "/collections/men",
   },
   {
     id: 3,
-    image: "/men-slide3.jpg",
+    image: "/GULLNAAZ-BANNER-FOR-MAN-3.png",
     title: "Silver Excellence",
     subtitle: "Crafted with precision, our silver collection embodies strength and refinement",
     cta: "View Silver Collection",
-    ctaLink: "/collections/men?category=silver",
+    ctaLink: "/collections/men",
   },
 ]
 
@@ -44,6 +44,7 @@ export default function MenHomePage() {
   const artificialJewellery = menProducts.filter((p) => p.category === "artificial").slice(0, 4)
   const trendingProducts = menProducts.filter((p) => p.tags?.includes("statement")).slice(0, 4)
   const giftsForHim = menProducts.filter((p) => p.tags?.includes("gift")).slice(0, 4)
+  console.log(newArrivals)
 
   return (
     <div className="min-h-screen">

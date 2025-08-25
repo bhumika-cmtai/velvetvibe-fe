@@ -7,6 +7,7 @@ import "./globals.css"
 import { CartProvider } from "@/context/CartContext"
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { WishlistProvider } from "@/context/WishlistContext"
+import { ReduxProvider } from "@/lib/Provider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -39,12 +40,15 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
+        <ReduxProvider>
           <CartProvider>
             <WishlistProvider >
+              
             {children}
             </WishlistProvider>
             {/* <Toaster /> */}
           </CartProvider>
+          </ReduxProvider>
         </ThemeProvider>
       </body>
     </html>
