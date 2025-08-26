@@ -1,10 +1,11 @@
+// login/page.tsx
 "use client";
 
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
 import { loginSuccess } from '@/lib/redux/slices/authSlice';
-import { loginUserApi } from '@/lib/api/auth';
+import { loginUserApi } from '@/lib/api/auth'; // Ensure this path is correct
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,8 +26,18 @@ export default function LoginPage() {
 
     try {
       const response = await loginUserApi({ email, password });
-      dispatch(loginSuccess({ user: response.data.user, accessToken: response.data.accessToken }));
-      router.push('/'); // Redirect to homepage on success
+      const { user, accessToken } = response.data;
+
+      // Dispatch user data to Redux store
+      dispatch(loginSuccess({ user, accessToken }));
+      
+      // **NEW: Redirect based on user role**
+      if (user.role === 'admin') {
+        router.push('/account/admin'); // Redirect admins to their dashboard
+      } else {
+        router.push('/'); // Redirect regular users to the homepage
+      }
+
     } catch (err: any) {
       setError(err.message);
     } finally {

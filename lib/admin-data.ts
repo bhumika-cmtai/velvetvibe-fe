@@ -80,43 +80,43 @@ interface PaginatedResponse<T> extends ApiResponse<T[]> {
   totalNotifications: number;
 }
 
-export const createNotificationApi = async (
-  formData: FormData, // Change the parameter from an object to FormData
-  token: string
-): Promise<ApiResponse<Notification>> => {
-  const response: AxiosResponse<ApiResponse<Notification>> = await apiClient.post(
-    '/notifications',
-    formData, // Pass FormData directly
-    getAuthHeaders(token)
-  );
-  return response.data;
-};
+// export const createNotificationApi = async (
+//   formData: FormData, // Change the parameter from an object to FormData
+//   token: string
+// ): Promise<ApiResponse<Notification>> => {
+//   const response: AxiosResponse<ApiResponse<Notification>> = await apiClient.post(
+//     '/notifications',
+//     formData, // Pass FormData directly
+//     getAuthHeaders(token)
+//   );
+//   return response.data;
+// };
 
-export const getAllNotificationsApi = async (
-  { page = 1, limit = 10 }: { page?: number; limit?: number },
-  token: string
-): Promise<PaginatedNotifications> => {
-  const response: AxiosResponse<ApiResponse<Notification[]> & PaginatedNotifications> = 
-    await apiClient.get(
-      `/notifications?page=${page}&limit=${limit}`,
-      getAuthHeaders(token)
-    );
+// export const getAllNotificationsApi = async (
+//   { page = 1, limit = 10 }: { page?: number; limit?: number },
+//   token: string
+// ): Promise<PaginatedNotifications> => {
+//   const response: AxiosResponse<ApiResponse<Notification[]> & PaginatedNotifications> = 
+//     await apiClient.get(
+//       `/notifications?page=${page}&limit=${limit}`,
+//       getAuthHeaders(token)
+//     );
   
-  // Return in the format expected by the Redux slice
-  return {
-    data: response.data.data,
-    currentPage: response.data.currentPage,
-    totalPages: response.data.totalPages,
-    totalNotifications: response.data.totalNotifications,
-  };
-};
+//   // Return in the format expected by the Redux slice
+//   return {
+//     data: response.data.data,
+//     currentPage: response.data.currentPage,
+//     totalPages: response.data.totalPages,
+//     totalNotifications: response.data.totalNotifications,
+//   };
+// };
 
-export const deleteNotificationApi = async (
-  notificationId: string,
-  token: string
-): Promise<void> => {
-  await apiClient.delete(`/notifications/${notificationId}`, getAuthHeaders(token));
-};
+// export const deleteNotificationApi = async (
+//   notificationId: string,
+//   token: string
+// ): Promise<void> => {
+//   await apiClient.delete(`/notifications/${notificationId}`, getAuthHeaders(token));
+// };
 
 
 // export interface AdminUser {

@@ -1,15 +1,15 @@
-"use client"; // This remains a client component
+// verifyOtpForm.tsx
+"use client";
 
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { loginSuccess } from '@/lib/redux/slices/authSlice';
-import { verifyOtpApi } from '@/lib/api/auth';
+import { verifyOtpApi } from '@/lib/api/auth'; // Ensure this path is correct
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-// I've renamed the component to VerifyOtpForm to be clear
 export default function VerifyOtpForm() {
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
@@ -17,24 +17,36 @@ export default function VerifyOtpForm() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  // This hook is what requires the Suspense boundary
   const searchParams = useSearchParams();
   const email = searchParams.get('email');
 
-  // This check now correctly runs on the client after Suspense resolves
+  // Redirect if email is not in the URL params
   if (!email) {
+    // It's better to redirect server-side or in a useEffect hook to avoid layout shifts,
+    // but for simplicity, this works.
     router.push('/signup');
-    return null; // Return null while redirecting
+    return null; 
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+
     try {
       const response = await verifyOtpApi({ email, otp });
-      dispatch(loginSuccess({ user: response.data.user, accessToken: response.data.accessToken }));
-      router.push('/'); // Redirect to homepage on success
+      const { user, accessToken } = response.data;
+      
+      // Dispatch user data to Redux store
+      dispatch(loginSuccess({ user, accessToken }));
+
+      // **NEW: Redirect based on user role**
+      if (user.role === 'admin') {
+        router.push('/account/admin'); // Redirect admins to their dashboard
+      } else {
+        router.push('/'); // Redirect regular users to the homepage
+      }
+
     } catch (err: any) {
       setError(err.message || 'An unknown error occurred.');
     } finally {

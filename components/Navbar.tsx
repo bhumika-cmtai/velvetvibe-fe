@@ -17,8 +17,8 @@ import { logout } from "@/lib/redux/slices/authSlice"
 import type { RootState } from "@/lib/redux/store"
 
 const navLinks = [
-  { name: "Silver Jewellery", href: "/collections/women/silver-jewelery" },
-  { name: "Artificial Jewellery", href: "/collections/women/artificial-jewelery" },
+  { name: "Silver Jewellery", href: "/collections/women/silver-jewellery" },
+  { name: "Artificial Jewellery", href: "/collections/women/artificial-jewellery" },
   { name: "Collections", href: "/collections/women" },
   { name: "Bags", href: "/collections/women/bags" },
   { name: "Gifts", href: "/collections/women/gifts" },

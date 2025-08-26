@@ -8,6 +8,7 @@ import { CartProvider } from "@/context/CartContext"
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { WishlistProvider } from "@/context/WishlistContext"
 import { ReduxProvider } from "@/lib/Provider";
+import FloatingWhatsApp from "@/components/FloatingWhatsApp"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -45,6 +46,7 @@ export default function RootLayout({
             <WishlistProvider >
               
             {children}
+            <FloatingWhatsApp />
             </WishlistProvider>
             {/* <Toaster /> */}
           </CartProvider>

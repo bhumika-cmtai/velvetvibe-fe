@@ -6,7 +6,7 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 // INTERFACES - These now perfectly match your Mongoose schemas
 // =================================================================
 
-export interface Address {
+ interface Address {
   _id: string; // MongoDB adds an _id to subdocuments
   fullName: string;
   phone: string;
@@ -19,7 +19,7 @@ export interface Address {
   isDefault: boolean;
 }
 
-export interface User {
+ interface User {
   _id: string;
   fullName: string;
   email: string;

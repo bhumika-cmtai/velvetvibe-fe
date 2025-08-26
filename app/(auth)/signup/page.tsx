@@ -1,8 +1,9 @@
+// signup/page.tsx
 "use client";
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { registerUserApi } from '@/lib/api/auth';
+import { registerUserApi } from '@/lib/api/auth'; // Ensure this path is correct
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,10 +23,13 @@ export default function SignUpPage() {
     setError('');
     
     try {
+      // The API call uses the function defined in lib/api/auth.ts
       await registerUserApi({ name: fullName, email, password });
+      
       // On success, redirect to the OTP page with the email as a query param
       router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
     } catch (err: any) {
+      // The error message comes directly from our API wrapper
       setError(err.message);
     } finally {
       setIsLoading(false);
