@@ -9,6 +9,9 @@ import {
   Gem,
   MessageSquare,
   TicketPercent,
+  Package2,
+  MessageCircleCode,
+  Mail,
 } from "lucide-react";
 
 const navLinks = [
@@ -18,6 +21,9 @@ const navLinks = [
   { href: "/account/admin/products", label: "Products", icon: Gem },
   { href: "/account/admin/contacts", label: "Contacts", icon: MessageSquare },
   { href: "/account/admin/coupon", label: "Manage Coupon", icon: TicketPercent },
+  {href: "/account/admin/notification", label: "Notification", icon: Mail},
+  {href: "/account/admin/bulk-order", label: "Bulk Order", icon: Package2},
+
 ];
 
 export function Sidebar() {

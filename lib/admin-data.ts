@@ -1,4 +1,6 @@
+// admin-data.ts
 import axios from 'axios';
+import { AxiosResponse } from 'axios';
 import { Product } from '@/lib/data'; // Your frontend Product type definition
 
 // Set the base URL for your API. Store this in a .env file for production.
@@ -48,6 +50,73 @@ export interface AdminUser {
   status?: 'idle' | 'loading' | 'succeeded' | 'failed'; 
 }
 
+export interface Notification {
+  _id: string;
+  title: string;
+  message: string;
+  image?: string; // Add the optional image URL field
+  sentTo: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+
+export interface PaginatedNotifications {
+  data: Notification[];
+  currentPage: number;
+  totalPages: number;
+  totalNotifications: number;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  currentPage: number;
+  totalPages: number;
+  totalNotifications: number;
+}
+
+export const createNotificationApi = async (
+  formData: FormData, // Change the parameter from an object to FormData
+  token: string
+): Promise<ApiResponse<Notification>> => {
+  const response: AxiosResponse<ApiResponse<Notification>> = await apiClient.post(
+    '/notifications',
+    formData, // Pass FormData directly
+    getAuthHeaders(token)
+  );
+  return response.data;
+};
+
+export const getAllNotificationsApi = async (
+  { page = 1, limit = 10 }: { page?: number; limit?: number },
+  token: string
+): Promise<PaginatedNotifications> => {
+  const response: AxiosResponse<ApiResponse<Notification[]> & PaginatedNotifications> = 
+    await apiClient.get(
+      `/notifications?page=${page}&limit=${limit}`,
+      getAuthHeaders(token)
+    );
+  
+  // Return in the format expected by the Redux slice
+  return {
+    data: response.data.data,
+    currentPage: response.data.currentPage,
+    totalPages: response.data.totalPages,
+    totalNotifications: response.data.totalNotifications,
+  };
+};
+
+export const deleteNotificationApi = async (
+  notificationId: string,
+  token: string
+): Promise<void> => {
+  await apiClient.delete(`/notifications/${notificationId}`, getAuthHeaders(token));
+};
 
 
 // export interface AdminUser {
@@ -174,4 +243,30 @@ export const deleteCouponApi = (couponId: string, token: string) => {
     method: 'DELETE',
   });
 };
+
+// export const createNotificationApi = async (
+//   data: { title: string; message: string },
+//   token: string
+// ): Promise<{ data: Notification }> => {
+//   const response = await apiClient.post('/notifications', data, getAuthHeaders(token));
+//   return response.data;
+// };
+
+// export const getAllNotificationsApi = async (
+//   { page = 1, limit = 10 }: { page?: number; limit?: number },
+//   token: string
+// ): Promise<PaginatedNotifications> => {
+//   const response = await apiClient.get(
+//     `/notifications?page=${page}&limit=${limit}`,
+//     getAuthHeaders(token)
+//   );
+//   return response.data;
+// };
+
+// export const deleteNotificationApi = async (
+//   notificationId: string,
+//   token: string
+// ): Promise<void> => {
+//   await apiClient.delete(`/notifications/${notificationId}`, getAuthHeaders(token));
+// };
 

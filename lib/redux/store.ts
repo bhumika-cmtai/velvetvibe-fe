@@ -3,13 +3,15 @@ import authReducer from './slices/authSlice';
 import adminReducer from './slices/adminSlice'
 import contactReducer from './slices/contactSlice'
 import couponReducer from './slices/couponSlice'
+import notificationReducer from './slices/notificationSlice'
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     admin: adminReducer,
     contact: contactReducer,
-    coupon: couponReducer
+    coupon: couponReducer,
+    notification: notificationReducer
   },
 });
 
