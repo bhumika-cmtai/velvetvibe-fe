@@ -21,42 +21,53 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-// Import Redux hooks and actions
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
+// --- FIX: fetchProducts now requires a page argument ---
 import { fetchProducts, deleteProduct, createProduct, updateProduct, fetchProductById } from '@/lib/redux/slices/adminSlice';
 import { ViewProductModal } from '@/components/ViewProductModal';
-import { Product } from '@/lib/data'; // Adjust if your Product type is now from the model
+import { Product } from '@/lib/data';
 import { EditProductModal } from '@/components/EditProductModal';
-
-// --- FIX START: Import the new AddProductModal ---
 import { AddProductModal } from '@/components/AddProductModal';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
-// --- FIX END ---
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function ProductsPage() {
   const dispatch = useDispatch<AppDispatch>();
-  const { products,error ,status, selectedProduct, selectedProductStatus } = useSelector((state: RootState) => state.admin);
+  // Assuming you've added productPagination to the slice as per the previous request
+  const { products, error, status, selectedProduct, selectedProductStatus, productPagination } = useSelector((state: RootState) => state.admin);
   
+  // This component will now manage the current page
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
-const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
-
+  // --- UPDATED: useEffect to fetch products for the current page ---
   useEffect(() => {
-    if (status === 'idle') {
-      dispatch(fetchProducts());
-    }
-  }, [status, dispatch]);
+    // We will fetch products whenever the currentPage state changes.
+    // The limit is hardcoded here but could be a state variable if you want a page size selector.
+    dispatch(fetchProducts({ page: currentPage, limit: 10 }));
+  }, [currentPage, dispatch]);
   
+  // --- All handler functions (handleCreateNew, handleUpdate, etc.) are correct ---
   const handleCreateNew = async (formData: FormData) => {
-    await dispatch(createProduct(formData)).unwrap();
-
-    setIsAddDialogOpen(false);
+    try {
+      await dispatch(createProduct(formData)).unwrap();
+      setIsAddDialogOpen(false);
+      // After creating, go back to page 1 to see the new product.
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        // If we are already on page 1, we need to re-trigger the fetch.
+        dispatch(fetchProducts({ page: 1, limit: 10 }));
+      }
+    } catch(e) { console.error(e) }
   };
 
   const handleUpdate = async (updatedData: Partial<Product>, newImages: (File | null)[], newVideo: File | null) => {
@@ -112,28 +123,28 @@ const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     }
   };
 
-  
+
   const handleDeleteClick = (product: Product) => {
     setCurrentProduct(product);
     setIsDeleteDialogOpen(true);
   };
 
+
   const handleDeleteConfirm = async () => {
     if (!currentProduct) return;
-
     setIsDeleting(true);
     try {
       await dispatch(deleteProduct(currentProduct.id)).unwrap();
-      // This line only runs on success
       setIsDeleteDialogOpen(false);
+      // Refetch the current page to update the list
+      dispatch(fetchProducts({ page: currentPage, limit: 10 }));
     } catch (error) {
       console.error("Failed to delete product:", error);
-      // Dialog remains open on failure, toast is shown by slice.
     } finally {
-      // Ensure the button is re-enabled whether it succeeds or fails.
       setIsDeleting(false);
     }
   };
+  
   const handleEditClick = (product: Product) => {
     setCurrentProduct(product);
     setIsEditDialogOpen(true);
@@ -142,8 +153,16 @@ const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     dispatch(fetchProductById(productId));
     setIsViewDialogOpen(true);
   };
+
+  // --- Pagination handlers ---
+  const handlePreviousPage = () => {
+    setCurrentPage(prev => Math.max(prev - 1, 1));
+  };
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(prev + 1, productPagination.totalPages));
+  };
   
-  if (status === 'loading') return <div className="p-8">Loading products...</div>;
+  if (status === 'loading') return <div className="flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin" /></div>;
   if (status === 'failed') return <div className="p-8 text-red-600">Error fetching data: {error}</div>;
 
   return (
@@ -153,44 +172,78 @@ const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
         <Button onClick={() => setIsAddDialogOpen(true)}>Add New Product</Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Image</TableHead><TableHead>Name</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Type</TableHead><TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {products.map((product: Product) => (
-            <TableRow key={product.id}>
-              <TableCell><Image src={product.images[0] || '/placeholder.svg'} alt={product.name} width={48} height={48} className="object-cover rounded-md" /></TableCell>
-              <TableCell className="font-medium">{product.name}</TableCell>
-              <TableCell>₹{product.price.toLocaleString()}</TableCell>
-              <TableCell>{product.stock}</TableCell>
-              <TableCell className="capitalize">{product.type}</TableCell>
-              <TableCell className="space-x-2">
-                <Button variant="default" size="sm" onClick={() => handleViewClick(product.id)}>View</Button>
-                <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(product)}>Delete</Button>
-              </TableCell>
+      <div className='bg-white p-4 rounded-md shadow-md'>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Image</TableHead><TableHead>Name</TableHead><TableHead>Price</TableHead><TableHead>Stock</TableHead><TableHead>Type</TableHead><TableHead>Actions</TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {products.map((product: Product) => (
+              <TableRow key={product.id}>
+                <TableCell><Image src={product.images[0] || '/placeholder.svg'} alt={product.name} width={48} height={48} className="object-cover rounded-md" /></TableCell>
+                <TableCell className="font-medium">
+                <Tooltip>
+                      <TooltipTrigger>
+                        <p className="max-w-[250px] truncate">
+                          {product.name}
+                        </p>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{product.name}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                </TableCell>
+                <TableCell>₹{product.price.toLocaleString()}</TableCell>
+                <TableCell>{product.stock}</TableCell>
+                <TableCell className="capitalize">{product.type}</TableCell>
+                <TableCell className="space-x-2">
+                  <Button variant="default" size="sm" onClick={() => handleViewClick(product.id)}>View</Button>
+                  <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
+                  <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(product)}>Delete</Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
 
-      {/* --- FIX START: Render the new AddProductModal --- */}
+      {/* --- Pagination Controls --- */}
+      <div className="flex items-center justify-end space-x-4 py-4">
+        <span className="text-sm text-gray-700">
+          Page {productPagination.currentPage} of {productPagination.totalPages}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handlePreviousPage}
+          disabled={productPagination.currentPage <= 1}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleNextPage}
+          disabled={productPagination.currentPage >= productPagination.totalPages}
+        >
+          Next
+        </Button>
+      </div>
+
+      {/* --- Modals and Dialogs --- */}
       <AddProductModal 
         isOpen={isAddDialogOpen}
         onClose={() => setIsAddDialogOpen(false)}
         onSave={handleCreateNew}
       />
-      {/* --- FIX END --- */}
       <ViewProductModal 
         isOpen={isViewDialogOpen}
         onClose={() => setIsViewDialogOpen(false)}
         product={selectedProduct}
         status={selectedProductStatus}
       />
-
       {currentProduct && (
          <EditProductModal 
             isOpen={isEditDialogOpen}
@@ -199,7 +252,6 @@ const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
             onSave={handleUpdate}
           />
       )}
-      
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete "{currentProduct?.name}".</AlertDialogDescription></AlertDialogHeader>

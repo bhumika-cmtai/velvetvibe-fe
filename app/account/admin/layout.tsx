@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Header from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -6,16 +9,32 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-    return (
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-        <div className="flex h-screen bg-gray-50">
-          <Sidebar />
-          <div className="flex flex-1 flex-col ml-64">
-          <Header title="Dashboard" />
-          <main  className="flex-1 overflow-y-auto bg-gray-100 p-8">
-            {children}
-          </main>
-          </div>
-        </div>
-      );
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
+
+      <div className="flex flex-1 flex-col lg:ml-64"> {/* Margin is now responsive */}
+        <Header 
+          title="Dashboard" 
+          onMenuClick={() => setIsSidebarOpen(true)} 
+        />
+        <main className="flex-1 overflow-y-auto bg-gray-100 p-6 md:p-8">
+          {children}
+        </main>
+      </div>
+
+      {/* Optional: Adds a dark overlay behind the sidebar on mobile */}
+      {isSidebarOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black bg-opacity-50 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        ></div>
+      )}
+    </div>
+  );
 }

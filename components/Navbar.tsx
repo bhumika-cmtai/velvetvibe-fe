@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation" 
 import { Search, User, Heart, ShoppingBag, Menu, X, Gem, Star, Shield, Circle, VenetianMask, Shell, Link2, GitBranch, Diamond, ChevronRight } from "lucide-react"
@@ -14,7 +14,24 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { useSelector, useDispatch } from "react-redux"
 import { logout } from "@/lib/redux/slices/authSlice"
-import type { RootState } from "@/lib/redux/store"
+import { fetchProducts, clearSelectedProduct } from "@/lib/redux/slices/productSlice" // Import fetchProducts
+import { AppDispatch, type RootState } from "@/lib/redux/store"
+
+// Custom Debounce Function
+function debounce<T extends (...args: any[]) => void>(func: T, delay: number): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null;
+
+  return function(this: ThisParameterType<T>, ...args: Parameters<T>) {
+    const context = this;
+    const later = function() {
+      timeout = null;
+      func.apply(context, args);
+    };
+
+    clearTimeout(timeout as NodeJS.Timeout);
+    timeout = setTimeout(later, delay);
+  };
+}
 
 const navLinks = [
   { name: "Silver Jewellery", href: "/collections/women/silver-jewellery" },
@@ -22,6 +39,7 @@ const navLinks = [
   { name: "Collections", href: "/collections/women" },
   { name: "Bags", href: "/collections/women/bags" },
   { name: "Gifts", href: "/collections/women/gifts" },
+  // These will be moved to the second row
   { name: "Women", href: "/" },
   { name: "Men", href: "/pages/men" },
 ]
@@ -37,7 +55,7 @@ const categoryItems = [
 ];
 
 const accountMenuItems = [
-  { name: "My Account", href: "/account/user/profile" },
+  { name: "My Account", href: "/account/user/" },
   { name: "My Orders", href: "/account/user/order-history" },
   { name: "Settings", href: "/account/user/settings" },
   { name: "Sign Out", href: "#" }, 
@@ -53,11 +71,16 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCategoryOpen, setIsCategoryOpen] = useState(false)
   const [isAccountOpen, setIsAccountOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("") // New: Search input state
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false) // New: Search dropdown visibility
+
   const pathname = usePathname()
   const router = useRouter()
-  
+  const searchRef = useRef<HTMLDivElement>(null); // Ref for click outside search
+
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
+  const { items: searchResults, loading: productLoading, error: productError } = useSelector((state: RootState) => state.product); // Get search results from Redux
+  const dispatch = useDispatch<AppDispatch>();
 
   const { totalItems: totalCartItems } = useCart()
   const { totalItems: totalWishlistItems } = useWishlist()
@@ -76,6 +99,62 @@ export function Navbar() {
     router.push('/'); 
   };
 
+  // Debounced search function
+  // Note: useCallback is used to memoize the debounced function itself,
+  // ensuring it doesn't get redefined on every render unless its dependencies change.
+  const debouncedSearch = useCallback(
+    debounce((query: string) => {
+      if (query.trim().length > 1) { // Only search if query is at least 2 characters
+        dispatch(fetchProducts({ search: query, limit: 5 })); // Fetch up to 5 relevant products
+        setIsSearchDropdownOpen(true);
+      } else {
+        setIsSearchDropdownOpen(false);
+        // Optionally clear searchResults in store here or just let it be
+        // dispatch(clearSearchResults()); // if you had such an action
+      }
+    }, 300), // 300ms debounce time
+    [dispatch]
+  );
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    debouncedSearch(query);
+  };
+
+  const handleProductClick = (slug: string) => {
+    router.push(`/products/${slug}`);
+    setSearchQuery(""); // Clear search input
+    setIsSearchDropdownOpen(false); // Close dropdown
+    setIsSearchOpen(false); // Close the search bar
+    dispatch(clearSelectedProduct()); // Clear selected product details in Redux if any
+  };
+
+  // Close search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchDropdownOpen(false);
+        // setIsSearchOpen(false); // Optionally close the whole search bar if clicking outside searchRef
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    // When the search bar is closed, also close the dropdown and clear query
+    if (!isSearchOpen) {
+      setIsSearchDropdownOpen(false);
+      setSearchQuery("");
+      // Also clear search results when search bar closes completely
+      // dispatch(clearSearchResults()); // if you had such an action
+    }
+  }, [isSearchOpen]);
+
+
   return (
     <motion.header
       initial={{ y: -120 }}
@@ -89,6 +168,7 @@ export function Navbar() {
       } as React.CSSProperties}
     >
       <div className="container mx-auto px-6">
+        {/* --- Top Row: Logo, Main Nav, Icons --- */}
         <div className="flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center">
             <motion.div whileHover={{ scale: 1.05 }}>
@@ -103,6 +183,7 @@ export function Navbar() {
             </motion.div>
           </Link>
 
+          {/* --- Main Navigation (First Row) --- */}
           <nav className="hidden md:flex items-center space-x-10">
             {navLinks.slice(0, 5).map((item) => (
               <Link
@@ -134,7 +215,7 @@ export function Navbar() {
                     <ul className="space-y-1">
                       {categoryItems.map((item) => (
                         <li key={item.name}>
-                          <Link href="#" className="flex items-center p-3 text-gray-800 hover:bg-[#FFFDF6] rounded-md transition-colors duration-200">
+                          <Link href="/collection/women" className="flex items-center p-3 text-gray-800 hover:bg-[#FFFDF6] rounded-md transition-colors duration-200">
                             <span className="mr-4" style={{ color: "var(--theme-primary)" }}>{item.icon}</span>
                             <span className="font-medium">{item.name}</span>
                             <ChevronRight size={16} className="ml-auto text-gray-400" />
@@ -146,30 +227,9 @@ export function Navbar() {
                 )}
               </AnimatePresence>
             </motion.div>
-
-            {navLinks.slice(5).map((item) => {
-              const isActive = (item.name === "Women" && isWomenActive) || (item.name === "Men" && isMenActive);
-              const activeColor = (item.name === "Women" && theme === "women") || (item.name === "Men" && theme === "men");
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`relative text-base font-medium transition-colors ${isActive ? "font-semibold" : ""}`}
-                  style={{ color: isActive && activeColor ? "#D09D13" : "var(--theme-text)" }}
-                >
-                  {item.name}
-                  {isActive && activeColor && (
-                    <motion.div
-                      layoutId={`activeNav-${item.name}`}
-                      className="absolute -bottom-2 left-0 right-0 h-0.5"
-                      style={{ backgroundColor: "#D09D13" }}
-                    />
-                  )}
-                </Link>
-              )
-            })}
           </nav>
-
+          
+          {/* --- Action Icons --- */}
           <div className="flex items-center space-x-5">
             <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)} className={`hidden md:flex ${iconButtonHoverClass}`}>
               <Search className="h-6 w-6" style={{ color: "var(--theme-text)" }} />
@@ -236,7 +296,8 @@ export function Navbar() {
                 )}
               </AnimatePresence>
             </motion.div>
-
+            
+            {/* --- Mobile Menu Trigger --- */}
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -244,7 +305,7 @@ export function Navbar() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="flex w-full flex-col p-8 sm:w-96 [&_button:focus-visible]:ring-0">
-                <div>
+                 <div>
                   <SheetTitle className="text-2xl font-serif font-bold" style={{ color: "var(--theme-primary)" }}>
                     Gullnaaz
                   </SheetTitle>
@@ -273,7 +334,6 @@ export function Navbar() {
                         ))}
                       </ul>
                     </div>
-                    {/* --- FIX START: Added conditional sign-out button for mobile --- */}
                     <div className="border-t pt-6">
                       {isAuthenticated ? (
                         <button
@@ -293,26 +353,96 @@ export function Navbar() {
                         </div>
                       )}
                     </div>
-                    {/* --- FIX END --- */}
                   </div>
                 </div>
               </SheetContent>
             </Sheet>
           </div>
         </div>
+        
+        {/* --- Second Row: Women/Men Links --- */}
+        <nav className={`hidden md:flex items-center justify-center space-x-10 py-3 border-t ${theme === 'men' ? 'border-gray-700' : 'border-gray-200'}`}>
+            {navLinks.slice(5).map((item) => {
+              const isActive = (item.name === "Women" && isWomenActive) || (item.name === "Men" && isMenActive);
+              const activeColor = (item.name === "Women" && theme === "women") || (item.name === "Men" && theme === "men");
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`relative text-base font-medium transition-colors ${isActive ? "font-semibold" : ""}`}
+                  style={{ color: isActive && activeColor ? "#D09D13" : "var(--theme-text)" }}
+                >
+                  {item.name}
+                  {isActive && activeColor && (
+                    <motion.div
+                      layoutId={`activeNav-${item.name}`}
+                      className="absolute -bottom-2 left-0 right-0 h-0.5"
+                      style={{ backgroundColor: "#D09D13" }}
+                    />
+                  )}
+                </Link>
+              )
+            })}
+        </nav>
+
+        {/* --- Search Bar & Dropdown --- */}
         <AnimatePresence>
           {isSearchOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="pb-5"
+              className="pb-5 relative" // Added relative for dropdown positioning
+              ref={searchRef} // Attach ref here
             >
               <Input
                 placeholder="Search for beautiful jewelry..."
                 className="w-full max-w-lg mx-auto h-12 text-base"
                 autoFocus
+                value={searchQuery}
+                onChange={handleSearchChange}
+                onFocus={() => searchQuery.trim().length > 1 && setIsSearchDropdownOpen(true)} // Open dropdown if there's a query
               />
+              
+              <AnimatePresence>
+                {isSearchDropdownOpen && searchQuery.trim().length > 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute left-1/2 -translate-x-1/2 mt-2 w-full max-w-lg bg-white rounded-md shadow-lg p-2 z-40 border border-gray-200"
+                  >
+                    {productLoading && (
+                      <div className="py-4 text-center text-gray-600">Loading products...</div>
+                    )}
+                    {productError && (
+                      <div className="py-4 text-center text-red-500">Error: {productError}</div>
+                    )}
+                    {!productLoading && !productError && searchResults.length === 0 && (
+                      <div className="py-4 text-center text-gray-600">No products found for "{searchQuery}"</div>
+                    )}
+                    {!productLoading && !productError && searchResults.length > 0 && (
+                      <ul>
+                      {searchResults.map((product: any) => (
+                        <li key={product._id}>
+                          <button
+                            onClick={() => handleProductClick(product.slug)}
+                            className="flex items-center w-full p-3 hover:bg-gray-100 rounded-md transition-colors text-gray-800 text-left"
+                          >
+                            <div className="font-medium truncate max-w-[90%]">
+                              {product.name}
+                            </div>
+                            <ChevronRight size={16} className="ml-auto text-gray-400" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
         </AnimatePresence>

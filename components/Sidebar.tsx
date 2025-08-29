@@ -10,31 +10,48 @@ import {
   MessageSquare,
   TicketPercent,
   Package2,
-  MessageCircleCode,
-  Mail,
+  X, // Import the close icon
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const navLinks = [
-  { href: "/account/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/account/admin/orders", label: "Orders", icon: Package },
-  { href: "/account/admin/users", label: "Users", icon: Users },
-  { href: "/account/admin/products", label: "Products", icon: Gem },
-  { href: "/account/admin/contacts", label: "Contacts", icon: MessageSquare },
-  { href: "/account/admin/coupon", label: "Manage Coupon", icon: TicketPercent },
-  // {href: "/account/admin/notification", label: "Notification", icon: Mail},
-  {href: "/account/admin/bulk-order", label: "Bulk Order", icon: Package2},
-
+    { href: "/account/admin", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/account/admin/orders", label: "Orders", icon: Package },
+    { href: "/account/admin/users", label: "Users", icon: Users },
+    { href: "/account/admin/products", label: "Products", icon: Gem },
+    { href: "/account/admin/contacts", label: "Contacts", icon: MessageSquare },
+    { href: "/account/admin/coupon", label: "Manage Coupon", icon: TicketPercent },
+    {href: "/account/admin/bulk-order", label: "Bulk Order", icon: Package2},
 ];
 
-export function Sidebar() {
+// Define props to control the sidebar's state from the parent layout
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    // --- FIX START: Added classes to make the sidebar fixed ---
-    <aside className="fixed top-0 left-0 z-40 h-full w-64 flex-shrink-0 bg-white shadow-md">
-    {/* --- FIX END --- */}
-      <div className="p-6">
+    // The sidebar's visibility is controlled by transform classes.
+    // On 'lg' screens and larger, it is always visible.
+    <aside
+      className={`fixed top-0 left-0 z-40 h-full w-64 bg-white shadow-md transition-transform duration-300 ease-in-out 
+      ${isOpen ? "translate-x-0" : "-translate-x-full"}
+      lg:translate-x-0`}
+    >
+      <div className="flex items-center justify-between p-6">
         <h1 className="text-2xl font-bold text-gray-800">Admin Panel</h1>
+        {/* Close button for mobile, hidden on large screens */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden"
+          onClick={onClose}
+        >
+          <X className="h-6 w-6" />
+        </Button>
       </div>
       <nav className="flex flex-col p-4">
         {navLinks.map((link) => {
@@ -46,6 +63,7 @@ export function Sidebar() {
               className={`flex items-center rounded-md px-4 py-3 text-gray-700 transition-colors hover:bg-gray-200 ${
                 isActive ? "bg-gray-300 font-semibold" : ""
               }`}
+              onClick={onClose} // Close sidebar on link click in mobile view
             >
               <link.icon className="mr-3 h-5 w-5" />
               {link.label}

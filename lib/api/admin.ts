@@ -1,93 +1,129 @@
-async function apiFetch(endpoint: string, options: RequestInit = {}, token: string | null = null) {
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
-    
-    // --- FIX START: Use a more specific type for headers to allow string indexing ---
-    // We initialize headers as a flexible key-value pair object.
-    const headers: Record<string, string> = {};
-    // --- FIX END ---
-  
-    // Set Content-Type only if the body is NOT FormData.
-    // The browser must set the Content-Type for FormData itself to include the boundary.
-    if (!(options.body instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
-    }
-  
-    // Add the Authorization token if it exists.
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-  
-    const response = await fetch(`${apiBaseUrl}${endpoint}`, {
-      ...options,
-      // Merge our generated headers with any custom headers from the options.
-      headers: { ...headers, ...options.headers },
+// admin.ts
+import apiClient from './adminClient'; // Ensure this is your centralized, interceptor-based client
+import type { Product } from '@/lib/data';
+
+// Define the types needed for the API responses
+export interface AdminUser {
+  _id: string;
+  fullName: string;
+  email: string;
+  role: 'user' | 'admin';
+  isVerified: boolean;
+  createdAt: string;
+}
+
+export interface Inquiry {
+  _id: string;
+  name: string;
+  email: string;
+  message: string;
+  status: 'Pending' | 'Reviewed' | 'Resolved';
+  adminNotes?: string;
+  createdAt: string;
+}
+
+export interface Coupon {
+  _id: string;
+  code: string;
+  discountPercentage: number;
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ==========================================================
+// --- PRODUCT API FUNCTIONS ---
+// ==========================================================
+export const getAllProductsApi = async (params: { page?: number; limit?: number }) => {
+  return apiClient.get('/admin/products', { params });
+};
+export const getProductByIdApi = async (productId: string) => {
+  return apiClient.get(`/admin/products/${productId}`);
+};
+export const createProductApi = async (formData: FormData) => {
+  return apiClient.post('/admin/products', formData);
+};
+export const updateProductApi = async (productId: string, formData: FormData) => {
+  return apiClient.put(`/admin/products/${productId}`, formData);
+};
+export const deleteProductApi = async (productId: string) => {
+  return apiClient.delete(`/admin/products/${productId}`);
+};
+
+// ==========================================================
+// --- USER API FUNCTIONS ---
+// ==========================================================
+export const getAllUsersApi = async (params: { page?: number; limit?: number; gender?: string; search?: string }) => {
+  return apiClient.get('/admin/users', { params });
+};
+export const getUserByIdApi = async (userId: string) => {
+  return apiClient.get(`/admin/users/${userId}`);
+};
+export const updateUserApi = async (userId: string, updates: Partial<AdminUser>) => {
+  return apiClient.put(`/admin/users/${userId}`, updates);
+};
+export const deleteUserApi = async (userId: string) => {
+  return apiClient.delete(`/admin/users/${userId}`);
+};
+
+// ==========================================================
+// --- INQUIRY (CONTACT) API FUNCTIONS ---
+// ==========================================================
+export const getAllInquiriesApi = async (status?: string) => {
+  const params = status ? { status } : {};
+  return apiClient.get('/contact/admin', { params });
+};
+export const updateInquiryApi = async (inquiryId: string, updates: FormData | { status?: string; adminNotes?: string }) => {
+  // If updates is FormData, send it as is (for multipart/form-data)
+  // Otherwise, send as application/json
+  if (updates instanceof FormData) {
+    return apiClient.put(`/contact/admin/${inquiryId}`, updates);
+  } else {
+    // If it's a plain object, set the Content-Type header explicitly for JSON
+    return apiClient.put(`/contact/admin/${inquiryId}`, updates, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
-  
-    // Handle cases where the response might not have a JSON body (e.g., 204 No Content)
-    if (response.status === 204) {
-        return null; 
-    }
-  
-    const data = await response.json();
-  
-    if (!response.ok) {
-      throw new Error(data.message || 'An API error occurred');
-    }
-  
-    return data;
   }
-  
-  // =======================
-  // Product API Functions (No changes needed here)
-  // =======================
-  
-  export const getAllProductsApi = (token: string) => {
-    return apiFetch('/admin/products', { method: 'GET' }, token);
-  };
-  
-  export const createProductApi = (formData: FormData, token: string) => {
-    return apiFetch('/admin/products', {
-      method: 'POST',
-      body: formData,
-    }, token);
-  };
-  
-  export const updateProductApi = (productId: string, formData: FormData, token: string) => {
-    return apiFetch(`/admin/products/${productId}`, {
-      method: 'PUT',
-      body: formData,
-    }, token);
-  };
-  
-  export const deleteProductApi = (productId: string, token: string) => {
-    return apiFetch(`/admin/products/${productId}`, {
-      method: 'DELETE',
-    }, token);
-  };
+};
 
-  export const getAllInquiriesApi = (token: string, status?: string) => {
-    let endpoint = '/contact/admin';
-  
-    // If a status is provided, append it to the URL as a query parameter.
-    if (status) {
-      endpoint += `?status=${status}`;
-    }
-    
-    // The fetch call now uses the potentially modified endpoint.
-    return apiFetch(endpoint, { method: 'GET' }, token);
-  };
-  
-  export const updateInquiryApi = (inquiryId: string, formData: FormData, token: string) => {
-    return apiFetch(`/contact/admin/${inquiryId}`, {
-      method: 'PUT', // Using PUT as per your controller for a full update
-      body: formData,
-    }, token);
-  };
 
-  export const deleteInquiryApi = (inquiryId: string, token: string) => {
-    return apiFetch(`/contact/admin/${inquiryId}`, {
-      method: 'DELETE',
-    }, token);
-  };
-  
-  
+
+export const deleteInquiryApi = async (inquiryId: string) => {
+  return apiClient.delete(`/contact/admin/${inquiryId}`);
+};
+
+// ==========================================================
+// --- COUPON API FUNCTIONS ---
+// ==========================================================
+
+export const createCouponApi = (couponData: { code: string; discountPercentage: number; status?: 'active' | 'inactive' }) => {
+  // apiClient already handles authorization headers via interceptors, so no need to pass token explicitly here.
+  return apiClient.post('/coupon', couponData);
+};
+
+export const getAllCouponsApi = (status?: 'active' | 'inactive') => {
+  // apiClient already handles authorization headers via interceptors, so no need to pass token explicitly here.
+  const params = status ? { status } : {};
+  return apiClient.get('/coupon', { params });
+};
+
+export const updateCouponApi = (couponId: string, couponData: Partial<{ code: string; discountPercentage: number; status: 'active' | 'inactive' }>) => {
+  // apiClient already handles authorization headers via interceptors, so no need to pass token explicitly here.
+  return apiClient.patch(`/coupon/${couponId}`, couponData);
+};
+
+/**
+ * Deletes a coupon. (Admin)
+ * @param couponId The ID of the coupon to delete.
+ */
+export const deleteCouponApi = (couponId: string) => {
+  // apiClient already handles authorization headers via interceptors, so no need to pass token explicitly here.
+  return apiClient.delete(`/coupon/${couponId}`);
+};
+
+export const getCouponByNameApi = (couponCode: string) => {
+  // This function hits the `GET /coupon/code/:code` endpoint
+  return apiClient.get(`/coupon/code/${couponCode}`);
+};

@@ -1,11 +1,9 @@
 "use client"
-
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { SectionTitle } from "@/components/SectionTitle"
 import { ProductCard } from "@/components/ProductCard"
-import { Product, womenProducts } from "@/lib/data"
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -25,49 +23,77 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-// Helper to get unique sub-categories from product names for artificial jewellery
+// --- REDUX IMPORTS ---
+import { useDispatch, useSelector } from "react-redux"
+import { fetchProducts } from "@/lib/redux/slices/productSlice"
+import { RootState } from "@/lib/redux/store"
+
+import type { Product } from "@/lib/data"
+
+// --- HELPERS ---
 const getSubCategories = (products: Product[]) => {
   const subCategories = new Set<string>()
   products.forEach((product) => {
-    if (product.name.toLowerCase().includes("choker")) subCategories.add("Choker")
-    if (product.name.toLowerCase().includes("necklace")) subCategories.add("Necklace")
-    if (product.name.toLowerCase().includes("earrings")) subCategories.add("Earrings")
-    if (product.name.toLowerCase().includes("maang tikka")) subCategories.add("Maang Tikka")
+    if (product.name.toLowerCase().includes("anklet")) subCategories.add("Anklet")
     if (product.name.toLowerCase().includes("bracelet")) subCategories.add("Bracelet")
+    if (product.name.toLowerCase().includes("jhumkas")) subCategories.add("Jhumkas")
   })
   return ["All", ...Array.from(subCategories)]
 }
 
 export default function ArtificialJewelleryPage() {
-  // 1. Filter for ARTIFICIAL products
-  const artificialProducts = useMemo(() => womenProducts.filter((p) => p.category === "artificial"), [])
+  const dispatch = useDispatch()
+  const { items: fetchedProducts, loading, error } = useSelector(
+    (state: RootState) => state.product
+  )
 
+  const productsToFilter = fetchedProducts as Product[]
+
+  // --- FIXED RANGE (₹100 - ₹10,000) ---
+  const minPrice = 100
+  const maxPrice = 10000
+
+  const [priceRange, setPriceRange] = useState<[number, number]>([minPrice, maxPrice])
   const [activeSubCategory, setActiveSubCategory] = useState("All")
-  const [priceRange, setPriceRange] = useState([0, 5000])
-  
-  const subCategories = useMemo(() => getSubCategories(artificialProducts), [artificialProducts])
-  const maxPrice = useMemo(() => {
-    return Math.ceil(Math.max(...artificialProducts.map(p => p.priceDiscounted), 0) / 100) * 100
-  }, [artificialProducts])
 
+  // Fetch products (ARTIFICIAL JEWELLERY)
   useEffect(() => {
-    setPriceRange([0, maxPrice]);
-  }, [maxPrice]);
+    dispatch(fetchProducts({ materialType: "artificial", limit: 100 }) as any)
+  }, [dispatch])
 
+  // Get subcategories dynamically
+  const subCategories = useMemo(
+    () => getSubCategories(productsToFilter),
+    [productsToFilter]
+  )
+
+  // Filter products by category + price
   const filteredProducts = useMemo(() => {
-    return artificialProducts
+    return productsToFilter
       .filter((p) => {
         if (activeSubCategory === "All") return true
-        return p.name.toLowerCase().includes(activeSubCategory.toLowerCase())
+        return p.name?.toLowerCase().includes(activeSubCategory.toLowerCase())
       })
       .filter((p) => {
-        return p.priceDiscounted >= priceRange[0] && p.priceDiscounted <= priceRange[1]
+        return p.price >= priceRange[0] && p.price <= priceRange[1]
       })
-  }, [artificialProducts, activeSubCategory, priceRange])
-  
-  const resetFilters = () => {
-    setActiveSubCategory("All");
-    setPriceRange([0, maxPrice]);
+  }, [productsToFilter, activeSubCategory, priceRange])
+
+  // Reset filters
+  const resetFilters = useCallback(() => {
+    setActiveSubCategory("All")
+    setPriceRange([minPrice, maxPrice])
+  }, [])
+
+  // Handle slider change
+  const handlePriceRangeChange = (newRange: number[]) => {
+    if (
+      newRange.length === 2 &&
+      typeof newRange[0] === "number" &&
+      typeof newRange[1] === "number"
+    ) {
+      setPriceRange(newRange as [number, number])
+    }
   }
 
   return (
@@ -75,22 +101,26 @@ export default function ArtificialJewelleryPage() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-12">
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
           <Link href="/" className="mb-8 inline-block">
             <Button variant="ghost" className="space-x-2">
               <ArrowLeft className="h-4 w-4" />
               <span>Back to Home</span>
             </Button>
           </Link>
-          {/* 2. Updated Section Title */}
           <SectionTitle
-            title="Modern Glamour"
-            subtitle="Discover stunning and affordable artificial jewellery for every occasion."
+            title="Artificial Jewellery Collection"
+            subtitle="Explore our stylish range of artificial jewellery, crafted for elegance and affordability."
+            isSparkling={true}
             className="mb-12"
           />
         </motion.div>
 
-        {/* Filter Section */}
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-4 mb-12">
           {/* Category Dropdown */}
           <Select value={activeSubCategory} onValueChange={setActiveSubCategory}>
@@ -109,20 +139,24 @@ export default function ArtificialJewelleryPage() {
           {/* Price Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-[240px] text-left font-normal justify-start">
+              <Button
+                variant="outline"
+                className="w-full sm:w-[240px] text-left font-normal justify-start"
+              >
                 <span>
                   {`Price: ₹${priceRange[0].toLocaleString()} - ₹${priceRange[1].toLocaleString()}`}
                 </span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent 
-              className="w-64 p-4" 
+            <DropdownMenuContent
+              className="w-64 p-4"
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
               <DropdownMenuLabel>Price Range</DropdownMenuLabel>
               <Slider
                 value={priceRange}
-                onValueChange={setPriceRange}
+                onValueChange={handlePriceRangeChange}
+                min={minPrice}
                 max={maxPrice}
                 step={100}
                 className="my-4"
@@ -135,24 +169,47 @@ export default function ArtificialJewelleryPage() {
           </DropdownMenu>
 
           {/* Reset Button */}
-          <Button variant="ghost" onClick={resetFilters} className="space-x-2 text-muted-foreground">
+          <Button
+            variant="ghost"
+            onClick={resetFilters}
+            className="space-x-2 text-muted-foreground"
+          >
             <X className="h-4 w-4" />
             <span>Reset</span>
           </Button>
         </div>
 
-        {/* Products Grid */}
-        {filteredProducts.length > 0 ? (
+        {/* Product Grid */}
+        {loading ? (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+              Loading Products...
+            </h2>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20 text-red-600">
+            <h2 className="text-2xl font-semibold mb-4">Error: {error}</h2>
+            <p className="text-gray-500">Please try again later.</p>
+          </div>
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
             {filteredProducts.map((product, index) => (
               <ProductCard key={product.id} product={product} index={index} />
             ))}
           </div>
         ) : (
-          <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="text-center py-20">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">No Products Found</h2>
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center py-20"
+          >
+            <h2 className="text-2xl font-semibold text-gray-700 mb-4">
+              No Products Found
+            </h2>
             <p className="text-gray-500">
-              Try adjusting your filters or use the 'Reset' button to see all items.
+              Try adjusting your filters or use the 'Reset' button to see all
+              items.
             </p>
           </motion.div>
         )}

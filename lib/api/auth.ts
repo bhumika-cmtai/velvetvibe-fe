@@ -45,7 +45,7 @@ interface BackendResponse<T> {
 
 // Configure your API base URL. Use environment variables for this.
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1', // Default for local dev
+  baseURL:  `${process.env.NEXT_PUBLIC_API_URL}/api/v1` || 'http://localhost:8000/api/v1', // Default for local dev
   withCredentials: true, // Important for sending cookies
 });
 

@@ -2,14 +2,14 @@ import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
 import { ContactForm } from "@/components/ContactForm"
 import { SectionTitle } from "@/components/SectionTitle"
-import { Gem } from "lucide-react"
+import { Gem, MapPin } from "lucide-react"
 
 export default function CustomizePage() {
   return (
     <div className="min-h-screen">
       <Navbar />
 
-      <main className="py-20">
+      <main className="py-10">
         <section className="container mx-auto px-4">
           <SectionTitle
             title="Your Vision, Our Craftsmanship"
@@ -40,6 +40,24 @@ export default function CustomizePage() {
             </div>
 
           </div>
+
+          {/* Address */}
+          <div className="mt-10">
+            <div className="max-w-3xl mx-auto space-y-4 text-center bg-gray-50 p-12 rounded-2xl border border-gray-200 shadow-sm">
+              <div className="flex justify-center mb-4">
+                <MapPin className="h-12 w-12 text-[#A77C38]" strokeWidth={1.5} />
+              </div>
+              <h3 className="text-4xl font-bold font-serif text-[#A77C38]">
+                Visit Our Showroom
+              </h3>
+              <p className="text-xl leading-relaxed text-gray-700">
+                Shop No. 12, MC NO.181/2225, Shri Ram Market, Gali Kunj,<br />
+                Dariba Kalan, Chandni Chowk, Delhi - 110006
+              </p>
+            </div>
+          </div>
+
+
         </section>
       </main>
 

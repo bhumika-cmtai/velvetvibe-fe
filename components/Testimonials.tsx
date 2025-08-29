@@ -21,10 +21,10 @@ export function Testimonials() {
   return (
     <div className="relative">
       <div className="text-center mb-12">
-        <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4" style={{ color: "var(--theme-primary)" }}>
+        <h2 className="text-3xl md:text-4xl font-serif font-bold mb-4 text-[#D09D13]" >
           Our Recent Work
         </h2>
-        <p className="text-lg text-gray-600">Top Influencers Choice</p>
+        <p className="text-lg text-[#BCBCBC]">Top Influencers Choice</p>
       </div>
 
       <div className="relative max-w-4xl mx-auto">
@@ -66,7 +66,7 @@ export function Testimonials() {
                 ))}
               </div>
               <p className="text-lg text-gray-700 mb-4 max-w-2xl mx-auto italic">"{testimonials[currentIndex].text}"</p>
-              <p className="font-semibold" style={{ color: "var(--theme-primary)" }}>
+              <p className="font-semibold text-[#D09D13]" >
                 {testimonials[currentIndex].name}
               </p>
             </motion.div>

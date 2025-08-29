@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { AdminUser } from '@/lib/admin-data';
+import { AdminUser } from '@/lib/api/admin';
 
 // Define the props for the component
 interface ViewUserModalProps {
@@ -40,9 +40,9 @@ export function ViewUserModal({ isOpen, onClose, user }: ViewUserModalProps) {
         <div className="py-4 space-y-2">
             <InfoRow label="Full Name" value={user.fullName} />
             <InfoRow label="Email Address" value={user.email} />
-            <InfoRow label="Gender" value={user.gender} />
+            {/* <InfoRow label="Gender" value={user.gender} /> */}
             <InfoRow label="Role" value={user.role} />
-            <InfoRow label="Account Status" value={user.status} isBadge />
+            {/* <InfoRow label="Account Status" value={user.status} isBadge /> */}
             <InfoRow label="User Verified" value={user.isVerified ? 'Yes' : 'No'} />
             <InfoRow label="Joined On" value={new Date(user.createdAt).toLocaleDateString()} />
         </div>

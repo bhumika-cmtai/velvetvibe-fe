@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { toast } from 'sonner';
-import { createCouponApi, deleteCouponApi, getAllCouponsApi, updateCouponApi } from '@/lib/admin-data';
+import { createCouponApi, deleteCouponApi, getAllCouponsApi,getCouponByNameApi ,updateCouponApi } from '@/lib/api/admin';
 
 // --- Type Definitions (No change) ---
 export interface Coupon {
@@ -40,7 +40,7 @@ export const fetchCoupons = createAsyncThunk(
         try {
             const token = getToken(getState);
             // Pass the status along to the updated API function
-            const response = await getAllCouponsApi(token, status);
+            const response = await getAllCouponsApi(status);
             return response.data.data;
         } catch (error: any) {
             return rejectWithValue(error.response?.data?.message || 'Failed to fetch coupons.');
@@ -48,10 +48,27 @@ export const fetchCoupons = createAsyncThunk(
     }
 );
 
+// Fetch a single coupon by its code name (for cart validation)
+export const fetchCouponByName = createAsyncThunk(
+    'coupons/fetchByName',
+    async (couponCode: string, { rejectWithValue }) => {
+        try {
+            // This API call fetches the coupon and validates if it's active on the backend
+            const response = await getCouponByNameApi(couponCode);
+            return response.data.data as Coupon; // The backend returns the full coupon object
+        } catch (error: any) {
+            // The backend API sends specific error messages for "not found" or "inactive"
+            return rejectWithValue(error.response?.data?.message || 'An error occurred.');
+        }
+    }
+);
+
+
+
 export const createCoupon = createAsyncThunk('coupons/create', async (couponData: { code: string; discountPercentage: number }, { getState, rejectWithValue }) => {
     try {
         const token = getToken(getState);
-        const response = await createCouponApi(couponData, token);
+        const response = await createCouponApi(couponData);
         // --- FIX: Extract the new coupon object from the ApiResponse ---
         return response.data.data;
     } catch (error: any) {
@@ -63,7 +80,7 @@ export const createCoupon = createAsyncThunk('coupons/create', async (couponData
 export const updateCoupon = createAsyncThunk('coupons/update', async ({ couponId, couponData }: { couponId: string; couponData: Partial<Coupon> }, { getState, rejectWithValue }) => {
     try {
         const token = getToken(getState);
-        const response = await updateCouponApi(couponId, couponData, token);
+        const response = await updateCouponApi(couponId, couponData);
         // --- FIX: Extract the updated coupon object ---
         return response.data.data;
     } catch (error: any) {
@@ -75,7 +92,7 @@ export const updateCoupon = createAsyncThunk('coupons/update', async ({ couponId
 export const deleteCoupon = createAsyncThunk('coupons/delete', async (couponId: string, { getState, rejectWithValue }) => {
     try {
         const token = getToken(getState);
-        await deleteCouponApi(couponId, token);
+        await deleteCouponApi(couponId);
         return couponId;
     } catch (error: any) {
         // --- FIX: Extract the specific backend message ---

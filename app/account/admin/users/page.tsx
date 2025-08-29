@@ -2,14 +2,23 @@
 import { useState, useEffect } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input"; 
 import { Badge } from "@/components/ui/badge";
+// --- CHANGE: Import AlertDialog components ---
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { fetchUsers, deleteUser, updateUser } from '@/lib/redux/slices/adminSlice';
 import { EditUserModal } from '@/components/EditUserModal';
-import { ViewUserModal } from '@/components/viewUserModal'; // <-- Import the new modal
-import { AdminUser } from '@/lib/admin-data';
+import { ViewUserModal } from '@/components/viewUserModal';
+import { AdminUser } from '@/lib/api/admin';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -18,48 +27,80 @@ export default function UsersPage() {
   const { users, userStatus, userPagination } = useSelector((state: RootState) => state.admin);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [genderFilter, setGenderFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   
   // State for modals
   const [isEditModalOpen, setEditModalOpen] = useState(false);
-  const [isViewModalOpen, setViewModalOpen] = useState(false); // <-- State for view modal
+  const [isViewModalOpen, setViewModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(null);
 
+  // --- CHANGE: State for the delete confirmation dialog ---
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Debouncing effect for the search input (no changes)
   useEffect(() => {
-    const apiGenderFilter = genderFilter === 'all' ? '' : genderFilter;
-    dispatch(fetchUsers({ page: currentPage, gender: apiGenderFilter }));
-  }, [dispatch, currentPage, genderFilter]);
+    const timerId = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1); 
+    }, 500);
+    return () => clearTimeout(timerId);
+  }, [searchQuery]);
 
-  const handleFilterChange = (newGender: string) => {
-    setGenderFilter(newGender);
-    setCurrentPage(1); 
-  };
+  // Data fetching effect (no changes)
+  useEffect(() => {
+    dispatch(fetchUsers({ page: currentPage, name: debouncedSearchQuery }));
+  }, [dispatch, currentPage, debouncedSearchQuery]);
 
-  // --- MODAL HANDLERS ---
   const handleEditClick = (user: AdminUser) => {
     setCurrentUser(user);
     setEditModalOpen(true);
   };
 
-  const handleViewClick = (user: AdminUser) => { // <-- Handler for View button
+  const handleViewClick = (user: AdminUser) => {
     setCurrentUser(user);
     setViewModalOpen(true);
   };
 
-  const handleDeleteClick = (userId: string) => { // <-- Handler for Delete button
-    if (window.confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
-      dispatch(deleteUser(userId));
+  // --- CHANGE: handleDeleteClick now opens the modal ---
+  const handleDeleteClick = (user: AdminUser) => {
+    setCurrentUser(user); // Set the user to be deleted
+    setIsDeleteDialogOpen(true); // Open the confirmation dialog
+  };
+  
+  // --- NEW: Function to handle the actual deletion after confirmation ---
+  const handleDeleteConfirm = async () => {
+    if (!currentUser) return;
+
+    setIsDeleting(true);
+    try {
+      await toast.promise(dispatch(deleteUser(currentUser._id)).unwrap(), {
+          loading: 'Deleting user...',
+          success: 'User deleted successfully!',
+          error: 'Failed to delete user.',
+      });
+      setIsDeleteDialogOpen(false); // Close the dialog on success
+    } catch (error) {
+      console.error("Delete failed:", error);
+    } finally {
+      setIsDeleting(false);
+      setCurrentUser(null);
     }
   };
   
+  // --- CHANGE: handleUpdateUser now returns the promise ---
   const handleUpdateUser = async (userId: string, data: Partial<AdminUser>) => {
-    try {
-        await dispatch(updateUser({ userId, updates: data })).unwrap();
-        setEditModalOpen(false);
-        // No need to re-fetch, the Redux state is updated automatically by the slice
-    } catch(error) {
-        console.error("Update failed:", error);
-    }
+    // This function now returns the promise from toast.promise,
+    // which the EditUserModal can `await`.
+    await toast.promise(dispatch(updateUser({ userId, updates: data })).unwrap(), {
+      loading: 'Updating user...',
+      success: () => {
+        setEditModalOpen(false); // Close modal on success
+        return 'User updated successfully!';
+      },
+      error: 'Failed to update user.',
+    });
   };
   
   const isLoading = userStatus === 'loading';
@@ -67,18 +108,13 @@ export default function UsersPage() {
   return (
     <div>
       <h1 className="text-3xl font-bold mb-4">Users</h1>
-      <div className="flex justify-between items-center mb-4">
-        <Select value={genderFilter} onValueChange={handleFilterChange}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Filter by Gender" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Genders</SelectItem>
-            <SelectItem value="Male">Male</SelectItem>
-            <SelectItem value="Female">Female</SelectItem>
-            <SelectItem value="Other">Other</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="flex justify-between items-center mb-4 ">
+        <Input
+          placeholder="Search by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-sm bg-white"
+        />
       </div>
 
       {isLoading && (!users || users.length === 0) ? (
@@ -87,14 +123,13 @@ export default function UsersPage() {
         </div>
       ) : (
         <>
-          <div className="border rounded-md">
+          <div className="border bg-white shadow-md p-4 ">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Gender</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Verified</TableHead> 
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -104,74 +139,54 @@ export default function UsersPage() {
                     <TableRow key={user._id}>
                       <TableCell className="font-medium">{user.fullName}</TableCell>
                       <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.gender}</TableCell>
                       <TableCell>
-                        {/* <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>
-                          {user.status}
-                        </Badge> */}
+                        <Badge variant={user.isVerified ? 'default' : 'destructive'}>
+                          {user.isVerified ? 'Verified' : 'Not Verified'}
+                        </Badge>
                       </TableCell>
                       <TableCell className="text-right space-x-2">
-                        {/* --- ACTION BUTTONS --- */}
-                        <Button variant="outline" size="sm" onClick={() => handleViewClick(user)}>
-                          View
-                        </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleEditClick(user)}>
-                          Edit
-                        </Button>
-                        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(user._id)}>
-                          Delete
-                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => handleViewClick(user)}>View</Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEditClick(user)}>Edit</Button>
+                        {/* --- CHANGE: Pass the full user object to handleDeleteClick --- */}
+                        <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(user)}>Delete</Button>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24">
-                      No users found for the selected criteria.
-                    </TableCell>
-                  </TableRow>
+                  <TableRow><TableCell colSpan={4} className="text-center h-24">No users found.</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
           </div>
 
           <div className="flex justify-center items-center space-x-2 mt-4">
-            <Button 
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))} 
-              disabled={userPagination.currentPage === 1 || isLoading}
-            >
-              Previous
-            </Button>
-            <span>
-              Page {userPagination.currentPage} of {userPagination.totalPages}
-            </span>
-            <Button 
-              onClick={() => setCurrentPage(p => p + 1)} 
-              disabled={userPagination.currentPage >= userPagination.totalPages || isLoading}
-            >
-              Next
-            </Button>
+            <Button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={userPagination.currentPage === 1 || isLoading}>Previous</Button>
+            <span>Page {userPagination.currentPage} of {userPagination.totalPages}</span>
+            <Button onClick={() => setCurrentPage(p => p + 1)} disabled={userPagination.currentPage >= userPagination.totalPages || isLoading}>Next</Button>
           </div>
         </>
       )}
 
-      {/* --- RENDER MODALS --- */}
-      {currentUser && (
-        <EditUserModal 
-          isOpen={isEditModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          user={currentUser}
-          onSave={handleUpdateUser}
-        />
-      )}
+      {currentUser && <EditUserModal isOpen={isEditModalOpen} onClose={() => setEditModalOpen(false)} user={currentUser} onSave={handleUpdateUser} />}
+      {currentUser && <ViewUserModal isOpen={isViewModalOpen} onClose={() => setViewModalOpen(false)} user={currentUser} />}
 
-      {currentUser && (
-        <ViewUserModal 
-          isOpen={isViewModalOpen}
-          onClose={() => setViewModalOpen(false)}
-          user={currentUser}
-        />
-      )}
+      {/* --- NEW: AlertDialog for Delete Confirmation --- */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user "{currentUser?.fullName}" and all their associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} disabled={isDeleting}>
+              {isDeleting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...</> : "Delete"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -73,8 +73,9 @@ export const fetchInquiries = createAsyncThunk(
         try {
             const token = getToken(getState);
             // Pass the status to your API function
-            const response = await getAllInquiriesApi(token, status);
-            return response.data;
+            const response = await getAllInquiriesApi(status);
+            // console.log(response.data)
+            return response.data.data;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to fetch inquiries.');
         }
@@ -89,7 +90,7 @@ export const updateInquiry = createAsyncThunk(
     async ({ inquiryId, formData }: { inquiryId: string; formData: FormData }, { getState, rejectWithValue }) => {
         try {
             const token = getToken(getState);
-            const response = await updateInquiryApi(inquiryId, formData, token);
+            const response = await updateInquiryApi(inquiryId, formData);
             return response.data;
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to update the inquiry.');
@@ -105,7 +106,7 @@ export const deleteInquiry = createAsyncThunk(
     async (inquiryId: string, { getState, rejectWithValue }) => {
         try {
             const token = getToken(getState);
-            await deleteInquiryApi(inquiryId, token);
+            await deleteInquiryApi(inquiryId);
             return inquiryId; // Return the ID for successful deletion to update the state
         } catch (error: any) {
             return rejectWithValue(error.message || 'Failed to delete the inquiry.');

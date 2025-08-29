@@ -148,9 +148,9 @@ export default function CouponAdminPage() {
     {/* --- Row 1: Title and Filter --- */}
           <div className="flex items-center justify-between">
               <h1 className="text-3xl font-bold">Manage Coupons</h1>
-              <div className="w-[180px]">
+              <div className="w-[180px] ">
                   <Select value={statusFilter} onValueChange={(value: 'All' | 'active' | 'inactive') => setStatusFilter(value)}>
-                      <SelectTrigger id="status-filter">
+                      <SelectTrigger id="status-filter" className='bg-white'>
                           <SelectValue placeholder="Filter by status..." />
                       </SelectTrigger>
                       <SelectContent>

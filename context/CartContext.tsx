@@ -1,5 +1,5 @@
+// cartContext.tsx
 "use client"
-
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import type { Product } from "@/lib/data"
 
@@ -35,16 +35,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addToCart = (product: Product, quantity = 1) => {
     setItems((prev) => {
-      const existingItem = prev.find((item) => item.id === product.id)
+      const existingItem = prev.find((item) => item._id === product._id)
       if (existingItem) {
-        return prev.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item))
+        return prev.map((item) => (item._id === product._id ? { ...item, quantity: item.quantity + quantity } : item))
       }
       return [...prev, { ...product, quantity }]
     })
   }
 
   const removeFromCart = (productId: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== productId))
+    setItems((prev) => prev.filter((item) => item._id !== productId))
   }
 
   const updateQuantity = (productId: string, quantity: number) => {
@@ -52,7 +52,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       removeFromCart(productId)
       return
     }
-    setItems((prev) => prev.map((item) => (item.id === productId ? { ...item, quantity } : item)))
+    setItems((prev) => prev.map((item) => (item._id === productId ? { ...item, quantity } : item)))
   }
 
   const clearCart = () => {
@@ -60,7 +60,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }
 
   const totalItems = items.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = items.reduce((sum, item) => sum + item.priceDiscounted * item.quantity, 0)
+  const totalPrice = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
   return (
     <CartContext.Provider

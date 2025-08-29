@@ -50,7 +50,7 @@ export function SectionTitle({ title, subtitle, className = "", isSparkling = fa
       {/* --- MODIFICATION END --- */}
 
       {/* Subtitle and underline remain the same for both versions */}
-      {subtitle && <p className="text-lg text-gray-600 max-w-2xl mx-auto">{subtitle}</p>}
+      {subtitle && <p className="text-lg text-[#BCBCBC] max-w-2xl mx-auto">{subtitle}</p>}
       <motion.div
         initial={{ width: 0 }}
         whileInView={{ width: 60 }}

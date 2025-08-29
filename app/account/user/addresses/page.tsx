@@ -1,19 +1,20 @@
-
 "use client";
+
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { RootState } from '@/lib/redux/store';
-import { Address, removeAddress, setDefaultAddress } from '@/lib/redux/slices/authSlice';
+import { RootState, AppDispatch } from '@/lib/redux/store';
+import { Address } from '@/lib/redux/slices/authSlice';
+// --- UPDATED: Import async thunks from userSlice ---
+import { fetchUserProfile, deleteUserAddress, setDefaultUserAddress } from '@/lib/redux/slices/userSlice';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
-import { Plus, Edit, Trash2, Star } from 'lucide-react';
-import { AddressForm } from '@/components/AddressForm'; // We will create this next
+import { Plus, Edit, Trash2, Star, Loader2 } from 'lucide-react';
+import { AddressForm } from '@/components/AddressForm';
 
-// A component to display a single address card
 const AddressCard = ({ address, onEdit, onDelete, onSetDefault }: { address: Address, onEdit: () => void, onDelete: () => void, onSetDefault: () => void }) => (
   <Card className={`transition-all ${address.isDefault ? 'border-2 border-[#D09D13]' : 'border'}`}>
     <CardContent className="p-6">
@@ -26,8 +27,8 @@ const AddressCard = ({ address, onEdit, onDelete, onSetDefault }: { address: Add
           )}
           <p className="font-bold text-gray-800">{address.fullName}</p>
           <p className="text-gray-600">{address.street}</p>
-          <p className="text-gray-600">{address.city}, {address.state} - {address.zipCode}</p>
-          <p className="mt-2 text-gray-600">Phone: {address.phoneNumber}</p>
+          <p className="text-gray-600">{address.city}, {address.state} - {address.postalCode}</p>
+          <p className="mt-2 text-gray-600">Phone: {address.phone}</p>
         </div>
         <div className="flex flex-col space-y-2">
           <Button variant="ghost" size="icon" onClick={onEdit}><Edit size={16} /></Button>
@@ -44,24 +45,34 @@ const AddressCard = ({ address, onEdit, onDelete, onSetDefault }: { address: Add
 );
 
 export default function AddressesPage() {
-  const { isAuthenticated, addresses } = useSelector((state: RootState) => state.auth);
   const router = useRouter();
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
+
+  // --- UPDATED: Select user object which contains addresses ---
+  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
+  const { status: userStatus } = useSelector((state: RootState) => state.user);
+  const addresses = user?.addresses || [];
   
-  const [isLoading, setIsLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login');
     } else {
-      setIsLoading(false);
+      // Fetch fresh address data on page load
+      dispatch(fetchUserProfile());
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, dispatch]);
 
-  if (isLoading) {
-    return <div className="flex min-h-screen items-center justify-center"><p>Loading...</p></div>;
+  if (userStatus === 'loading') {
+    return <div className="flex min-h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
   }
 
   const handleAddNew = () => {
@@ -76,12 +87,14 @@ export default function AddressesPage() {
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this address?')) {
-      dispatch(removeAddress(id));
+      // --- UPDATED: Dispatch async thunk ---
+      dispatch(deleteUserAddress(id));
     }
   };
 
   const handleSetDefault = (id: string) => {
-    dispatch(setDefaultAddress(id));
+    // --- UPDATED: Dispatch async thunk ---
+    dispatch(setDefaultUserAddress(id));
   };
 
   return (
@@ -90,20 +103,21 @@ export default function AddressesPage() {
       <main className="container mx-auto max-w-4xl px-4 py-12">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Manage Addresses</h1>
-          <Button onClick={handleAddNew}>
+          <Button onClick={handleAddNew} className="bg-[#D09D13] hover:bg-[#b48a10]">
             <Plus size={20} className="mr-2" /> Add New Address
           </Button>
         </div>
         
+        {/* This JSX is now only rendered after the client has mounted, preventing the mismatch */}
         {addresses.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {addresses.map((address) => (
               <AddressCard
-                key={address.id}
+                key={address._id} 
                 address={address}
                 onEdit={() => handleEdit(address)}
-                onDelete={() => handleDelete(address.id)}
-                onSetDefault={() => handleSetDefault(address.id)}
+                onDelete={() => handleDelete(address._id)}
+                onSetDefault={() => handleSetDefault(address._id)}
               />
             ))}
           </div>

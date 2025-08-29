@@ -68,7 +68,7 @@ export function CategoryCards({ gender }: CategoryCardsProps) {
         women: "/silver-women-necklace.jpg",
         men: "/silver-bracelet-men.jpg", // Example image for men
       },
-      href: `/collections/${gender}?category=silver`,
+      href: `/collections/${gender}/silver-jewellery`,
     },
     {
       title: "Artificial Jewellery",
@@ -77,7 +77,7 @@ export function CategoryCards({ gender }: CategoryCardsProps) {
         women: "/artificial-women-earing.jpg",
         men: "/leather-bracelet-men.jpg", // Example image for men
       },
-      href: `/collections/${gender}?category=artificial`,
+      href: `/collections/${gender}/artificial-jewellery`,
     },
   ]
   // --- MODIFICATION END ---

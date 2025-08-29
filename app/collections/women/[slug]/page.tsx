@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import { Heart, Minus, Plus, Star } from "lucide-react"
@@ -10,14 +10,21 @@ import { Footer } from "@/components/Footer"
 import { ProductCard } from "@/components/ProductCard"
 import { useCart } from "@/context/CartContext"
 import { useToast } from "@/hooks/use-toast"
-import { womenProducts, allProducts } from "@/lib/data"
 import { motion } from "framer-motion"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+
+// --- REDUX IMPORTS ---
+import { useDispatch, useSelector } from "react-redux"
+import { fetchProductBySlug } from "@/lib/redux/slices/productSlice"
+import { RootState } from "@/lib/redux/store"
 
 export default function WomenProductPage() {
   const params = useParams()
   const slug = params.slug as string
-  const product = womenProducts.find((p) => p.slug === slug)
+  const dispatch = useDispatch<any>()
+  const { selectedProduct: product, productDetailsLoading, productDetailsError } = useSelector(
+    (state: RootState) => state.product
+  )
 
   const [quantity, setQuantity] = useState(1)
   const [isWishlisted, setIsWishlisted] = useState(false)
@@ -26,12 +33,27 @@ export default function WomenProductPage() {
   const { addToCart } = useCart()
   const { toast } = useToast()
 
-  if (!product) {
+  // Fetch product by slug
+  useEffect(() => {
+    if (slug) {
+      dispatch(fetchProductBySlug(slug))
+    }
+  }, [slug, dispatch])
+
+  if (productDetailsLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600 text-lg">Loading product details...</p>
+      </div>
+    )
+  }
+
+  if (productDetailsError || !product) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-          <p className="text-gray-600">The product you're looking for doesn't exist.</p>
+          <p className="text-gray-600">{productDetailsError || "The product you're looking for doesn't exist."}</p>
         </div>
       </div>
     )
@@ -56,10 +78,12 @@ export default function WomenProductPage() {
   const incrementQuantity = () => setQuantity((prev) => prev + 1)
   const decrementQuantity = () => setQuantity((prev) => Math.max(1, prev - 1))
 
-  // Get recommended products (same category, different product)
-  const recommendedProducts = allProducts
-    .filter((p) => p.category === product.category && p.id !== product.id && p.gender === "women")
-    .slice(0, 4)
+  // Recommended products: same category, exclude current product
+  const recommendedProducts = useSelector((state: RootState) =>
+    state.product.items
+      .filter((p) => p.category === product.category && p.id !== product.id && p.gender === "women")
+      .slice(0, 4)
+  )
 
   return (
     <div className="min-h-screen">
@@ -204,33 +228,11 @@ export default function WomenProductPage() {
                   </div>
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="care">
-                <AccordionTrigger>Care Instructions</AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-1 text-sm">
-                    <li>• Store in a dry place away from moisture</li>
-                    <li>• Clean with a soft cloth after each use</li>
-                    <li>• Avoid contact with perfumes and chemicals</li>
-                    <li>• Keep away from direct sunlight</li>
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-              <AccordionItem value="shipping">
-                <AccordionTrigger>Shipping & Returns</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-2 text-sm">
-                    <p>• Free shipping on orders above ₹2,000</p>
-                    <p>• Delivery within 3-5 business days</p>
-                    <p>• 30-day return policy</p>
-                    <p>• Exchange available within 15 days</p>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
             </Accordion>
           </motion.div>
         </div>
 
-        {/* You Might Also Like */}
+        {/* Recommended Products */}
         {recommendedProducts.length > 0 && (
           <motion.section
             initial={{ opacity: 0, y: 50 }}
@@ -243,8 +245,8 @@ export default function WomenProductPage() {
               You Might Also Like
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {recommendedProducts.map((product, index) => (
-                <ProductCard key={product.id} product={product} index={index} />
+              {recommendedProducts.map((p, index) => (
+                <ProductCard key={p.id} product={p} index={index} />
               ))}
             </div>
           </motion.section>

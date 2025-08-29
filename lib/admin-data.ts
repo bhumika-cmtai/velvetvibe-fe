@@ -4,7 +4,7 @@ import { AxiosResponse } from 'axios';
 import { Product } from '@/lib/data'; // Your frontend Product type definition
 
 // Set the base URL for your API. Store this in a .env file for production.
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL =  `${process.env.NEXT_PUBLIC_API_URL}/api/v1` || 'http://localhost:8000/api/v1';
 
 // Create an Axios instance for API calls
 const apiClient = axios.create({
@@ -135,7 +135,7 @@ interface PaginatedResponse<T> extends ApiResponse<T[]> {
 
 // --- API FUNCTIONS ---
 
-export const getProductByIdApi = async (productId: string, token: string): Promise<{ data: Product }> => {
+export const getProductByIdApi = async (productId: string): Promise<{ data: Product }> => {
   const response = await apiClient.get(`/admin/products/${productId}`, getAuthHeaders(token));
   return response.data; // Expects backend to return { success: true, data: Product }
 };
@@ -146,20 +146,20 @@ export const getAllProductsApi = async (token: string): Promise<{ data: { produc
   return response.data; // Expects backend to return { success: true, data: { products: [...] } }
 };
 
-export const createProductApi = async (formData: FormData, token: string): Promise<{ data: Product }> => {
+export const createProductApi = async (formData: FormData): Promise<{ data: Product }> => {
   const response = await apiClient.post('/admin/products', formData, getAuthHeaders(token));
   return response.data; // Expects backend to return { success: true, data: Product }
 };
 
-export const updateProductApi = async (productId: string, formData: FormData, token: string): Promise<{ data: Product }> => {
+export const updateProductApi = async (productId: string, formData: FormData): Promise<{ data: Product }> => {
   const response = await apiClient.put(`/admin/products/${productId}`, formData, getAuthHeaders(token));
   return response.data; // Expects backend to return { success: true, data: Product }
 };
 
-export const deleteProductApi = async (productId: string, token: string): Promise<void> => {
+export const deleteProductApi = async (productId: string): Promise<void> => {
   await apiClient.delete(`/admin/products/${productId}`, getAuthHeaders(token));
 };
-export const getAllUsersApi = (params: GetUsersParams = {}, token: string) => {
+export const getAllUsersApi = (params: GetUsersParams = {}) => {
   // Use URLSearchParams to easily build the query string
   const query = new URLSearchParams();
   if (params.page) query.append('page', String(params.page));
@@ -170,11 +170,11 @@ export const getAllUsersApi = (params: GetUsersParams = {}, token: string) => {
   return apiClient(`/admin/users?${query.toString()}`, { method: 'GET' });
 };
 
-export const getUserByIdApi = (userId: string, token: string) => {
+export const getUserByIdApi = (userId: string) => {
   return apiClient(`/admin/users/${userId}`, { method: 'GET' });
 };
 
-export const updateUserApi = (userId: string, data: Partial<AdminUser>, token: string) => {
+export const updateUserApi = (userId: string, data: Partial<AdminUser>) => {
   const config = {
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -189,7 +189,7 @@ export const updateUserApi = (userId: string, data: Partial<AdminUser>, token: s
   });
 };
 
-export const deleteUserApi = (userId: string, token: string) => {
+export const deleteUserApi = (userId: string) => {
   return apiClient(`/admin/users/${userId}`, { method: 'DELETE' });
 };
 
@@ -209,7 +209,7 @@ export const createCouponApi = (couponData: { code: string; discountPercentage: 
 
 
 
-export const getAllCouponsApi = (token: string, status?: 'active' | 'inactive') => {
+export const getAllCouponsApi = (status?: 'active' | 'inactive') => {
   let endpoint = '/coupon';
 
   // If a status is provided, append it as a query parameter
@@ -226,7 +226,7 @@ export const getAllCouponsApi = (token: string, status?: 'active' | 'inactive') 
 };
 
 
-export const updateCouponApi = (couponId: string, couponData: Partial<{ code: string; discountPercentage: number; status: 'active' | 'inactive' }>, token: string) => {
+export const updateCouponApi = (couponId: string, couponData: Partial<{ code: string; discountPercentage: number; status: 'active' | 'inactive' }>) => {
   return apiClient(`/coupon/${couponId}`, {
     method: 'PATCH',
     
@@ -238,7 +238,7 @@ export const updateCouponApi = (couponId: string, couponData: Partial<{ code: st
  * Deletes a coupon. (Admin)
  * @param couponId The ID of the coupon to delete.
  */
-export const deleteCouponApi = (couponId: string, token: string) => {
+export const deleteCouponApi = (couponId: string) => {
   return apiClient(`/coupon/${couponId}`, {
     method: 'DELETE',
   });

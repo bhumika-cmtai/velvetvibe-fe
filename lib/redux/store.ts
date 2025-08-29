@@ -3,15 +3,24 @@ import authReducer from './slices/authSlice';
 import adminReducer from './slices/adminSlice'
 import contactReducer from './slices/contactSlice'
 import couponReducer from './slices/couponSlice'
-import notificationReducer from './slices/notificationSlice'
+// import notificationReducer from './slices/notificationSlice'
+import userReducer from './slices/userSlice'
+import productReducer from './slices/productSlice'
+import cartReducer from './slices/cartSlice'
+import wishlistReducer from './slices/wishlistSlice'
+import bulkOrderReducer from './slices/bulkOrderSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     admin: adminReducer,
-    contact: contactReducer,
+    contact:contactReducer,
     coupon: couponReducer,
-    notification: notificationReducer
+    user:userReducer,
+    product: productReducer,
+    cart: cartReducer,
+    wishlist: wishlistReducer,
+    bulkOrder: bulkOrderReducer
   },
 });
 

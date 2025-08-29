@@ -1,29 +1,112 @@
+// wishlistPage.tsx
 "use client"
 
 import Image from "next/image"
 import Link from "next/link"
-import { Trash2, Heart, ArrowLeft, Star } from "lucide-react"
+import { Trash2, Heart, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Navbar } from "@/components/Navbar"
 import { Footer } from "@/components/Footer"
-import { useWishlist } from "@/context/WishlistContext"
-import { useCart } from "@/context/CartContext"
 import { motion, AnimatePresence } from "framer-motion"
 import { useToast } from "@/hooks/use-toast"
-import { Product } from "@/lib/data"
+import { Product } from "@/lib/data" // Ensure this Product type has an '_id' field
+
+// REDUX IMPORTS
+import { useDispatch, useSelector } from 'react-redux'
+import {
+  fetchWishlist,
+  removeFromWishlist,
+  selectWishlistItems,
+  selectWishlistStatus,
+  selectTotalWishlistItems,
+  selectWishlistError,
+  removeWishlistOptimistic, // For optimistic UI
+} from '@/lib/redux/slices/wishlistSlice' // Adjust path to your wishlistSlice
+import { addToCart } from '@/lib/redux/slices/cartSlice'; // Assuming you have a cartSlice with addToCart
+import { AppDispatch } from '@/lib/redux/store' // Adjust path to your Redux store type
+import { useEffect } from "react"
+
 
 export default function WishlistPage() {
-  const { items, removeFromWishlist, totalItems } = useWishlist()
-  const { addToCart } = useCart()
+  const dispatch: AppDispatch = useDispatch()
+  const items = useSelector(selectWishlistItems)
+  const totalItems = useSelector(selectTotalWishlistItems)
+  const wishlistStatus = useSelector(selectWishlistStatus)
+  const wishlistError = useSelector(selectWishlistError)
   const { toast } = useToast()
 
-  const handleMoveToCart = (item: Product) => {
-    addToCart(item)
-    removeFromWishlist(item.id)
-    toast({
-      title: "Moved to Cart",
-      description: `${item.name} has been moved to your cart.`,
-    })
+  useEffect(() => {
+    // Fetch wishlist when the component mounts
+    if (wishlistStatus === 'idle') {
+      dispatch(fetchWishlist());
+    }
+  }, [dispatch, wishlistStatus]);
+
+  const handleRemoveFromWishlist = async (productId: string, productName: string) => {
+    // Optimistic update
+    dispatch(removeWishlistOptimistic(productId));
+    try {
+      await dispatch(removeFromWishlist(productId)).unwrap();
+      toast({
+        title: "Removed from Wishlist",
+        description: `${productName} has been removed from your wishlist.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to remove item from wishlist.",
+        variant: "destructive",
+      });
+      // Revert optimistic update if API call fails (you might need to refetch or re-add)
+      dispatch(fetchWishlist()); // Simplistic way to revert: refetch
+    }
+  };
+
+
+  const handleMoveToCart = async (item: Product) => {
+    // Assuming addToCart is also an async thunk from a cartSlice
+    try {
+      // Optimistically remove from wishlist first
+      dispatch(removeWishlistOptimistic(item.id)); // Use item._id
+      // Add to cart (assuming this is an async thunk that returns the updated cart or item)
+      await dispatch(addToCart({ productId: item.id, quantity: 1 })).unwrap(); // Assuming addToCart takes { productId, quantity }
+
+      toast({
+        title: "Moved to Cart",
+        description: `${item.name} has been moved to your cart.`,
+      });
+
+      // After successful move to cart, remove from wishlist on backend
+      // We already optimistically removed it, so just ensure backend is updated
+      await dispatch(removeFromWishlist(item.id)).unwrap(); // Use item._id
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error || "Failed to move item to cart or remove from wishlist.",
+        variant: "destructive",
+      });
+      // If any step fails, refetch both cart and wishlist to ensure consistency
+      dispatch(fetchWishlist());
+      // Optionally, dispatch a fetchCart if you have one
+    }
+  };
+
+
+  // Handle loading and error states
+  if (wishlistStatus === 'loading' && items.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p>Loading your wishlist...</p>
+      </div>
+    );
+  }
+
+  if (wishlistStatus === 'failed') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <p className="text-red-500">Error loading wishlist: {wishlistError}</p>
+      </div>
+    );
   }
 
   // Empty state remains the same
@@ -61,7 +144,6 @@ export default function WishlistPage() {
       <Navbar />
 
       <main className="container mx-auto px-4 py-8">
-        {/* --- MODIFICATION START: Header updated to match image --- */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -74,29 +156,27 @@ export default function WishlistPage() {
                 <ArrowLeft className="h-5 w-5" />
               </Button>
             </Link>
-            {/* Font and color changed to match the new design */}
             <h1 className="text-2xl font-bold" style={{ color: "black" }}>
               My Wishlist ({totalItems} items)
             </h1>
           </div>
         </motion.div>
-        {/* --- MODIFICATION END --- */}
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           <AnimatePresence>
             {items.map((item, index) => (
               <motion.div
-                key={item.id}
+                key={item._id} // Use item._id for key
                 layout
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
-                // Card style updated to match image (more rounded, stronger shadow)
                 className="bg-white rounded-2xl border border-gray-200 shadow-md flex flex-col group overflow-hidden"
               >
                 {/* Product Image */}
                 <div className="relative w-full aspect-square">
+                  {/* Ensure item.mainImage is available from backend or adjust */}
                   <Image
                     src={item.images[0] || "/placeholder.svg"}
                     alt={item.name}
@@ -111,37 +191,39 @@ export default function WishlistPage() {
                     {/* Price */}
                     <div className="flex items-baseline space-x-2">
                       <span className="text-lg font-bold text-gray-900">
-                        ₹{item.priceDiscounted.toLocaleString()}
+                        ₹{item.price.toLocaleString()} {/* Use item.price from backend */}
                       </span>
-                      {item.priceOriginal > item.priceDiscounted && (
+                      {/* If your backend item includes original/discounted price, adjust here */}
+                      {/* {item.priceOriginal > item.priceDiscounted && (
                         <span className="text-sm text-gray-500 line-through">
                           ₹{item.priceOriginal.toLocaleString()}
                         </span>
-                      )}
+                      )} */}
                     </div>
                     {/* Name */}
                     <p className="text-sm text-gray-700 mt-1 line-clamp-2">
                       {item.name}
                     </p>
                   </div>
-                  
+
                   {/* Action Buttons */}
                   <div className="pt-3 flex items-center space-x-2">
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => removeFromWishlist(item.id)}
+                      // Pass item._id and name to the handler
+                      onClick={() => handleRemoveFromWishlist(item._id, item.name)}
                       className="h-10 w-10 flex-shrink-0 rounded-md"
                     >
                       <Trash2 className="h-5 w-5 text-gray-600" />
                     </Button>
-                    {/* --- FIX: Replaced `w-full` with `flex-1` --- */}
                     <Button
-                      onClick={() => handleMoveToCart(item)}
+                      onClick={() => handleMoveToCart(item as Product)} // Ensure type compatibility
                       className="flex-1 h-10 rounded-md font-medium text-white"
                       style={{ backgroundColor: "#AA7E3D" }}
+                      disabled={item.stock === 0} // Disable if out of stock
                     >
-                      Move to Cart
+                      {item.stock === 0 ? "Out of Stock" : "Move to Cart"}
                     </Button>
                   </div>
                 </div>

@@ -1,12 +1,17 @@
 // lib/redux/slices/authSlice.ts
 
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import {
+  fetchUserProfile,
+  addUserAddress,
+  updateUserAddress,
+  deleteUserAddress,
+  setDefaultUserAddress,
+} from './userSlice'; 
+import { RootState } from '../store';
 
-// =================================================================
-// INTERFACES - These now perfectly match your Mongoose schemas
-// =================================================================
 
- interface Address {
+ export interface Address {
   _id: string; // MongoDB adds an _id to subdocuments
   fullName: string;
   phone: string;
@@ -28,8 +33,6 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit';
   isVerified: boolean;
   addresses: Address[];
   wishlist: string[]; // Array of Product ObjectIds
-  // The cart is often managed by a separate context/slice due to its frequent updates,
-  // but it can be included here if needed.
   createdAt: string; // Timestamps from Mongoose
   updatedAt: string;
 }
@@ -41,9 +44,6 @@ interface AuthState {
   accessToken: string | null;
 }
 
-// =================================================================
-// LOCAL STORAGE - For session persistence
-// =================================================================
 
 const loadState = (): AuthState => {
   try {
@@ -67,11 +67,6 @@ const saveState = (state: AuthState) => {
 };
 
 const initialState: AuthState = loadState();
-
-// =================================================================
-// THE AUTH SLICE
-// =================================================================
-
 const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -173,7 +168,42 @@ const authSlice = createSlice({
         saveState(state);
       }
     },
+    
   },
+  extraReducers: (builder) => {
+    builder
+
+      .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<any>) => {
+        state.isAuthenticated = true; // Ensure this is set
+        state.user = action.payload;
+        saveState(state); // Persist the fresh user data
+      })
+      .addCase(addUserAddress.fulfilled, (state, action: PayloadAction<Address[]>) => {
+        if (state.user) {
+          state.user.addresses = action.payload;
+          saveState(state);
+        }
+      })
+      .addCase(updateUserAddress.fulfilled, (state, action: PayloadAction<Address[]>) => {
+        if (state.user) {
+          state.user.addresses = action.payload;
+          saveState(state);
+        }
+      })
+      .addCase(deleteUserAddress.fulfilled, (state, action: PayloadAction<Address[]>) => {
+        if (state.user) {
+          state.user.addresses = action.payload;
+          saveState(state);
+        }
+      })
+      .addCase(setDefaultUserAddress.fulfilled, (state, action: PayloadAction<Address[]>) => {
+        if (state.user) {
+          state.user.addresses = action.payload;
+          saveState(state);
+        }
+      });
+  },
+  
 });
 
 export const { 
@@ -187,3 +217,7 @@ export const {
 } = authSlice.actions;
 
 export default authSlice.reducer;
+
+export const selectIsAuthenticated = (state: RootState): boolean => state.auth.isAuthenticated;
+
+export const selectCurrentUser = (state: RootState): User | null => state.auth.user;
