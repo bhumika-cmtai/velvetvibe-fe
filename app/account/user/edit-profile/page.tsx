@@ -215,7 +215,7 @@ export default function EditProfilePage() {
             {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
             {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="flex items-center justify-end space-x-4 border-t border-gray-200 pt-6">
-              <Link href="/profile">
+              <Link href="/account/user">
                 <Button type="button" variant="outline">
                   Cancel
                 </Button>

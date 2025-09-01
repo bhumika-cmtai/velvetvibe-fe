@@ -24,7 +24,8 @@ export function Footer() {
   return (
     <footer className={`${bgColor} border-t ${borderColor} mt-20`}>
       <div className="container mx-auto px-4 py-16">
-        <div className="grid md:grid-cols-4 gap-8">
+        {/* --- THIS IS THE LINE THAT WAS CHANGED --- */}
+        <div className="grid md:grid-cols-3 gap-8">
           {/* Brand */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -72,16 +73,16 @@ export function Footer() {
           >
             <h4 className={`font-semibold ${headingColor}`}>Categories</h4>
             <div className="space-y-2">
-              <Link href="/collections/women?category=earrings" className={`block ${textColor} ${linkHoverColor}`}>
+              <Link href="/collections?category=earrings" className={`block ${textColor} ${linkHoverColor}`}>
                 Earrings
               </Link>
-              <Link href="/collections/women?category=bangles" className={`block ${textColor} ${linkHoverColor}`}>
+              <Link href="/collections?category=bangles" className={`block ${textColor} ${linkHoverColor}`}>
                 Bangles
               </Link>
-              <Link href="/collections/women?category=silver" className={`block ${textColor} ${linkHoverColor}`}>
+              <Link href="/collections/women/silver-jewellery" className={`block ${textColor} ${linkHoverColor}`}>
                 Silver Jewellery
               </Link>
-              <Link href="/collections/women?category=artificial" className={`block ${textColor} ${linkHoverColor}`}>
+              <Link href="/collections/women/artificial-jewellery" className={`block ${textColor} ${linkHoverColor}`}>
                 Artificial Jewellery
               </Link>
             </div>
@@ -113,7 +114,7 @@ export function Footer() {
           </motion.div>
 
           {/* Newsletter */}
-          <motion.div
+          {/* <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3 }}
@@ -128,7 +129,7 @@ export function Footer() {
                 <Mail className="h-4 w-4" />
               </Button>
             </div>
-          </motion.div>
+          </motion.div> */}
         </div>
 
         <motion.div

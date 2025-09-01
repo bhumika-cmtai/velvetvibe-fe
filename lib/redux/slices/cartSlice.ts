@@ -6,7 +6,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
   ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
   : 'http://localhost:8000/api/v1';
 
-// Configure axios to include credentials for session-based auth
 axios.defaults.withCredentials = true;
 
 // =================================================================
@@ -26,20 +25,18 @@ export interface CartItem {
   quantity: number;
 }
 
-// --- FIXED: Expanded CartState to include all calculated totals ---
- interface CartState {
+interface CartState {
   items: CartItem[];
   loading: boolean;
   error: string | null;
   appliedCoupon: Coupon | null;
   totalItems: number;
-  subTotal: number; // The price before any discounts or shipping
+  subTotal: number;
   shippingCost: number;
   discountAmount: number;
-  finalTotal: number; // The final price the user has to pay
+  finalTotal: number;
 }
 
-// --- FIXED: Updated initialState to match the new CartState interface ---
 const initialState: CartState = {
   items: [],
   loading: false,
@@ -52,35 +49,24 @@ const initialState: CartState = {
   finalTotal: 0,
 };
 
-interface CartPayload {
-  items: CartItem[];
-  // Include other properties your API might return inside the 'data' object
+// Yeh type batata hai ki API se successful response mein kya aayega
+// Aapke response ke hisab se, items 'data' property ke andar aate hain
+interface ApiResponse {
+  data: CartItem[];
 }
-
-
 
 // =================================================================
 // --- ASYNC THUNKS (API Calls) ---
-// (No changes here, these are correct)
+// Har thunk ko theek se type kiya gaya hai taaki woh ApiResponse return kare
 // =================================================================
 
-export const fetchCart = createAsyncThunk<CartPayload, void, { rejectValue: string }>(
+export const fetchCart = createAsyncThunk<ApiResponse, void, { rejectValue: string }>(
   'cart/fetchCart',
   async (_, { rejectWithValue }) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/users/cart`);
-      
-      // --- THE FIX ---
-      // The API likely returns the array directly in response.data.data.
-      // We check if it's an array and wrap it in the { items: [...] } object
-      // to match the expected CartPayload structure for the reducer.
-      if (Array.isArray(response.data.data)) {
-        return { items: response.data.data }; 
-      }
-      
-      // If the API already returns the correct object, this will handle it too.
-      return response.data.data;
-
+      // Hum response ko hamesha { data: [...] } format mein normalize karenge
+      return { data: response.data.data };
     } catch (error: any) {
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
@@ -91,50 +77,49 @@ export const fetchCart = createAsyncThunk<CartPayload, void, { rejectValue: stri
   }
 );
 
-
-export const addToCart = createAsyncThunk(
+export const addToCart = createAsyncThunk<ApiResponse, { productId: string; quantity?: number }, { rejectValue: string }>(
   'cart/addToCart',
-  async ({ productId, quantity = 1 }: { productId: string; quantity?: number }, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/users/cart`, { productId, quantity });
-      return response.data.data;
+      const response = await axios.post(`${API_BASE_URL}/users/cart`, params);
+      return response.data; // Backend se { data: [...] } format aa raha hai
     } catch (error: any) {
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
           ? error.response.data.message
-          : error.message || 'Failed to add to cart'
+          : 'Failed to add to cart'
       );
     }
   }
 );
 
-export const removeFromCart = createAsyncThunk(
+export const removeFromCart = createAsyncThunk<ApiResponse, string, { rejectValue: string }>(
   'cart/removeFromCart',
-  async (cartItemId: string, { rejectWithValue }) => {
+  async (cartItemId, { rejectWithValue }) => {
     try {
       const response = await axios.delete(`${API_BASE_URL}/users/cart/item/${cartItemId}`);
-      return response.data.data;
+      return response.data; // Backend se { data: [...] } format aa raha hai
     } catch (error: any) {
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
           ? error.response.data.message
-          : error.message || 'Failed to remove from cart'
+          : 'Failed to remove from cart'
       );
     }
   }
 );
 
-export const updateCartQuantity = createAsyncThunk(
+export const updateCartQuantity = createAsyncThunk<ApiResponse, { productId: string; quantity: number }, { rejectValue: string }>(
   'cart/updateQuantity',
-  async ({ productId, quantity }: { productId: string; quantity: number }, { rejectWithValue }) => {
+  async (params, { rejectWithValue }) => {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/users/cart/item/quantity/${productId}`, { quantity });
-      return response.data.data;
+      const response = await axios.patch(`${API_BASE_URL}/users/cart/item/quantity/${params.productId}`, { quantity: params.quantity });
+      return response.data; // Backend se { data: [...] } format aa raha hai
     } catch (error: any) {
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
           ? error.response.data.message
-          : error.message || 'Failed to update cart quantity'
+          : 'Failed to update cart quantity'
       );
     }
   }
@@ -151,7 +136,6 @@ const cartSlice = createSlice({
     clearCart: (state) => {
       state.items = [];
       state.appliedCoupon = null;
-      // Also reset all totals
       cartSlice.caseReducers.calculateTotals(state);
     },
     applyCoupon: (state, action: PayloadAction<Coupon>) => {
@@ -162,20 +146,15 @@ const cartSlice = createSlice({
       state.appliedCoupon = null;
       cartSlice.caseReducers.calculateTotals(state);
     },
-    // --- FIXED: Only ONE version of calculateTotals ---
     calculateTotals: (state) => {
       const subTotal = state.items.reduce((total, item) => total + item.product.price * item.quantity, 0);
       const totalItems = state.items.reduce((total, item) => total + item.quantity, 0);
-
       let discountAmount = 0;
       if (state.appliedCoupon) {
         discountAmount = subTotal * (state.appliedCoupon.discountPercentage / 100);
       }
-
       const shippingCost = subTotal > 2000 ? 0 : 99;
       const finalTotal = subTotal - discountAmount + shippingCost;
-
-      // Update all state properties
       state.subTotal = subTotal;
       state.totalItems = totalItems;
       state.discountAmount = discountAmount;
@@ -183,9 +162,9 @@ const cartSlice = createSlice({
       state.finalTotal = finalTotal;
     },
   },
+  // --- YEH SABSE SAHI AUR SIMPLE extraReducers HAI ---
   extraReducers: (builder) => {
     builder
-      // --- Universal pending and rejected states ---
       .addMatcher(
         (action) => action.type.startsWith('cart/') && action.type.endsWith('/pending'),
         (state) => {
@@ -195,25 +174,22 @@ const cartSlice = createSlice({
       )
       .addMatcher(
         (action) => action.type.startsWith('cart/') && action.type.endsWith('/rejected'),
-        (state, action: PayloadAction<string>) => { // <-- TYPE ANNOTATION ADDED
+        (state, action: PayloadAction<string>) => {
           state.loading = false;
-          // Now TypeScript knows action.payload exists and is a string
           state.error = action.payload;
         }
       )
+      // Har successful action ke baad, hum state.items ko backend se aaye data se replace kar denge
       .addMatcher(
         (action) => action.type.startsWith('cart/') && action.type.endsWith('/fulfilled'),
-        (state, action: PayloadAction<CartPayload>) => { // <-- TYPE ANNOTATION ADDED
+        (state, action: PayloadAction<ApiResponse>) => {
           state.loading = false;
-          // Now TypeScript knows action.payload exists and has an 'items' property
-          state.items = action.payload.items || [];
+          state.items = action.payload.data || []; // 'data' property se items nikalenge
           cartSlice.caseReducers.calculateTotals(state);
         }
       );
   },
 });
 
-// --- FIXED: Export all necessary actions ---
 export const { clearCart, applyCoupon, removeCoupon, calculateTotals } = cartSlice.actions;
-
 export default cartSlice.reducer;

@@ -54,7 +54,7 @@ const filterGroups = [
   },
 ]
 
-export default function WomenCollectionPage() {
+export default function MenCollectionPage() {
   const dispatch = useDispatch<AppDispatch>()
   const searchParams = useSearchParams()
 
@@ -97,7 +97,7 @@ export default function WomenCollectionPage() {
 
   const buildQueryParams = () => {
     const params: Record<string, string> = {
-      gender: "Female",
+      gender: "Male",
       page: String(currentPage),
       limit: String(productsPerPage),
     }
@@ -166,7 +166,7 @@ export default function WomenCollectionPage() {
                   className="text-2xl font-serif font-bold"
                   style={{ color: "var(--theme-primary)" }}
                 >
-                  Women's Jewelry ({totalProducts} items)
+                  Men's Jewelry ({totalProducts} items)
                 </h1>
               </div>
 

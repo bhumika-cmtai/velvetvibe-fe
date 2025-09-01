@@ -23,70 +23,72 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+// --- REDUX IMPORTS ---
 import { useDispatch, useSelector } from "react-redux"
 import { fetchProducts } from "@/lib/redux/slices/productSlice"
 import { RootState } from "@/lib/redux/store"
 
 import type { Product } from "@/lib/data"
 
-const getGiftSubCategories = (products: Product[]) => {
-  const subCategories = new Set<string>()
-  products.forEach((product) => {
-    const name = product.name.toLowerCase();
-    if (name.includes("set")) subCategories.add("Gift Sets")
-    if (name.includes("frame")) subCategories.add("Photo Frames")
-    if (name.includes("idol")) subCategories.add("Idols & Figurines")
-    if (name.includes("coin")) subCategories.add("Silver Coins")
-  })
-  return ["All Gifts", ...Array.from(subCategories)]
-}
+// Bags ke liye sub-categories (aap ise apne data ke anusaar badal sakte hain)
+const subCategories = ["All", "Handbags", "Clutches", "Totes", "Sling Bags"];
 
-export default function SilverCollectionPage() {
+export default function BagsCollectionPage() {
   const dispatch = useDispatch()
-  const { items: fetchedProducts, loading, error } = useSelector(
+  
+  // Redux store se pagination ke liye totalPages nikalenge
+  const { items: fetchedProducts, loading, error, totalPages } = useSelector(
     (state: RootState) => state.product
   )
 
   const productsToFilter = fetchedProducts as Product[]
 
+  // Bags ke liye price range
   const minPrice = 500
-  const maxPrice = 20000
+  const maxPrice = 15000
 
   const [priceRange, setPriceRange] = useState<[number, number]>([minPrice, maxPrice])
-  const [activeSubCategory, setActiveSubCategory] = useState("All Gifts")
+  const [activeSubCategory, setActiveSubCategory] = useState("All")
+  const [currentPage, setCurrentPage] = useState(1)
 
+  // Main data fetching logic jo filter change par chalega
   useEffect(() => {
-    dispatch(fetchProducts({ material: "Silver", type: "gift", limit: 100 }) as any)
-  }, [dispatch])
-
-  const subCategories = useMemo(
-    () => getGiftSubCategories(productsToFilter),
-    [productsToFilter]
-  )
-
-  const filteredProducts = useMemo(() => {
-    const keywordMap: { [key: string]: string } = {
-        "Gift Sets": "set",
-        "Photo Frames": "frame",
-        "Idols & Figurines": "idol",
-        "Silver Coins": "coin",
+    const apiParams: { 
+      type: string; 
+      limit: number; 
+      page: number;
+      category?: string; // Backend 'category' expect karega
+    } = {
+      type: "bag", // API se 'bag' type ke products fetch kar rahe hain
+      limit: 12,
+      page: currentPage,
     };
+    
+    // Category filter
+    if (activeSubCategory !== "All") {
+      apiParams.category = activeSubCategory;
+    }
+    
+    dispatch(fetchProducts(apiParams) as any)
+  }, [dispatch, activeSubCategory, currentPage]) // Jab bhi category ya page badlega, data fetch hoga
 
-    return productsToFilter
-      .filter((p) => {
-        if (activeSubCategory === "All Gifts") return true;
-        const keyword = keywordMap[activeSubCategory];
-        if (!keyword) return true;
-        return p.name?.toLowerCase().includes(keyword);
-      })
-      .filter((p) => {
-        return p.price >= priceRange[0] && p.price <= priceRange[1]
-      })
-  }, [productsToFilter, activeSubCategory, priceRange])
+  // Jab category badle, to page 1 par aa jao
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeSubCategory]);
 
+  // Client-side par ab sirf price filter hoga
+  const filteredProducts = useMemo(() => {
+    return productsToFilter.filter((p) => {
+      return p.price >= priceRange[0] && p.price <= priceRange[1]
+    })
+  }, [productsToFilter, priceRange])
+
+  // Filters reset karne ka function
   const resetFilters = useCallback(() => {
-    setActiveSubCategory("All Gifts")
+    setActiveSubCategory("All")
     setPriceRange([minPrice, maxPrice])
+    setCurrentPage(1)
   }, [])
 
   const handlePriceRangeChange = (newRange: number[]) => {
@@ -98,6 +100,19 @@ export default function SilverCollectionPage() {
       setPriceRange(newRange as [number, number])
     }
   }
+
+  // Page change karne ke handlers
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prevPage => prevPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prevPage => prevPage - 1);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -116,15 +131,17 @@ export default function SilverCollectionPage() {
             </Button>
           </Link>
           <SectionTitle
-            title="Silver Gifts Collection"
-            subtitle="Find the perfect silver gift, beautifully crafted for every special occasion."
+            title="Bags Collection"
+            subtitle="Explore our stylish and elegant collection of bags for every occasion."
             isSparkling={true}
             className="mb-12"
           />
         </motion.div>
 
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-4 mb-12">
-          <Select value={activeSubCategory} onValueChange={setActiveSubCategory}>
+          {/* Category Dropdown */}
+          {/* <Select value={activeSubCategory} onValueChange={setActiveSubCategory}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -134,9 +151,10 @@ export default function SilverCollectionPage() {
                   {cat}
                 </SelectItem>
               ))}
-            </SelectContent>
-          </Select>
+            </SelectContent> */}
+          {/* </Select> */}
 
+          {/* Price Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -168,6 +186,7 @@ export default function SilverCollectionPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Reset Button */}
           <Button
             variant="ghost"
             onClick={resetFilters}
@@ -178,10 +197,11 @@ export default function SilverCollectionPage() {
           </Button>
         </div>
 
+        {/* Product Grid */}
         {loading ? (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-              Loading Gifts...
+              Loading Bags...
             </h2>
           </div>
         ) : error ? (
@@ -190,11 +210,36 @@ export default function SilverCollectionPage() {
             <p className="text-gray-500">Please try again later.</p>
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
-            {filteredProducts.map((product, index) => (
-              <ProductCard key={product._id} product={product} index={index} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+              {filteredProducts.map((product, index) => (
+                <ProductCard key={product._id} product={product} index={index} />
+              ))}
+            </div>
+
+            {/* PAGINATION UI */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex justify-center items-center space-x-4">
+                <Button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1 || loading}
+                  variant="outline"
+                >
+                  Previous
+                </Button>
+                <span className="text-lg font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages || loading}
+                  variant="outline"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 50 }}
@@ -203,11 +248,11 @@ export default function SilverCollectionPage() {
             className="text-center py-20"
           >
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-              No Gifts Found
+              No Bags Found
             </h2>
             <p className="text-gray-500">
               Try adjusting your filters or use the 'Reset' button to see all
-              available gifts.
+              items.
             </p>
           </motion.div>
         )}

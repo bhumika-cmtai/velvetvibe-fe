@@ -59,7 +59,7 @@ export default function SilverJewelleryPage() {
 
   // Fetch products
   useEffect(() => {
-    dispatch(fetchProducts({ materialType: "silver", limit: 100 }) as any)
+    dispatch(fetchProducts({gender:"Male" ,materialType: "silver", limit: 100 }) as any)
   }, [dispatch])
 
   // Get subcategories dynamically

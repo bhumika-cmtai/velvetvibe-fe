@@ -1,5 +1,4 @@
 "use client"
-
 import { useEffect, useMemo, useState, useRef } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
@@ -346,80 +345,82 @@ export default function WomenProductPage() {
               </Link>
             </div>
 
-            {/* Product Details */}
-            <div className="max-w-96 border-t pt-6 space-y-4 items-center">
-              {product.type && (
-                <div className="flex justify-between items-start">
-                  <span className="font-medium text-gray-700">Type:</span>
-                  <span className="text-gray-900 ml-4">{product.type}</span>
-                </div>
-              )}
+            {/* --- CORRECTED PRODUCT DETAILS SECTION --- */}
+            <div className="border-t pt-6">
+                <div className="mx-auto max-w-md space-y-4">
+                    {product.type && (
+                        <div className="grid grid-cols-2 items-start gap-4">
+                            <span className="font-medium text-gray-700 text-left">Type:</span>
+                            <span className="text-gray-900 text-right">{product.type}</span>
+                        </div>
+                    )}
 
-              {product.gender && (
-                <div className="flex justify-between items-start">
-                  <span className="font-medium text-gray-700">Gender:</span>
-                  <span className="text-gray-900 ml-4">{product.gender}</span>
-                </div>
-              )}
+                    {product.gender && (
+                        <div className="grid grid-cols-2 items-start gap-4">
+                            <span className="font-medium text-gray-700 text-left">Gender:</span>
+                            <span className="text-gray-900 text-right">{product.gender}</span>
+                        </div>
+                    )}
+                    
+                    {product.tags && product.tags.length > 0 && (
+                        <div className="grid grid-cols-2 items-start gap-4">
+                            <span className="font-medium text-gray-700 text-left">Tags:</span>
+                            <div className="flex flex-wrap justify-end gap-2">
+                                {product.tags.map((tag: string, idx: number) => (
+                                <span
+                                    key={idx}
+                                    className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-sm"
+                                >
+                                    {tag}
+                                </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
-              {product.tags && product.tags.length > 0 && (
-                <div className="flex justify-between items-start">
-                  <span className="font-medium text-gray-700">Tags:</span>
-                  <span className="text-gray-900 ml-4 flex flex-wrap gap-2">
-                    {product.tags.map((tag: string, idx: number) => (
-                      <span
-                        key={idx}
-                        className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-sm"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </span>
-                </div>
-              )}
+                    {product.material && (
+                         <div className="grid grid-cols-2 items-start gap-4">
+                            <span className="font-medium text-gray-700 text-left">Material:</span>
+                            <span className="text-gray-900 text-right">{product.material}</span>
+                        </div>
+                    )}
 
-              {product.material && (
-                <div className="flex justify-between items-start">
-                  <span className="font-medium text-gray-700">Material:</span>
-                  <span className="text-gray-900 ml-4">{product.material}</span>
-                </div>
-              )}
+                    {product.color && product.color.length > 0 && (
+                        <div className="grid grid-cols-2 items-start gap-4">
+                            <span className="font-medium text-gray-700 text-left">Color:</span>
+                            <div className="flex flex-wrap justify-end gap-2">
+                                {product.color.map((c: string, idx: number) => (
+                                    <span key={idx} className="px-2 py-1 bg-gray-100 rounded-full text-sm">{c}</span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
-              {product.color && product.color.length > 0 && (
-                <div className="flex justify-between items-start">
-                  <span className="font-medium text-gray-700">Color:</span>
-                  <span className="text-gray-900 ml-4 flex flex-wrap gap-2">
-                    {product.color.map((c: string, idx: number) => (
-                      <span key={idx} className="px-2 py-1 bg-gray-100 rounded-full text-sm">{c}</span>
-                    ))}
-                  </span>
+                    {product.stones && product.stones.length > 0 && (
+                        <div className="grid grid-cols-2 items-start gap-4">
+                            <span className="font-medium text-gray-700 text-left">Stones:</span>
+                            <div className="flex flex-wrap justify-end gap-2">
+                                {product.stones.map((s: string, idx: number) => (
+                                <span key={idx} className="px-2 py-1 bg-gray-100 rounded-full text-sm">{s}</span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {product.jewelleryCategory && (
+                         <div className="grid grid-cols-2 items-start gap-4">
+                            <span className="font-medium text-gray-700 text-left">Jewellery Category:</span>
+                            <span className="text-gray-900 text-right">{product.jewelleryCategory}</span>
+                        </div>
+                    )}
+                    
+                    {product.materialType && (
+                        <div className="grid grid-cols-2 items-start gap-4">
+                            <span className="font-medium text-gray-700 text-left">Material Type:</span>
+                            <span className="text-gray-900 text-right">{product.materialType}</span>
+                        </div>
+                    )}
                 </div>
-              )}
-
-              {product.stones && product.stones.length > 0 && (
-                <div className="flex justify-between items-start">
-                  <span className="font-medium text-gray-700">Stones:</span>
-                  <span className="text-gray-900 ml-4 flex flex-wrap gap-2">
-                    {product.stones.map((s: string, idx: number) => (
-                      <span key={idx} className="px-2 py-1 bg-gray-100 rounded-full text-sm">{s}</span>
-                    ))}
-                  </span>
-                </div>
-              )}
-
-              {product.jewelleryCategory && (
-                <div className="flex justify-between items-start">
-                  <span className="font-medium text-gray-700">Jewellery Category:</span>
-                  <span className="text-gray-900 ml-4">{product.jewelleryCategory}</span>
-                </div>
-              )}
-
-              {product.materialType && (
-                <div className="flex justify-between items-start">
-                  <span className="font-medium text-gray-700">Material Type:</span>
-                  <span className="text-gray-900 ml-4">{product.materialType}</span>
-                </div>
-              )}
             </div>
           </motion.div>
         </div>

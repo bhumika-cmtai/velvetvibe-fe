@@ -17,7 +17,6 @@ import { logout } from "@/lib/redux/slices/authSlice"
 import { fetchProducts, clearSelectedProduct } from "@/lib/redux/slices/productSlice" // Import fetchProducts
 import { AppDispatch, type RootState } from "@/lib/redux/store"
 
-// Custom Debounce Function
 function debounce<T extends (...args: any[]) => void>(func: T, delay: number): (...args: Parameters<T>) => void {
   let timeout: NodeJS.Timeout | null;
 
@@ -34,25 +33,29 @@ function debounce<T extends (...args: any[]) => void>(func: T, delay: number): (
 }
 
 const navLinks = [
-  { name: "Silver Jewellery", href: "/collections/women/silver-jewellery" },
-  { name: "Artificial Jewellery", href: "/collections/women/artificial-jewellery" },
-  { name: "Collections", href: "/collections/women" },
-  { name: "Bags", href: "/collections/women/bags" },
-  { name: "Gifts", href: "/collections/women/gifts" },
-  // These will be moved to the second row
+  { name: "Silver Jewellery", href: "/collections/silver-jewellery" },
+  { name: "Silver Collection", href: "/collections/silver-collection" },
+  { name: "Artificial Jewellery", href: "/collections/artificial-jewellery" },
+  { name: "Collections", href: "/collections" },
+  { name: "Bags", href: "/collections/bags" },
+  { name: "Gifts", href: "/collections/gifts" },
   { name: "Women", href: "/" },
   { name: "Men", href: "/pages/men" },
 ]
 
 const categoryItems = [
-  { name: "Rings", icon: <Circle size={20} /> },
-  { name: "Necklace", icon: <GitBranch size={20} /> },
-  { name: "Earring", icon: <VenetianMask size={20} /> },
-  { name: "Bracelet", icon: <Shield size={20} /> },
-  { name: "Pearls", icon: <Shell size={20} /> },
-  { name: "Platinum", icon: <Star size={20} /> },
-  { name: "Chain", icon: <Link2 size={20} /> },
+  { name: "Rings", href: "/collections?category=rings", icon: <Circle size={20} /> },
+  
+  { name: "Necklace", href: "/collections?category=Necklaces", icon: <GitBranch size={20} /> },
+  { name: "Earring", href: "/collections?category=Earrings", icon: <VenetianMask size={20} /> },
+  
+  { name: "Bracelet", href: "/collections?category=Bangles", icon: <Shield size={20} /> },
+
+  // { name: "Pearls", href: "/collections/women?category=pearls", icon: <Shell size={20} /> },
+  // { name: "Platinum", href: "/collections/women?category=platinum", icon: <Star size={20} /> },
+  { name: "Chain", href: "/collections?category=chain", icon: <Link2 size={20} /> },
 ];
+
 
 const accountMenuItems = [
   { name: "My Account", href: "/account/user/" },
@@ -71,15 +74,15 @@ export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isCategoryOpen, setIsCategoryOpen] = useState(false)
   const [isAccountOpen, setIsAccountOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("") // New: Search input state
-  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false) // New: Search dropdown visibility
+  const [searchQuery, setSearchQuery] = useState("") 
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState(false) 
 
   const pathname = usePathname()
   const router = useRouter()
-  const searchRef = useRef<HTMLDivElement>(null); // Ref for click outside search
+  const searchRef = useRef<HTMLDivElement>(null); 
 
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
-  const { items: searchResults, loading: productLoading, error: productError } = useSelector((state: RootState) => state.product); // Get search results from Redux
+  const { items: searchResults, loading: productLoading, error: productError } = useSelector((state: RootState) => state.product); 
   const dispatch = useDispatch<AppDispatch>();
 
   const { totalItems: totalCartItems } = useCart()
@@ -95,24 +98,19 @@ export function Navbar() {
   const handleLogout = () => {
     dispatch(logout());
     setIsAccountOpen(false);
-    setIsMobileMenuOpen(false); // Close mobile menu on logout
+    setIsMobileMenuOpen(false); 
     router.push('/'); 
   };
-
-  // Debounced search function
-  // Note: useCallback is used to memoize the debounced function itself,
-  // ensuring it doesn't get redefined on every render unless its dependencies change.
+  
   const debouncedSearch = useCallback(
     debounce((query: string) => {
-      if (query.trim().length > 1) { // Only search if query is at least 2 characters
-        dispatch(fetchProducts({ search: query, limit: 5 })); // Fetch up to 5 relevant products
+      if (query.trim().length > 1) { 
+        dispatch(fetchProducts({ search: query, limit: 5 }));
         setIsSearchDropdownOpen(true);
       } else {
         setIsSearchDropdownOpen(false);
-        // Optionally clear searchResults in store here or just let it be
-        // dispatch(clearSearchResults()); // if you had such an action
       }
-    }, 300), // 300ms debounce time
+    }, 300), 
     [dispatch]
   );
 
@@ -124,18 +122,16 @@ export function Navbar() {
 
   const handleProductClick = (slug: string) => {
     router.push(`/products/${slug}`);
-    setSearchQuery(""); // Clear search input
-    setIsSearchDropdownOpen(false); // Close dropdown
-    setIsSearchOpen(false); // Close the search bar
-    dispatch(clearSelectedProduct()); // Clear selected product details in Redux if any
+    setSearchQuery(""); 
+    setIsSearchDropdownOpen(false); 
+    setIsSearchOpen(false); 
+    dispatch(clearSelectedProduct()); 
   };
-
-  // Close search dropdown when clicking outside
+  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsSearchDropdownOpen(false);
-        // setIsSearchOpen(false); // Optionally close the whole search bar if clicking outside searchRef
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -145,12 +141,9 @@ export function Navbar() {
   }, []);
 
   useEffect(() => {
-    // When the search bar is closed, also close the dropdown and clear query
     if (!isSearchOpen) {
       setIsSearchDropdownOpen(false);
       setSearchQuery("");
-      // Also clear search results when search bar closes completely
-      // dispatch(clearSearchResults()); // if you had such an action
     }
   }, [isSearchOpen]);
 
@@ -168,7 +161,6 @@ export function Navbar() {
       } as React.CSSProperties}
     >
       <div className="container mx-auto px-6">
-        {/* --- Top Row: Logo, Main Nav, Icons --- */}
         <div className="flex h-20 items-center justify-between">
           <Link href="/" className="flex items-center">
             <motion.div whileHover={{ scale: 1.05 }}>
@@ -183,9 +175,8 @@ export function Navbar() {
             </motion.div>
           </Link>
 
-          {/* --- Main Navigation (First Row) --- */}
-          <nav className="hidden md:flex items-center space-x-10">
-            {navLinks.slice(0, 5).map((item) => (
+          <nav className="hidden md:flex items-center space-x-6">
+            {navLinks.slice(0, 6).map((item) => (
               <Link
                 key={item.name}
                 href={item.href}
@@ -200,9 +191,9 @@ export function Navbar() {
               onHoverEnd={() => setIsCategoryOpen(false)}
               className="relative"
             >
-              <Button variant="ghost" className="text-base font-medium transition-colors text-[var(--theme-text)] hover:text-[#D09D13] p-0">
+              <button className={`p-2 rounded-lg text-base font-medium transition-colors text-[var(--theme-text)] hover:text-[#D09D13]`}>
                 Categories
-              </Button>
+              </button>
               <AnimatePresence>
                 {isCategoryOpen && (
                   <motion.div
@@ -215,7 +206,7 @@ export function Navbar() {
                     <ul className="space-y-1">
                       {categoryItems.map((item) => (
                         <li key={item.name}>
-                          <Link href="/collection/women" className="flex items-center p-3 text-gray-800 hover:bg-[#FFFDF6] rounded-md transition-colors duration-200">
+                          <Link href={item.href} className="flex items-center p-3 text-gray-800 hover:bg-[#FFFDF6] rounded-md transition-colors duration-200">
                             <span className="mr-4" style={{ color: "var(--theme-primary)" }}>{item.icon}</span>
                             <span className="font-medium">{item.name}</span>
                             <ChevronRight size={16} className="ml-auto text-gray-400" />
@@ -229,7 +220,6 @@ export function Navbar() {
             </motion.div>
           </nav>
           
-          {/* --- Action Icons --- */}
           <div className="flex items-center space-x-5">
             <Button variant="ghost" size="icon" onClick={() => setIsSearchOpen(!isSearchOpen)} className={`hidden md:flex ${iconButtonHoverClass}`}>
               <Search className="h-6 w-6" style={{ color: "var(--theme-text)" }} />
@@ -296,8 +286,7 @@ export function Navbar() {
                 )}
               </AnimatePresence>
             </motion.div>
-            
-            {/* --- Mobile Menu Trigger --- */}
+
             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden">
@@ -325,7 +314,7 @@ export function Navbar() {
                       <ul className="pl-4">
                         {categoryItems.map((item) => (
                           <li key={item.name}>
-                            <Link href="#" className="flex items-center py-2 text-gray-700 hover:text-[#D09D13] hover:bg-[#FFFDF6]" onClick={() => setIsMobileMenuOpen(false)}>
+                            <Link href={item.href} className="flex items-center py-2 text-gray-700 hover:text-[#D09D13] hover:bg-[#FFFDF6]" onClick={() => setIsMobileMenuOpen(false)}>
                               <span className="mr-3" style={{ color: "var(--theme-primary)"}}>{item.icon}</span>
                               <span>{item.name}</span>
                               <ChevronRight size={20} className="ml-auto text-gray-400" />
@@ -360,9 +349,8 @@ export function Navbar() {
           </div>
         </div>
         
-        {/* --- Second Row: Women/Men Links --- */}
         <nav className={`hidden md:flex items-center justify-center space-x-10 py-3 border-t ${theme === 'men' ? 'border-gray-700' : 'border-gray-200'}`}>
-            {navLinks.slice(5).map((item) => {
+            {navLinks.slice(6).map((item) => {
               const isActive = (item.name === "Women" && isWomenActive) || (item.name === "Men" && isMenActive);
               const activeColor = (item.name === "Women" && theme === "women") || (item.name === "Men" && theme === "men");
               return (
@@ -385,15 +373,14 @@ export function Navbar() {
             })}
         </nav>
 
-        {/* --- Search Bar & Dropdown --- */}
         <AnimatePresence>
           {isSearchOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="pb-5 relative" // Added relative for dropdown positioning
-              ref={searchRef} // Attach ref here
+              className="pb-5 relative" 
+              ref={searchRef} 
             >
               <Input
                 placeholder="Search for beautiful jewelry..."
@@ -401,7 +388,7 @@ export function Navbar() {
                 autoFocus
                 value={searchQuery}
                 onChange={handleSearchChange}
-                onFocus={() => searchQuery.trim().length > 1 && setIsSearchDropdownOpen(true)} // Open dropdown if there's a query
+                onFocus={() => searchQuery.trim().length > 1 && setIsSearchDropdownOpen(true)} 
               />
               
               <AnimatePresence>
@@ -438,7 +425,6 @@ export function Navbar() {
                         </li>
                       ))}
                     </ul>
-                    
                     )}
                   </motion.div>
                 )}

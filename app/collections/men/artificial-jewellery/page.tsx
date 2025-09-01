@@ -23,25 +23,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+// --- REDUX IMPORTS ---
 import { useDispatch, useSelector } from "react-redux"
 import { fetchProducts } from "@/lib/redux/slices/productSlice"
 import { RootState } from "@/lib/redux/store"
 
 import type { Product } from "@/lib/data"
 
-const getGiftSubCategories = (products: Product[]) => {
+// --- HELPERS ---
+const getSubCategories = (products: Product[]) => {
   const subCategories = new Set<string>()
   products.forEach((product) => {
-    const name = product.name.toLowerCase();
-    if (name.includes("set")) subCategories.add("Gift Sets")
-    if (name.includes("frame")) subCategories.add("Photo Frames")
-    if (name.includes("idol")) subCategories.add("Idols & Figurines")
-    if (name.includes("coin")) subCategories.add("Silver Coins")
+    if (product.name.toLowerCase().includes("anklet")) subCategories.add("Anklet")
+    if (product.name.toLowerCase().includes("bracelet")) subCategories.add("Bracelet")
+    if (product.name.toLowerCase().includes("jhumkas")) subCategories.add("Jhumkas")
   })
-  return ["All Gifts", ...Array.from(subCategories)]
+  return ["All", ...Array.from(subCategories)]
 }
 
-export default function SilverCollectionPage() {
+export default function ArtificialJewelleryPage() {
   const dispatch = useDispatch()
   const { items: fetchedProducts, loading, error } = useSelector(
     (state: RootState) => state.product
@@ -49,46 +49,43 @@ export default function SilverCollectionPage() {
 
   const productsToFilter = fetchedProducts as Product[]
 
-  const minPrice = 500
-  const maxPrice = 20000
+  // --- FIXED RANGE (₹100 - ₹10,000) ---
+  const minPrice = 100
+  const maxPrice = 10000
 
   const [priceRange, setPriceRange] = useState<[number, number]>([minPrice, maxPrice])
-  const [activeSubCategory, setActiveSubCategory] = useState("All Gifts")
+  const [activeSubCategory, setActiveSubCategory] = useState("All")
 
+  // Fetch products (ARTIFICIAL JEWELLERY)
   useEffect(() => {
-    dispatch(fetchProducts({ material: "Silver", type: "gift", limit: 100 }) as any)
+    dispatch(fetchProducts({gender:"Male" ,materialType: "artificial", limit: 100 }) as any)
   }, [dispatch])
 
+  // Get subcategories dynamically
   const subCategories = useMemo(
-    () => getGiftSubCategories(productsToFilter),
+    () => getSubCategories(productsToFilter),
     [productsToFilter]
   )
 
+  // Filter products by category + price
   const filteredProducts = useMemo(() => {
-    const keywordMap: { [key: string]: string } = {
-        "Gift Sets": "set",
-        "Photo Frames": "frame",
-        "Idols & Figurines": "idol",
-        "Silver Coins": "coin",
-    };
-
     return productsToFilter
       .filter((p) => {
-        if (activeSubCategory === "All Gifts") return true;
-        const keyword = keywordMap[activeSubCategory];
-        if (!keyword) return true;
-        return p.name?.toLowerCase().includes(keyword);
+        if (activeSubCategory === "All") return true
+        return p.name?.toLowerCase().includes(activeSubCategory.toLowerCase())
       })
       .filter((p) => {
         return p.price >= priceRange[0] && p.price <= priceRange[1]
       })
   }, [productsToFilter, activeSubCategory, priceRange])
 
+  // Reset filters
   const resetFilters = useCallback(() => {
-    setActiveSubCategory("All Gifts")
+    setActiveSubCategory("All")
     setPriceRange([minPrice, maxPrice])
   }, [])
 
+  // Handle slider change
   const handlePriceRangeChange = (newRange: number[]) => {
     if (
       newRange.length === 2 &&
@@ -100,7 +97,8 @@ export default function SilverCollectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    // Applied dark theme background here
+    <div className="min-h-screen bg-[linear-gradient(to_right,_#052E38_-59%,_#5F5F5F_100%)] text-white">
       <Navbar />
 
       <main className="container mx-auto px-4 py-12">
@@ -110,38 +108,42 @@ export default function SilverCollectionPage() {
           transition={{ duration: 0.6 }}
         >
           <Link href="/" className="mb-8 inline-block">
-            <Button variant="ghost" className="space-x-2">
+            {/* Updated button text for dark theme */}
+            <Button variant="ghost" className="space-x-2 text-gray-300 hover:text-white">
               <ArrowLeft className="h-4 w-4" />
               <span>Back to Home</span>
             </Button>
           </Link>
           <SectionTitle
-            title="Silver Gifts Collection"
-            subtitle="Find the perfect silver gift, beautifully crafted for every special occasion."
-            isSparkling={true}
-            className="mb-12"
+            // Applied custom text color for title and subtitle
+            title="Artificial Jewellery Collection"
+            subtitle="Explore our stylish range of artificial jewellery, crafted for elegance and affordability."
+            className="mb-12 text-[#D09D13]"
           />
         </motion.div>
 
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-4 mb-12">
+          {/* Category Dropdown */}
           <Select value={activeSubCategory} onValueChange={setActiveSubCategory}>
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px] bg-gray-800 border-gray-600 text-white placeholder:text-gray-400">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-gray-900 text-white border-gray-700">
               {subCategories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
+                <SelectItem key={cat} value={cat} className="focus:bg-gray-800 focus:text-white">
                   {cat}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
+          {/* Price Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full sm:w-[240px] text-left font-normal justify-start"
+                className="w-full sm:w-[240px] text-left font-normal justify-start bg-gray-800 border-gray-600 text-white hover:bg-gray-700 hover:text-white"
               >
                 <span>
                   {`Price: ₹${priceRange[0].toLocaleString()} - ₹${priceRange[1].toLocaleString()}`}
@@ -149,7 +151,7 @@ export default function SilverCollectionPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-64 p-4"
+              className="w-64 p-4 bg-gray-900 text-white border-gray-700"
               onCloseAutoFocus={(e) => e.preventDefault()}
             >
               <DropdownMenuLabel>Price Range</DropdownMenuLabel>
@@ -161,33 +163,35 @@ export default function SilverCollectionPage() {
                 step={100}
                 className="my-4"
               />
-              <div className="flex justify-between text-sm text-muted-foreground">
+              <div className="flex justify-between text-sm text-gray-400">
                 <span>₹{priceRange[0].toLocaleString()}</span>
                 <span>₹{priceRange[1].toLocaleString()}</span>
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Reset Button */}
           <Button
             variant="ghost"
             onClick={resetFilters}
-            className="space-x-2 text-muted-foreground"
+            className="space-x-2 text-gray-400 hover:text-white"
           >
             <X className="h-4 w-4" />
             <span>Reset</span>
           </Button>
         </div>
 
+        {/* Product Grid */}
         {loading ? (
           <div className="text-center py-20">
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-              Loading Gifts...
+            <h2 className="text-2xl font-semibold text-gray-200 mb-4">
+              Loading Products...
             </h2>
           </div>
         ) : error ? (
-          <div className="text-center py-20 text-red-600">
+          <div className="text-center py-20 text-red-500">
             <h2 className="text-2xl font-semibold mb-4">Error: {error}</h2>
-            <p className="text-gray-500">Please try again later.</p>
+            <p className="text-gray-400">Please try again later.</p>
           </div>
         ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
@@ -202,13 +206,21 @@ export default function SilverCollectionPage() {
             transition={{ duration: 0.6 }}
             className="text-center py-20"
           >
-            <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-              No Gifts Found
+            <h2 className="text-2xl font-semibold text-gray-200 mb-4">
+              No Products Found
             </h2>
-            <p className="text-gray-500">
+            <p className="text-gray-400">
               Try adjusting your filters or use the 'Reset' button to see all
-              available gifts.
+              items.
             </p>
+            {/* Added the new button you requested here */}
+            <div className="mt-12 text-center">
+                <Link href="/collections">
+                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-[#D09D13] text-[#8b6600] bg-[#fcf1ce] hover:bg-[#D09D13] hover:text-white transition-colors">
+                    View All Collections
+                  </Button>
+                </Link>
+            </div>
           </motion.div>
         )}
       </main>

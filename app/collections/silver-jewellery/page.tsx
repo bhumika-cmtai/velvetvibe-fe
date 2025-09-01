@@ -23,25 +23,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+// --- REDUX IMPORTS ---
 import { useDispatch, useSelector } from "react-redux"
 import { fetchProducts } from "@/lib/redux/slices/productSlice"
 import { RootState } from "@/lib/redux/store"
 
 import type { Product } from "@/lib/data"
 
-const getGiftSubCategories = (products: Product[]) => {
-  const subCategories = new Set<string>()
-  products.forEach((product) => {
-    const name = product.name.toLowerCase();
-    if (name.includes("set")) subCategories.add("Gift Sets")
-    if (name.includes("frame")) subCategories.add("Photo Frames")
-    if (name.includes("idol")) subCategories.add("Idols & Figurines")
-    if (name.includes("coin")) subCategories.add("Silver Coins")
-  })
-  return ["All Gifts", ...Array.from(subCategories)]
-}
+// Sub-categories ki fixed list
+const subCategories = ["All", "Rings", "Earrings", "Necklaces", "Bracelets", "Anklet", "Jhumkas"];
+// 1. Gender filter ke liye options
+const genderOptions = ["All Genders", "Women", "Men"];
 
-export default function SilverCollectionPage() {
+
+export default function SilverJewelleryPage() {
   const dispatch = useDispatch()
   const { items: fetchedProducts, loading, error } = useSelector(
     (state: RootState) => state.product
@@ -49,46 +44,57 @@ export default function SilverCollectionPage() {
 
   const productsToFilter = fetchedProducts as Product[]
 
-  const minPrice = 500
-  const maxPrice = 20000
+  const minPrice = 100
+  const maxPrice = 10000
 
   const [priceRange, setPriceRange] = useState<[number, number]>([minPrice, maxPrice])
-  const [activeSubCategory, setActiveSubCategory] = useState("All Gifts")
+  const [activeSubCategory, setActiveSubCategory] = useState("All")
+  // 2. Gender filter ke liye naya state
+  const [activeGender, setActiveGender] = useState("All Genders");
 
+  // useEffect ab category aur gender, dono par depend karega
   useEffect(() => {
-    dispatch(fetchProducts({ material: "Silver", type: "gift", limit: 100 }) as any)
-  }, [dispatch])
-
-  const subCategories = useMemo(
-    () => getGiftSubCategories(productsToFilter),
-    [productsToFilter]
-  )
-
-  const filteredProducts = useMemo(() => {
-    const keywordMap: { [key: string]: string } = {
-        "Gift Sets": "set",
-        "Photo Frames": "frame",
-        "Idols & Figurines": "idol",
-        "Silver Coins": "coin",
+    const apiParams: { 
+      type: string;
+      materialType: string; 
+      limit: number; 
+      jewelleryCategory?: string;
+      gender?: string; // Gender parameter add kiya
+    } = {
+      type: "jewellery",
+      materialType: "silver",
+      limit: 100,
     };
+    
+    // Category filter logic
+    if (activeSubCategory !== "All") {
+      apiParams.jewelleryCategory = activeSubCategory;
+    }
+    
+    // 3. Gender filter logic
+    if (activeGender !== "All Genders") {
+      // "Women" ko "Female" aur "Men" ko "Male" mein convert karke bhejenge
+      apiParams.gender = activeGender === 'Women' ? 'Female' : 'Male';
+    }
+    
+    dispatch(fetchProducts(apiParams) as any)
+  }, [dispatch, activeSubCategory, activeGender]) // Dependency mein activeGender add kiya
 
-    return productsToFilter
-      .filter((p) => {
-        if (activeSubCategory === "All Gifts") return true;
-        const keyword = keywordMap[activeSubCategory];
-        if (!keyword) return true;
-        return p.name?.toLowerCase().includes(keyword);
-      })
-      .filter((p) => {
-        return p.price >= priceRange[0] && p.price <= priceRange[1]
-      })
-  }, [productsToFilter, activeSubCategory, priceRange])
+  // Client-side filtering sirf price ke liye hogi
+  const filteredProducts = useMemo(() => {
+    return productsToFilter.filter((p) => {
+      return p.price >= priceRange[0] && p.price <= priceRange[1]
+    })
+  }, [productsToFilter, priceRange])
 
+  // Reset filters
   const resetFilters = useCallback(() => {
-    setActiveSubCategory("All Gifts")
+    setActiveSubCategory("All")
+    setActiveGender("All Genders"); // 4. Gender filter ko bhi reset karenge
     setPriceRange([minPrice, maxPrice])
   }, [])
 
+  // Handle slider change
   const handlePriceRangeChange = (newRange: number[]) => {
     if (
       newRange.length === 2 &&
@@ -116,14 +122,16 @@ export default function SilverCollectionPage() {
             </Button>
           </Link>
           <SectionTitle
-            title="Silver Gifts Collection"
-            subtitle="Find the perfect silver gift, beautifully crafted for every special occasion."
+            title="Silver Jewellery Collection"
+            subtitle="Discover the timeless elegance of our handcrafted sterling silver pieces, perfect for every occasion."
             isSparkling={true}
             className="mb-12"
           />
         </motion.div>
 
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-4 mb-12">
+          {/* Category Dropdown */}
           <Select value={activeSubCategory} onValueChange={setActiveSubCategory}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Category" />
@@ -136,7 +144,22 @@ export default function SilverCollectionPage() {
               ))}
             </SelectContent>
           </Select>
+          
+          {/* 5. GENDER FILTER DROPDOWN UI */}
+          <Select value={activeGender} onValueChange={setActiveGender}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="Gender" />
+            </SelectTrigger>
+            <SelectContent>
+              {genderOptions.map((gender) => (
+                <SelectItem key={gender} value={gender}>
+                  {gender}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
+          {/* Price Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -168,6 +191,7 @@ export default function SilverCollectionPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Reset Button */}
           <Button
             variant="ghost"
             onClick={resetFilters}
@@ -178,10 +202,11 @@ export default function SilverCollectionPage() {
           </Button>
         </div>
 
+        {/* Product Grid */}
         {loading ? (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-              Loading Gifts...
+              Loading Products...
             </h2>
           </div>
         ) : error ? (
@@ -203,11 +228,11 @@ export default function SilverCollectionPage() {
             className="text-center py-20"
           >
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-              No Gifts Found
+              No Products Found
             </h2>
             <p className="text-gray-500">
               Try adjusting your filters or use the 'Reset' button to see all
-              available gifts.
+              items.
             </p>
           </motion.div>
         )}

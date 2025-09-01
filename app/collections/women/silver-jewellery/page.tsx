@@ -29,64 +29,66 @@ import { fetchProducts } from "@/lib/redux/slices/productSlice"
 import { RootState } from "@/lib/redux/store"
 
 import type { Product } from "@/lib/data"
-// --- INTERFACES ---
 
-// --- HELPERS ---
-const getSubCategories = (products: Product[]) => {
-  const subCategories = new Set<string>()
-  products.forEach((product) => {
-    if (product.name.toLowerCase().includes("anklet")) subCategories.add("Anklet")
-    if (product.name.toLowerCase().includes("bracelet")) subCategories.add("Bracelet")
-    if (product.name.toLowerCase().includes("jhumkas")) subCategories.add("Jhumkas")
-  })
-  return ["All", ...Array.from(subCategories)]
-}
+const subCategories = ["All", "Rings", "Earrings", "Necklaces", "Bracelets"];
 
-export default function SilverJewelleryPage() {
+export default function WomenSilverJewelleryPage() {
   const dispatch = useDispatch()
-  const { items: fetchedProducts, loading, error } = useSelector(
+  
+  // Redux store se totalPages bhi nikalenge
+  const { items: fetchedProducts, loading, error, totalPages } = useSelector(
     (state: RootState) => state.product
   )
 
   const productsToFilter = fetchedProducts as Product[]
 
-  // --- FIXED RANGE (₹100 - ₹10,000) ---
   const minPrice = 100
   const maxPrice = 10000
 
   const [priceRange, setPriceRange] = useState<[number, number]>([minPrice, maxPrice])
   const [activeSubCategory, setActiveSubCategory] = useState("All")
+  // 1. Current page ke liye ek naya state banayenge
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch products
   useEffect(() => {
-    dispatch(fetchProducts({ materialType: "silver", limit: 100 }) as any)
-  }, [dispatch])
+    const apiParams: { 
+      materialType: string; 
+      limit: number; 
+      gender: string; 
+      jewelleryCategory?: string;
+      page?: number; // Page number bhi API request mein jayega
+    } = {
+      materialType: "silver",
+      limit: 12, // Page par 12 products dikhayenge, aap isse badal sakte hain
+      gender: "Female",
+      page: currentPage, // Current page ka state yahan use hoga
+    };
+    
+    if (activeSubCategory !== "All") {
+      apiParams.jewelleryCategory = activeSubCategory;
+    }
+    
+    dispatch(fetchProducts(apiParams) as any)
+  }, [dispatch, activeSubCategory, currentPage]) // Dependency mein currentPage add kiya hai
 
-  // Get subcategories dynamically
-  const subCategories = useMemo(
-    () => getSubCategories(productsToFilter),
-    [productsToFilter]
-  )
+  // 2. Jab bhi category change hogi, page number ko 1 par reset kar denge
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeSubCategory]);
 
-  // Filter products by category + price
+
   const filteredProducts = useMemo(() => {
-    return productsToFilter
-      .filter((p) => {
-        if (activeSubCategory === "All") return true
-        return p.name?.toLowerCase().includes(activeSubCategory.toLowerCase())
-      })
-      .filter((p) => {
-        return p.price >= priceRange[0] && p.price <= priceRange[1]
-      })
-  }, [productsToFilter, activeSubCategory, priceRange])
+    return productsToFilter.filter((p) => {
+      return p.price >= priceRange[0] && p.price <= priceRange[1]
+    })
+  }, [productsToFilter, priceRange])
 
-  // Reset filters
   const resetFilters = useCallback(() => {
-    setActiveSubCategory("All")
+    setActiveSubCategory("All") 
     setPriceRange([minPrice, maxPrice])
+    setCurrentPage(1); // Reset par bhi page 1 kar denge
   }, [])
 
-  // Handle slider change
   const handlePriceRangeChange = (newRange: number[]) => {
     if (
       newRange.length === 2 &&
@@ -96,8 +98,20 @@ export default function SilverJewelleryPage() {
       setPriceRange(newRange as [number, number])
     }
   }
-  console.log("in the silver jewellery file")
-  console.log(productsToFilter)
+
+  // 3. Page change karne ke liye handlers
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prevPage => prevPage + 1);
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prevPage => prevPage - 1);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -116,16 +130,16 @@ export default function SilverJewelleryPage() {
             </Button>
           </Link>
           <SectionTitle
-            title="Silver Jewellery Collection"
-            subtitle="Discover the timeless elegance of our handcrafted sterling silver pieces, perfect for every occasion."
+            title="Women's Silver Jewellery"
+            subtitle="Explore our exquisite collection of handcrafted silver jewellery, designed for the modern woman."
             isSparkling={true}
             className="mb-12"
           />
         </motion.div>
 
-        {/* Filters */}
+        {/* Filters Section */}
         <div className="flex flex-wrap items-center gap-4 mb-12">
-          {/* Category Dropdown */}
+          {/* Baki ke filters waise hi rahenge */}
           <Select value={activeSubCategory} onValueChange={setActiveSubCategory}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Category" />
@@ -139,7 +153,6 @@ export default function SilverJewelleryPage() {
             </SelectContent>
           </Select>
 
-          {/* Price Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -171,7 +184,6 @@ export default function SilverJewelleryPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Reset Button */}
           <Button
             variant="ghost"
             onClick={resetFilters}
@@ -182,7 +194,7 @@ export default function SilverJewelleryPage() {
           </Button>
         </div>
 
-        {/* Product Grid */}
+        {/* Product Grid Section */}
         {loading ? (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">
@@ -195,11 +207,36 @@ export default function SilverJewelleryPage() {
             <p className="text-gray-500">Please try again later.</p>
           </div>
         ) : filteredProducts.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
-            {filteredProducts.map((product, index) => (
-              <ProductCard key={product._id} product={product} index={index} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+              {filteredProducts.map((product, index) => (
+                <ProductCard key={product._id} product={product} index={index} />
+              ))}
+            </div>
+            
+            {/* 4. PAGINATION UI YAHAN ADD KIYA HAI */}
+            {totalPages > 1 && (
+              <div className="mt-12 flex justify-center items-center space-x-4">
+                <Button
+                  onClick={handlePrevPage}
+                  disabled={currentPage === 1 || loading}
+                  variant="outline"
+                >
+                  Previous
+                </Button>
+                <span className="text-lg font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  onClick={handleNextPage}
+                  disabled={currentPage === totalPages || loading}
+                  variant="outline"
+                >
+                  Next
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <motion.div
             initial={{ opacity: 0, y: 50 }}

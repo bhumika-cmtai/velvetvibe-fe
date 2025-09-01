@@ -3,14 +3,14 @@
 import { Navbar } from "@/components/Navbar"
 import { HeroCarousel } from "@/components/HeroCarousel"
 import { SectionTitle } from "@/components/SectionTitle"
-import { ProductCard } from "@/components/ProductCard"
+import { ProductCardMen } from "@/components/ProductCardMen"
 import { CategoryCards } from "@/components/CategoryCards"
 import { Testimonials } from "@/components/Testimonials"
 import { ContactForm } from "@/components/ContactForm"
 import { Footer } from "@/components/Footer"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Gem } from "lucide-react"
+import { Gem, MapPin } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { fetchProducts } from '@/lib/redux/slices/productSlice'
@@ -147,11 +147,9 @@ export default function MenHomePage() {
   )
 
   return (
-    // <div className="min-h-screen bg-gradient-to-r from-[#052E38] to-[#5F5F5F]]">
-      <div className="min-h-screen bg-[linear-gradient(to_right,_#052E38_-59%,_#5F5F5F_100%)]">
-
+    // --- THIS IS THE CORRECTED LINE ---
+    <div className="min-h-screen bg-black">
       <Navbar />
-
       <main className="space-y-20">
         <section>
           <HeroCarousel slides={heroSlides} />
@@ -159,26 +157,18 @@ export default function MenHomePage() {
 
         {/* New Arrivals */}
         <section className="container mx-auto px-4">
-          <SectionTitle
-            title="New Arrivals"
-            subtitle="Discover our latest collection of sophisticated men's accessories"
-            className="mb-8 text-[#D09D13]"
-          />
+          <SectionTitle title="New Arrivals" subtitle="Discover our latest collection" className="mb-8 text-[#D09D13]" />
           {sectionsLoading.newArrivals ? (
             <ProductSectionLoading />
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {newArrivals.map((product, index) => (
-                  <ProductCard key={product.id} product={product} index={index} />
+                  <ProductCardMen key={product._id} product={product} index={index} />
                 ))}
               </div>
               <div className="mt-12 text-center">
-                <Link href="/collections/men">
-                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-[#D09D13] bg-[#fcf1ce] hover:bg-[#D09D13] hover:text-white transition-colors">
-                    View All New Arrivals
-                  </Button>
-                </Link>
+                <Link href="/collections/men"><Button variant="outline" size="lg" className="px-8 py-6 text-base border-white text-white bg-transparent hover:bg-white hover:text-black transition-colors">View All New Arrivals</Button></Link>
               </div>
             </>
           )}
@@ -197,12 +187,12 @@ export default function MenHomePage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {silverJewellery.map((product, index) => (
-                  <ProductCard key={product.id} product={product} index={index} />
+                  <ProductCardMen key={product.id} product={product} index={index} />
                 ))}
               </div>
               <div className="mt-12 text-center">
-                <Link href="/collections/men?category=silver">
-                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-black hover:bg-black hover:text-white transition-colors">
+                <Link href="/collections/men/silver-jewellery">
+                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-[#8b6600] bg-[#fcf1ce] hover:bg-[#D09D13] hover:text-white transition-colors">
                     View All Silver Products
                   </Button>
                 </Link>
@@ -224,12 +214,12 @@ export default function MenHomePage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {trendingProducts.map((product, index) => (
-                  <ProductCard key={product.id} product={product} index={index} />
+                  <ProductCardMen key={product.id} product={product} index={index} />
                 ))}
               </div>
               <div className="mt-12 text-center">
-                <Link href="/collections/men?tag=statement">
-                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-black hover:bg-black hover:text-white transition-colors">
+                <Link href="/collections/men?tag=trend">
+                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-[#8b6600] bg-[#fcf1ce] hover:bg-[#D09D13] hover:text-white transition-colors">
                     View All Trending Products
                   </Button>
                 </Link>
@@ -251,12 +241,12 @@ export default function MenHomePage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {artificialJewellery.map((product, index) => (
-                  <ProductCard key={product.id} product={product} index={index} />
+                  <ProductCardMen key={product.id} product={product} index={index} />
                 ))}
               </div>
               <div className="mt-12 text-center">
-                <Link href="/collections/men?category=artificial">
-                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-black hover:bg-black hover:text-white transition-colors">
+                <Link href="/collections/men/artificial-jewellery">
+                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-[#8b6600] bg-[#fcf1ce] hover:bg-[#D09D13] hover:text-white transition-colors">
                     View All Artificial Products
                   </Button>
                 </Link>
@@ -288,12 +278,12 @@ export default function MenHomePage() {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                 {giftsForHim.map((product, index) => (
-                  <ProductCard key={product.id} product={product} index={index} />
+                  <ProductCardMen key={product.id} product={product} index={index} />
                 ))}
               </div>
               <div className="mt-12 text-center">
-                <Link href="/collections/men?tag=gift">
-                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-black hover:bg-black hover:text-white transition-colors">
+                <Link href="/collections/men/gifts">
+                  <Button variant="outline" size="lg" className="px-8 py-6 text-base border-black text-[#8b6600] bg-[#fcf1ce] hover:bg-[#D09D13] hover:text-white transition-colors">
                     View All Gifts
                   </Button>
                 </Link>
@@ -333,6 +323,23 @@ export default function MenHomePage() {
             </div>
           </div>
         </section>
+
+        {/* Address Section */}
+        <div className="mt-10">
+          <div className="max-w-3xl mx-auto space-y-4 text-center bg-gray-50 p-12 rounded-2xl border border-gray-200 shadow-sm">
+            <div className="flex justify-center mb-4">
+              <MapPin className="h-12 w-12 text-[#A77C38]" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-4xl font-bold font-serif text-[#A77C38]">
+              Visit Our Showroom
+            </h3>
+            <p className="text-xl leading-relaxed text-gray-700">
+              Shop No. 12, MC NO.181/225, Shri Ram Market, Gali Kunj,<br />
+              Dariba Kalan, Chandni Chowk, Delhi - 110006
+            </p>
+          </div>
+        </div>
+
       </main>
 
       <Footer />

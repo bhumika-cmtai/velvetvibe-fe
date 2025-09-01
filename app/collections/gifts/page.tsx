@@ -23,25 +23,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+// --- REDUX IMPORTS ---
 import { useDispatch, useSelector } from "react-redux"
 import { fetchProducts } from "@/lib/redux/slices/productSlice"
 import { RootState } from "@/lib/redux/store"
 
 import type { Product } from "@/lib/data"
 
+// --- HELPERS ---
 const getGiftSubCategories = (products: Product[]) => {
   const subCategories = new Set<string>()
   products.forEach((product) => {
-    const name = product.name.toLowerCase();
-    if (name.includes("set")) subCategories.add("Gift Sets")
-    if (name.includes("frame")) subCategories.add("Photo Frames")
-    if (name.includes("idol")) subCategories.add("Idols & Figurines")
-    if (name.includes("coin")) subCategories.add("Silver Coins")
+    const name = product.name?.toLowerCase() || ""
+    if (name.includes("figurine")) subCategories.add("Figurine")
+    if (name.includes("idol") || name.includes("murti")) subCategories.add("Idol")
+    if (name.includes("decorative")) subCategories.add("Decorative")
+    if (name.includes("souvenir")) subCategories.add("Souvenir")
   })
-  return ["All Gifts", ...Array.from(subCategories)]
+  return ["All", ...Array.from(subCategories)]
 }
 
-export default function SilverCollectionPage() {
+export default function GiftsCollectionPage() {
   const dispatch = useDispatch()
   const { items: fetchedProducts, loading, error } = useSelector(
     (state: RootState) => state.product
@@ -49,43 +51,37 @@ export default function SilverCollectionPage() {
 
   const productsToFilter = fetchedProducts as Product[]
 
-  const minPrice = 500
-  const maxPrice = 20000
+  // --- FIXED RANGE (₹100 - ₹5,000) ---
+  const minPrice = 100
+  const maxPrice = 5000
 
   const [priceRange, setPriceRange] = useState<[number, number]>([minPrice, maxPrice])
-  const [activeSubCategory, setActiveSubCategory] = useState("All Gifts")
+  const [activeSubCategory, setActiveSubCategory] = useState("All")
 
+  // Fetch products (GIFTS)
   useEffect(() => {
-    dispatch(fetchProducts({ material: "Silver", type: "gift", limit: 100 }) as any)
+    dispatch(fetchProducts({ type: "gift", limit: 100 }) as any)
   }, [dispatch])
 
+  // Get subcategories dynamically
   const subCategories = useMemo(
     () => getGiftSubCategories(productsToFilter),
     [productsToFilter]
   )
 
+  // Filter products by category + price
   const filteredProducts = useMemo(() => {
-    const keywordMap: { [key: string]: string } = {
-        "Gift Sets": "set",
-        "Photo Frames": "frame",
-        "Idols & Figurines": "idol",
-        "Silver Coins": "coin",
-    };
-
     return productsToFilter
       .filter((p) => {
-        if (activeSubCategory === "All Gifts") return true;
-        const keyword = keywordMap[activeSubCategory];
-        if (!keyword) return true;
-        return p.name?.toLowerCase().includes(keyword);
+        if (activeSubCategory === "All") return true
+        return p.name?.toLowerCase().includes(activeSubCategory.toLowerCase())
       })
-      .filter((p) => {
-        return p.price >= priceRange[0] && p.price <= priceRange[1]
-      })
+      .filter((p) => p.price >= priceRange[0] && p.price <= priceRange[1])
   }, [productsToFilter, activeSubCategory, priceRange])
 
+  // Reset filters
   const resetFilters = useCallback(() => {
-    setActiveSubCategory("All Gifts")
+    setActiveSubCategory("All")
     setPriceRange([minPrice, maxPrice])
   }, [])
 
@@ -116,15 +112,17 @@ export default function SilverCollectionPage() {
             </Button>
           </Link>
           <SectionTitle
-            title="Silver Gifts Collection"
-            subtitle="Find the perfect silver gift, beautifully crafted for every special occasion."
+            title="Gifts Collection"
+            subtitle="Discover our beautiful range of gifts, perfect for any occasion."
             isSparkling={true}
             className="mb-12"
           />
         </motion.div>
 
+        {/* Filters */}
         <div className="flex flex-wrap items-center gap-4 mb-12">
-          <Select value={activeSubCategory} onValueChange={setActiveSubCategory}>
+          {/* Category Dropdown */}
+          {/* <Select value={activeSubCategory} onValueChange={setActiveSubCategory}>
             <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -135,8 +133,9 @@ export default function SilverCollectionPage() {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select> */}
 
+          {/* Price Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
@@ -158,7 +157,7 @@ export default function SilverCollectionPage() {
                 onValueChange={handlePriceRangeChange}
                 min={minPrice}
                 max={maxPrice}
-                step={100}
+                step={50}
                 className="my-4"
               />
               <div className="flex justify-between text-sm text-muted-foreground">
@@ -168,6 +167,7 @@ export default function SilverCollectionPage() {
             </DropdownMenuContent>
           </DropdownMenu>
 
+          {/* Reset Button */}
           <Button
             variant="ghost"
             onClick={resetFilters}
@@ -178,10 +178,11 @@ export default function SilverCollectionPage() {
           </Button>
         </div>
 
+        {/* Product Grid */}
         {loading ? (
           <div className="text-center py-20">
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-              Loading Gifts...
+              Loading Products...
             </h2>
           </div>
         ) : error ? (
@@ -203,11 +204,11 @@ export default function SilverCollectionPage() {
             className="text-center py-20"
           >
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">
-              No Gifts Found
+              No Products Found
             </h2>
             <p className="text-gray-500">
               Try adjusting your filters or use the 'Reset' button to see all
-              available gifts.
+              items.
             </p>
           </motion.div>
         )}

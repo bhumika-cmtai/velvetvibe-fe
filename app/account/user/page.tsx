@@ -124,7 +124,7 @@ export default function ProfilePage() {
           {/* Navigation Links */}
           <div className="divide-y divide-gray-200">
             <ProfileLink
-              href="/account/orders"
+              href="/account/user/order-history"
               icon={Package}
               title="My Orders"
               subtitle="Track, cancel, or return your orders"

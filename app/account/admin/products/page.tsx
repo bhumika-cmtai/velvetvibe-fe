@@ -113,7 +113,7 @@ export default function ProductsPage() {
 
     try {
       // 4. Dispatch the async thunk and wait for it to complete
-      await dispatch(updateProduct({ productId: currentProduct.id, formData })).unwrap();
+      await dispatch(updateProduct({ productId: currentProduct._id, formData })).unwrap();
       // 5. Close the modal ONLY on success
       setIsEditDialogOpen(false);
     } catch (error) {
@@ -134,7 +134,7 @@ export default function ProductsPage() {
     if (!currentProduct) return;
     setIsDeleting(true);
     try {
-      await dispatch(deleteProduct(currentProduct.id)).unwrap();
+      await dispatch(deleteProduct(currentProduct._id)).unwrap();
       setIsDeleteDialogOpen(false);
       // Refetch the current page to update the list
       dispatch(fetchProducts({ page: currentPage, limit: 10 }));
@@ -181,7 +181,7 @@ export default function ProductsPage() {
           </TableHeader>
           <TableBody>
             {products.map((product: Product) => (
-              <TableRow key={product.id}>
+              <TableRow key={product._id}>
                 <TableCell><Image src={product.images[0] || '/placeholder.svg'} alt={product.name} width={48} height={48} className="object-cover rounded-md" /></TableCell>
                 <TableCell className="font-medium">
                 <Tooltip>
@@ -199,7 +199,7 @@ export default function ProductsPage() {
                 <TableCell>{product.stock}</TableCell>
                 <TableCell className="capitalize">{product.type}</TableCell>
                 <TableCell className="space-x-2">
-                  <Button variant="default" size="sm" onClick={() => handleViewClick(product.id)}>View</Button>
+                  <Button variant="default" size="sm" onClick={() => handleViewClick(product._id)}>View</Button>
                   <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
                   <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(product)}>Delete</Button>
                 </TableCell>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect,useLayoutEffect } from "react"
+import { useState, useEffect, useLayoutEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { useDispatch, useSelector } from "react-redux"
 import type { AppDispatch, RootState } from "@/lib/redux/store"
@@ -14,12 +14,32 @@ import { Footer } from "@/components/Footer"
 // Example filter config
 const filterGroups = [
   {
+    id: "gender",
+    label: "Gender",
+    options: [
+      // --- Ensured IDs are lowercase for API consistency ---
+      { id: "Male", label: "Men" },
+      { id: "Female", label: "Women" },
+    ],
+  },
+  {
+    id: "type",
+    label: "Type",
+    options: [
+      { id: "gift", label: "Gift" },
+      { id: "jewellery", label: "Jewellery" },
+      { id: "bag", label: "Bags" },
+    ],
+  },
+  {
     id: "jewelleryCategory",
     label: "Category",
     options: [
+      { id: "Rings", label: "rings" },
       { id: "Earrings", label: "Earrings" },
       { id: "Bangles", label: "Bangles" },
       { id: "Necklaces", label: "Necklaces" },
+      { id: "Bracelets", label: "Bracelets" },
     ],
   },
   {
@@ -33,13 +53,12 @@ const filterGroups = [
     ],
   },
   {
-    id: "metal",
-    label: "Metal",
+    id: "material",
+    label: "Material",
     options: [
       { id: "gold", label: "Gold" },
       { id: "silver", label: "Silver" },
-      { id: "brass", label: "Brass" },
-      { id: "alloy", label: "Alloy" },
+      { id: "artificial", label: "artificial" },
     ],
   },
   {
@@ -97,15 +116,21 @@ export default function WomenCollectionPage() {
 
   const buildQueryParams = () => {
     const params: Record<string, string> = {
-      gender: "Female",
       page: String(currentPage),
       limit: String(productsPerPage),
+    }
+
+    if (selectedFilters.gender?.length) {
+      params.gender = selectedFilters.gender.join(",")
+    }
+    if (selectedFilters.type?.length) {
+      params.type = selectedFilters.type.join(",")
     }
     if (selectedFilters.jewelleryCategory?.length) {
       params.jewelleryCategory = selectedFilters.jewelleryCategory.join(",")
     }
-    if (selectedFilters.metal?.length) {
-      params.materialType = selectedFilters.metal.join(",")
+    if (selectedFilters.material?.length) {
+      params.materialType = selectedFilters.material.join(",")
     }
     if (selectedFilters.color?.length) {
       params.color = selectedFilters.color.join(",")
@@ -121,7 +146,6 @@ export default function WomenCollectionPage() {
 
   // Scroll to top whenever currentPage changes
   useLayoutEffect(() => {
-    // Scroll the **window** to top smoothly
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [currentPage])
 
@@ -152,7 +176,7 @@ export default function WomenCollectionPage() {
 
       <main>
         <section id="products" className="container mx-auto px-4 py-20">
-          <div className="flex gap-8">
+          <div className="flex flex-col md:flex-row gap-8">
             <FiltersSidebar
               filters={filterGroups}
               selectedFilters={selectedFilters}
@@ -166,7 +190,7 @@ export default function WomenCollectionPage() {
                   className="text-2xl font-serif font-bold"
                   style={{ color: "var(--theme-primary)" }}
                 >
-                  Women's Jewelry ({totalProducts} items)
+                  ({totalProducts} items)
                 </h1>
               </div>
 
@@ -183,7 +207,7 @@ export default function WomenCollectionPage() {
                   </div>
 
                   {/* Pagination */}
-                  <div className="flex justify-center mt-10 gap-2">
+                  <div className="flex justify-center items-center mt-10 gap-2 flex-wrap">
                     <button
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage((p) => p - 1)}
@@ -234,4 +258,3 @@ export default function WomenCollectionPage() {
     </div>
   )
 }
-

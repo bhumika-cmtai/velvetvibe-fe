@@ -264,6 +264,7 @@ export default function WomenHomePage() {
         // Fetch New Arrivals (latest jewellery products)
         setSectionsLoading(prev => ({ ...prev, newArrivals: true }))
         const newArrivalsResult = await dispatch(fetchProducts({ 
+          gender: 'Female',
           type: 'jewellery', 
           limit: 4,
           // You might want to add a sort parameter for latest products
@@ -386,7 +387,7 @@ export default function WomenHomePage() {
                 ))}
               </div>
               <div className="mt-8 text-center">
-                <Link href="/collections/women">
+                <Link href="/collections/">
                   <Button variant="outline" size="lg" className="px-8 py-6 text-base hover:bg-[#FFFDF6] hover:cursor-pointer">
                     View All New Arrivals
                   </Button>
@@ -556,7 +557,7 @@ export default function WomenHomePage() {
                 ))}
               </div>
               <div className="mt-8 text-center">
-                <Link href="/collections/women/bags">
+                <Link href="/collections/bags">
                   <Button variant="outline" size="lg" className="px-8 py-6 text-base hover:bg-[#FFFDF6] hover:cursor-pointer">
                     View All Handbags
                   </Button>
@@ -583,7 +584,7 @@ export default function WomenHomePage() {
                 ))}
               </div>
               <div className="mt-8 text-center">
-                <Link href="/collections/women/gifts">
+                <Link href="/collections/gifts">
                   <Button variant="outline" size="lg" className="px-8 py-6 text-base hover:bg-[#FFFDF6] hover:cursor-pointer">
                     View All Gifts
                   </Button>
@@ -635,7 +636,7 @@ export default function WomenHomePage() {
               Visit Our Showroom
             </h3>
             <p className="text-xl leading-relaxed text-gray-700">
-              Shop No. 12, MC NO.181/2225, Shri Ram Market, Gali Kunj,<br />
+              Shop No. 12, MC NO.181/225, Shri Ram Market, Gali Kunjas,<br />
               Dariba Kalan, Chandni Chowk, Delhi - 110006
             </p>
           </div>

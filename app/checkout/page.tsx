@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, CreditCard, Shield, MapPin, PlusCircle, CheckCircle, Loader2, XCircle } from "lucide-react"
+import { useRouter } from "next/navigation" // Import useRouter
+import { ArrowLeft, CreditCard, Shield, MapPin, PlusCircle, CheckCircle, Loader2, XCircle, Home, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -17,151 +18,117 @@ import { RootState, AppDispatch } from "@/lib/redux/store"
 import { fetchCart, clearCart, applyCoupon, removeCoupon } from "@/lib/redux/slices/cartSlice"
 import { fetchCouponByName } from "@/lib/redux/slices/couponSlice"
 import { fetchUserProfile, addUserAddress, NewAddressPayload } from "@/lib/redux/slices/userSlice"
+import { placeCodOrder, createRazorpayOrder, verifyRazorpayPayment } from "@/lib/redux/slices/orderSlice"
+import { Select } from "@/components/ui/select"
+
+// Custom hook to load external scripts like Razorpay
+const useScript = (src: string) => {
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = true;
+    document.body.appendChild(script);
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, [src]);
+};
 
 export default function CheckoutPage() {
-  const dispatch = useDispatch<AppDispatch>()
-  const { toast } = useToast()
+  useScript("https://checkout.razorpay.com/v1/checkout.js");
+  const router = useRouter(); // Initialize the router
+  const dispatch = useDispatch<AppDispatch>();
+  const { toast } = useToast();
 
-  // --- Select all necessary state from Redux ---
   const {
     items,
-    totalItems,
     subTotal,
     shippingCost,
     discountAmount,
     finalTotal,
     appliedCoupon,
     loading: cartLoading,
-    error: cartError
   } = useSelector((state: RootState) => state.cart);
 
-  const { user, addresses, status: userStatus, error: userError } = useSelector(
+  const { user, addresses, status: userStatus } = useSelector(
     (state: RootState) => state.user
   );
 
-  // --- Local state for UI interactions ---
-  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null)
-  const [showNewAddressForm, setShowNewAddressForm] = useState(false)
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showNewAddressForm, setShowNewAddressForm] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<'cod' | 'razorpay'>('cod');
-  const [isProcessing, setIsProcessing] = useState(false)
+  const [isProcessing, setIsProcessing] = useState(false);
   const [couponCode, setCouponCode] = useState("");
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
   const [newAddressFormData, setNewAddressFormData] = useState<NewAddressPayload>({
-    fullName: "",
-    phone: "",
-    street: "",
-    city: "",
-    state: "",
-    postalCode: "",
-    type: "Home",
+    fullName: "", phone: "", street: "", city: "", state: "", postalCode: "", type: "Home",
   });
 
-  // Fetch initial data on component mount
   useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        await dispatch(fetchCart());
-        await dispatch(fetchUserProfile());
-      } catch (error) {
-        console.error('Error fetching initial data:', error);
-      }
-    };
-    fetchInitialData();
-  }, [dispatch])
+    dispatch(fetchCart());
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
 
-  // Set default selected address and pre-fill new address form with user data
   useEffect(() => {
-    console.log('Current addresses:', addresses);
-    console.log('Current user:', user);
-    
     if (addresses && addresses.length > 0 && !selectedAddressId) {
       const defaultAddress = addresses.find(addr => addr.isDefault) || addresses[0];
-      console.log('Setting default address:', defaultAddress);
       setSelectedAddressId(defaultAddress._id);
     }
-    
-    if (user && (!newAddressFormData.fullName || !newAddressFormData.phone)) {
+    if (user) {
       setNewAddressFormData(prev => ({
         ...prev,
         fullName: user.fullName || "",
         phone: user.phone || "",
+        street: prev.street || "",
+        city: prev.city || "",
+        state: prev.state || "",
+        postalCode: prev.postalCode || "",
+        type: prev.type || "Home",
       }));
     }
-  }, [addresses, selectedAddressId, user]);
+  }, [addresses, user]);
 
-  // --- Handlers ---
+  // useEffect(() => {
+  //   if (!cartLoading && items.length === 0) {
+  //     const timer = setTimeout(() => {
+  //        router.push('/cart');
+  //     }, 500);
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [items, cartLoading, router]);
+
   const handleNewAddressInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setNewAddressFormData({
-      ...newAddressFormData,
-      [e.target.name]: e.target.value,
-    });
+    setNewAddressFormData({ ...newAddressFormData, [e.target.name]: e.target.value });
   };
 
   const handleAddNewAddress = async () => {
-    // Basic validation
-    const requiredFields = ['fullName', 'phone', 'street', 'city', 'state', 'postalCode'];
-    const missingFields = requiredFields.filter(field => !newAddressFormData[field as keyof NewAddressPayload]);
-    
-    if (missingFields.length > 0) {
-        toast({ 
-          title: "Missing Information", 
-          description: `Please fill in: ${missingFields.join(', ')}`,
-          variant: "destructive" 
-        });
-        return;
-    }
-    
-    try {
-        const addedAddresses = await dispatch(addUserAddress(newAddressFormData)).unwrap();
-        toast({ title: "Address added successfully" });
-        setShowNewAddressForm(false);
-        
-        // Reset form
-        setNewAddressFormData({
-          fullName: user?.fullName || "",
-          phone: user?.phone || "",
-          street: "",
-          city: "",
-          state: "",
-          postalCode: "",
-          type: "Home",
-        });
-        
-        // Automatically select the newly added address
-        if (addedAddresses && addedAddresses.length > 0) {
-          const newAddress = addedAddresses[addedAddresses.length - 1];
-          setSelectedAddressId(newAddress._id);
-        }
-    } catch (err: any) {
-        toast({ 
-          title: "Failed to add address", 
-          description: typeof err === 'string' ? err : 'An error occurred while adding the address',
-          variant: "destructive" 
-        });
-    }
-  }
-
-  const handleApplyDiscount = async () => {
-    if (!couponCode.trim()) {
-      toast({ title: "Please enter a coupon code.", variant: "destructive" });
+    const requiredFields: (keyof NewAddressPayload)[] = ['fullName', 'phone', 'street', 'city', 'state', 'postalCode'];
+    if (requiredFields.some(field => !newAddressFormData[field])) {
+      toast({ title: "Please fill all required fields.", variant: "destructive" });
       return;
     }
+    try {
+      const addedAddresses = await dispatch(addUserAddress(newAddressFormData)).unwrap();
+      toast({ title: "Address added successfully" });
+      setShowNewAddressForm(false);
+      setNewAddressFormData({ fullName: user?.fullName || "", phone: user?.phone || "", street: "", city: "", state: "", postalCode: "", type: "Home" });
+      if (addedAddresses && addedAddresses.length > 0) {
+        setSelectedAddressId(addedAddresses[addedAddresses.length - 1]._id);
+      }
+    } catch (err: any) {
+      toast({ title: "Failed to add address", description: err, variant: "destructive" });
+    }
+  };
+
+  const handleApplyDiscount = async () => {
+    if (!couponCode.trim()) return;
     setIsApplyingCoupon(true);
     try {
       const validCoupon = await dispatch(fetchCouponByName(couponCode)).unwrap();
       dispatch(applyCoupon(validCoupon));
-      const discountValue = subTotal * (validCoupon.discountPercentage / 100);
-      toast({
-        title: "Coupon Applied!",
-        description: `You saved ₹${discountValue.toLocaleString()} with code "${validCoupon.code}".`,
-      });
-      setCouponCode("");
+      toast({ title: "Coupon Applied!" });
     } catch (errorMessage: any) {
-      toast({
-        title: "Invalid Coupon",
-        description: String(errorMessage),
-        variant: "destructive",
-      });
+      toast({ title: "Invalid Coupon", description: String(errorMessage), variant: "destructive" });
     } finally {
       setIsApplyingCoupon(false);
     }
@@ -169,75 +136,94 @@ export default function CheckoutPage() {
 
   const handleRemoveDiscount = () => {
     dispatch(removeCoupon());
-    toast({
-      title: "Coupon Removed",
-      description: "The discount has been removed from your cart.",
-    });
+    toast({ title: "Coupon Removed" });
   };
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (items.length === 0) {
-        toast({ title: "Your cart is empty.", variant: "destructive" });
-        return;
-    }
     if (!selectedAddressId) {
-        toast({ title: "Please select a shipping address.", variant: "destructive" });
-        return;
+      toast({ title: "Please select a shipping address.", variant: "destructive" });
+      return;
     }
 
     setIsProcessing(true);
-    const finalShippingAddress = addresses.find(addr => addr._id === selectedAddressId);
 
-    const orderPayload = {
-      orderItems: items.map(item => ({ product: item.product._id, quantity: item.quantity })),
-      shippingAddress: finalShippingAddress,
-      totalPrice: finalTotal,
-      paymentMethod: selectedPaymentMethod,
-      appliedCoupon: appliedCoupon?.code || null,
-    };
-
-    console.log("Final Order Payload:", orderPayload);
-
-    try {
-      // Simulate order processing
-      if (selectedPaymentMethod === 'cod') {
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-          toast({ title: "Order placed successfully!" });
-          dispatch(clearCart());
-          setIsProcessing(false);
-          window.location.href = "/order-success";
-      } else {
-          toast({ title: "Redirecting to payment...", description: "Razorpay integration placeholder." });
-          setIsProcessing(false);
+    if (selectedPaymentMethod === 'cod') {
+      try {
+        const result = await dispatch(placeCodOrder({ addressId: selectedAddressId })).unwrap();
+        toast({ title: "Order placed successfully!" });
+        router.push(`/order-success?orderId=${result.order._id}`);
+        dispatch(clearCart());
+      } catch (error: any) {
+        toast({ title: "Order Failed", description: error, variant: "destructive" });
+      } finally {
+        setIsProcessing(false);
       }
-    } catch (error) {
-      toast({ 
-        title: "Order failed", 
-        description: "Something went wrong. Please try again.",
-        variant: "destructive" 
-      });
-      setIsProcessing(false);
+    } else { // Razorpay Logic
+      try {
+        const razorpayOrder = await dispatch(createRazorpayOrder({ addressId: selectedAddressId, amount: finalTotal })).unwrap();
+        
+        const options = {
+          key: razorpayOrder.key,
+          amount: razorpayOrder.amount,
+          currency: "INR",
+          name: "Gullnaaz",
+          description: "Order Payment",
+          order_id: razorpayOrder.orderId,
+          handler: async function (response: any) {
+            try {
+              const result = await dispatch(verifyRazorpayPayment({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                addressId: selectedAddressId
+              })).unwrap();
+              toast({ title: "Payment Successful, Order Placed!" });
+              dispatch(clearCart());
+              router.push(`/order-success?orderId=${result.order._id}`);
+            } catch (verifyError: any) {
+              toast({ title: "Payment Verification Failed", description: verifyError, variant: "destructive" });
+            }
+          },
+          prefill: { name: user?.fullName, email: user?.email, contact: user?.phone },
+          theme: { color: "#A77C38" }
+        };
+        // @ts-ignore
+        const rzp = new window.Razorpay(options);
+        rzp.on('payment.failed', function (response: any) {
+            toast({
+                title: 'Payment Failed',
+                description: response.error.description,
+                variant: 'destructive',
+            });
+        });
+        rzp.open();
+      } catch (error: any) {
+        toast({ title: "Payment Failed", description: error, variant: "destructive" });
+      } finally {
+        setIsProcessing(false);
+      }
     }
-  }
+  };
 
-  // --- Render Logic ---
-  if (cartLoading || userStatus === 'loading') {
+  if (cartLoading || userStatus === 'loading' || (items.length === 0 && cartLoading)) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
+        <div className="min-h-screen flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
       </div>
     );
   }
   
   if (items.length === 0 && !cartLoading) {
-     if (typeof window !== 'undefined') { 
-       window.location.href = '/cart'; 
-     }
-     return null;
+     return (
+        <div className="min-h-screen bg-gray-50">
+            <Navbar />
+            <div className="min-h-screen flex items-center justify-center">
+                <p>Your cart is empty. Redirecting...</p>
+            </div>
+        </div>
+     );
   }
 
   return (
@@ -257,16 +243,6 @@ export default function CheckoutPage() {
             <div className="bg-white rounded-2xl p-8 border border-gray-200 shadow-sm">
               <h2 className="text-xl font-semibold mb-6">1. Shipping Information</h2>
               
-              {/* Debug info - remove in production */}
-              {/* {process.env.NODE_ENV === 'development' && (
-                <div className="mb-4 p-4 bg-gray-100 rounded text-sm">
-                  <p>Debug: User Status: {userStatus}</p>
-                  <p>Debug: Addresses Count: {addresses?.length || 0}</p>
-                  <p>Debug: Selected Address ID: {selectedAddressId}</p>
-                </div>
-              )} */}
-              
-              {/* Existing Addresses */}
               {addresses && addresses.length > 0 ? (
                 <div className="mb-8">
                   <h3 className="text-lg font-medium mb-4">Select Shipping Address</h3>
@@ -314,7 +290,6 @@ export default function CheckoutPage() {
                 </div>
               )}
               
-              {/* Add New Address Form */}
               <div className="mb-8">
                 <Button 
                   type="button" 
@@ -338,113 +313,74 @@ export default function CheckoutPage() {
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="fullName">Full Name *</Label>
-                          <Input 
-                            id="fullName"
-                            name="fullName" 
-                            value={newAddressFormData.fullName} 
-                            onChange={handleNewAddressInputChange}
-                            placeholder="Enter full name"
-                          />
+                          <Input id="fullName" name="fullName" value={newAddressFormData.fullName} onChange={handleNewAddressInputChange} placeholder="Enter full name" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="phone">Phone *</Label>
-                          <Input 
-                            id="phone"
-                            name="phone" 
-                            type="tel" 
-                            value={newAddressFormData.phone} 
-                            onChange={handleNewAddressInputChange}
-                            placeholder="Enter phone number"
-                          />
+                          <Input id="phone" name="phone" type="tel" value={newAddressFormData.phone} onChange={handleNewAddressInputChange} placeholder="Enter phone number" />
                         </div>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="street">Street Address *</Label>
-                        <Input 
-                          id="street"
-                          name="street" 
-                          value={newAddressFormData.street} 
-                          onChange={handleNewAddressInputChange}
-                          placeholder="Enter street address"
-                        />
+                        <Input id="street" name="street" value={newAddressFormData.street} onChange={handleNewAddressInputChange} placeholder="Enter street address" />
                       </div>
                       <div className="grid md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                           <Label htmlFor="state">State *</Label>
-                          <Input 
-                            id="state"
-                            name="state" 
-                            value={newAddressFormData.state} 
-                            onChange={handleNewAddressInputChange}
-                            placeholder="Enter state"
-                          />
+                          <Input id="state" name="state" value={newAddressFormData.state} onChange={handleNewAddressInputChange} placeholder="Enter state" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="city">City *</Label>
-                          <Input 
-                            id="city"
-                            name="city" 
-                            value={newAddressFormData.city} 
-                            onChange={handleNewAddressInputChange}
-                            placeholder="Enter city"
-                          />
+                          <Input id="city" name="city" value={newAddressFormData.city} onChange={handleNewAddressInputChange} placeholder="Enter city" />
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="postalCode">PIN Code *</Label>
-                          <Input 
-                            id="postalCode"
-                            name="postalCode" 
-                            value={newAddressFormData.postalCode} 
-                            onChange={handleNewAddressInputChange}
-                            placeholder="Enter PIN code"
-                          />
+                          <Input id="postalCode" name="postalCode" value={newAddressFormData.postalCode} onChange={handleNewAddressInputChange} placeholder="Enter PIN code" />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="type">Address Type</Label>
-                        <select
-                          id="type"
-                          name="type"
-                          value={newAddressFormData.type}
-                          onChange={handleNewAddressInputChange}
-                          className="w-full p-2 border rounded-md"
-                        >
-                          <option value="Home">Home</option>
-                          <option value="Work">Work</option>
-                        </select>
-                      </div>
-                      <Button type="button" className="w-full mt-4" onClick={handleAddNewAddress}>
-                        Save Address
-                      </Button>
+                      <div className="space-y-2 pt-2">
+            <Label>Address Type</Label>
+            <div className="grid grid-cols-2 gap-4">
+                <Button
+                    type="button"
+                    variant={newAddressFormData.type === 'Home' ? 'default' : 'outline'}
+                    onClick={() => handleNewAddressInputChange({
+                        target: { name: 'type', value: 'Home' }
+                    } as React.ChangeEvent<HTMLSelectElement>)}
+                    className="flex items-center justify-center py-6"
+                >
+                    <Home className="mr-2 h-4 w-4" />
+                    Home
+                </Button>
+                <Button
+                    type="button"
+                    variant={newAddressFormData.type === 'Work' ? 'default' : 'outline'}
+                    onClick={() => handleNewAddressInputChange({
+                        target: { name: 'type', value: 'Work' }
+                    } as React.ChangeEvent<HTMLSelectElement>)}
+                    className="flex items-center justify-center py-6"
+                >
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Work
+                </Button>
+            </div>
+        </div>
+
+                      <Button type="button" className="w-full mt-4" onClick={handleAddNewAddress}>Save Address</Button>
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
 
-              {/* Payment Method */}
               <div className="pt-6 border-t">
                 <h2 className="text-xl font-semibold mb-6">2. Payment Method</h2>
                 <div className="space-y-4">
-                  <div 
-                    onClick={() => setSelectedPaymentMethod('cod')} 
-                    className={`flex items-center space-x-3 p-4 border rounded-xl cursor-pointer transition-all ${
-                      selectedPaymentMethod === 'cod' 
-                        ? 'border-[#A77C38] ring-2 ring-[#A77C38] bg-[#A77C38]/5' 
-                        : 'border-gray-200 hover:border-gray-400'
-                    }`}
-                  >
+                  <div onClick={() => setSelectedPaymentMethod('cod')} className={`flex items-center space-x-3 p-4 border rounded-xl cursor-pointer transition-all ${ selectedPaymentMethod === 'cod' ? 'border-[#A77C38] ring-2 ring-[#A77C38] bg-[#A77C38]/5' : 'border-gray-200 hover:border-gray-400'}`}>
                       <CreditCard className="h-5 w-5 text-gray-500" />
                       <span className="flex-1 font-medium">Cash on Delivery (COD)</span>
                       {selectedPaymentMethod === 'cod' && <CheckCircle className="h-5 w-5 text-[#A77C38]" />}
                   </div>
-                  <div 
-                    onClick={() => setSelectedPaymentMethod('razorpay')} 
-                    className={`flex items-center space-x-3 p-4 border rounded-xl cursor-pointer transition-all ${
-                      selectedPaymentMethod === 'razorpay' 
-                        ? 'border-[#A77C38] ring-2 ring-[#A77C38] bg-[#A77C38]/5' 
-                        : 'border-gray-200 hover:border-gray-400'
-                    }`}
-                  >
+                  <div onClick={() => setSelectedPaymentMethod('razorpay')} className={`flex items-center space-x-3 p-4 border rounded-xl cursor-pointer transition-all ${ selectedPaymentMethod === 'razorpay' ? 'border-[#A77C38] ring-2 ring-[#A77C38] bg-[#A77C38]/5' : 'border-gray-200 hover:border-gray-400'}`}>
                       <div className="w-6 h-6 bg-blue-500 rounded flex items-center justify-center text-white text-xs font-bold">R</div>
                       <span className="flex-1 font-medium">Pay Online (Razorpay)</span>
                       {selectedPaymentMethod === 'razorpay' && <CheckCircle className="h-5 w-5 text-[#A77C38]" />}
@@ -462,12 +398,7 @@ export default function CheckoutPage() {
                 {items.map((item) => (
                   <div key={item._id} className="flex items-center space-x-4">
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden">
-                      <Image 
-                        src={item.product.images[0]} 
-                        alt={item.product.name} 
-                        fill 
-                        className="object-cover" 
-                      />
+                      <Image src={item.product.images[0]} alt={item.product.name} fill className="object-cover" />
                     </div>
                     <div className="flex-1">
                       <h4 className="font-medium truncate">{item.product.name}</h4>
@@ -479,84 +410,36 @@ export default function CheckoutPage() {
               </div>
               <hr className="my-6" />
               
-              {/* Coupon Form */}
               <div className="space-y-3 mb-6">
                 <Label>Discount Code</Label>
                 {appliedCoupon ? (
                   <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg">
                     <span className="text-green-700 font-medium">Code "{appliedCoupon.code}" applied</span>
-                    <Button 
-                      onClick={handleRemoveDiscount} 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-6 w-6 text-red-500"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
+                    <Button onClick={handleRemoveDiscount} variant="ghost" size="icon" className="h-6 w-6 text-red-500"><XCircle className="h-4 w-4" /></Button>
                   </div>
                 ) : (
                   <div className="flex space-x-2">
-                    <Input 
-                      placeholder="Enter code" 
-                      value={couponCode} 
-                      onChange={(e) => setCouponCode(e.target.value)} 
-                      disabled={isApplyingCoupon} 
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={handleApplyDiscount} 
-                      variant="outline" 
-                      disabled={isApplyingCoupon}
-                    >
+                    <Input placeholder="Enter code" value={couponCode} onChange={(e) => setCouponCode(e.target.value)} disabled={isApplyingCoupon} />
+                    <Button type="button" onClick={handleApplyDiscount} variant="outline" disabled={isApplyingCoupon}>
                       {isApplyingCoupon ? <Loader2 className="h-4 w-4 animate-spin" /> : "Apply"}
                     </Button>
                   </div>
                 )}
               </div>
               
-              {/* Totals */}
               <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Subtotal</span>
-                  <span>₹{subTotal.toLocaleString()}</span>
-                </div>
-                {discountAmount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount</span>
-                    <span>-₹{discountAmount.toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Shipping</span>
-                  <span>{shippingCost === 0 ? "Free" : `₹${shippingCost.toLocaleString()}`}</span>
-                </div>
+                <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>₹{subTotal.toLocaleString()}</span></div>
+                {discountAmount > 0 && (<div className="flex justify-between text-green-600"><span>Discount</span><span>-₹{discountAmount.toLocaleString()}</span></div>)}
+                <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span>{shippingCost === 0 ? "Free" : `₹${shippingCost.toLocaleString()}`}</span></div>
                 <hr className="my-4" />
-                <div className="flex justify-between text-lg font-semibold">
-                  <span>Total</span>
-                  <span className="text-[#A77C38]">₹{finalTotal.toLocaleString()}</span>
-                </div>
+                <div className="flex justify-between text-lg font-semibold"><span>Total</span><span className="text-[#A77C38]">₹{finalTotal.toLocaleString()}</span></div>
               </div>
               
-              {/* Place Order Button */}
-              <Button 
-                type="submit" 
-                disabled={isProcessing || !selectedAddressId} 
-                className="w-full py-3 mt-6 font-medium bg-[#A77C38] hover:bg-[#966b2a]"
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                    Processing...
-                  </>
-                ) : (
-                  `Place Order - ₹${finalTotal.toLocaleString()}`
-                )}
+              <Button type="submit" disabled={isProcessing || !selectedAddressId} className="w-full py-3 mt-6 font-medium bg-[#A77C38] hover:bg-[#966b2a]">
+                {isProcessing ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>) : (`Place Order - ₹${finalTotal.toLocaleString()}`)}
               </Button>
               
-              <div className="flex items-center justify-center space-x-2 mt-3 text-sm text-gray-600">
-                <Shield className="h-4 w-4" />
-                <span>Secure SSL Encrypted Payment</span>
-              </div>
+              <div className="flex items-center justify-center space-x-2 mt-3 text-sm text-gray-600"><Shield className="h-4 w-4" /><span>Secure SSL Encrypted Payment</span></div>
             </div>
           </motion.div>
         </form>

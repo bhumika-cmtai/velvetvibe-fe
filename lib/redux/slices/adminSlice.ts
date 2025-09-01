@@ -1,3 +1,4 @@
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { toast } from 'sonner';
 
@@ -178,14 +179,14 @@ const adminSlice = createSlice({
         toast.success("Product created successfully!");
       })
       .addCase(updateProduct.fulfilled, (state, action: PayloadAction<Product>) => {
-        const index = state.products.findIndex(p => p.id === action.payload.id); // Use _id for consistency with DB
+        const index = state.products.findIndex(p => p._id === action.payload._id); // Use _id for consistency with DB
         if (index !== -1) {
           state.products[index] = action.payload;
         }
         toast.success("Product updated successfully!");
       })
       .addCase(deleteProduct.fulfilled, (state, action: PayloadAction<string>) => {
-        state.products = state.products.filter(p => p.id !== action.payload); // Use _id
+        state.products = state.products.filter(p => p._id !== action.payload); // Use _id
         toast.success("Product deleted successfully!");
       })
 

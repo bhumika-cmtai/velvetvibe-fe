@@ -9,7 +9,8 @@ import productReducer from './slices/productSlice'
 import cartReducer from './slices/cartSlice'
 import wishlistReducer from './slices/wishlistSlice'
 import bulkOrderReducer from './slices/bulkOrderSlice';
-
+import orderReducer from './slices/orderSlice'
+import dashboardReducer from './slices/dashboardSlice'
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -20,7 +21,9 @@ export const store = configureStore({
     product: productReducer,
     cart: cartReducer,
     wishlist: wishlistReducer,
-    bulkOrder: bulkOrderReducer
+    bulkOrder: bulkOrderReducer,
+    order: orderReducer,
+    dashboard: dashboardReducer
   },
 });
 
