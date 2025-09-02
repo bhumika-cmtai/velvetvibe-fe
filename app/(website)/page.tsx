@@ -74,11 +74,12 @@ const customDesigns = [
 ];
 
 const staticReelsData = [
-  { id: 1, src: "/reels/jewel-reel.mp4", poster: "/custom1.jpg" },
-  { id: 2, src: "/reels/jewel-reel.mp4", poster: "/custom2.jpg" },
-  { id: 3, src: "/reels/jewel-reel.mp4", poster: "/custom3.jpg" },
-  { id: 4, src: "/reels/jewel-reel.mp4", poster: "/custom4.jpg" },
-  // Aap yahan aur videos add kar sakte hain
+  { id: 1, src: "/jewel-reel.mp4", poster: "/custom1.jpg" },
+  { id: 2, src: "/jewel-reel.mp4", poster: "/custom2.jpg" },
+  { id: 3, src: "/jewel-reel.mp4", poster: "/custom3.jpg" },
+  { id: 4, src: "/jewel-reel.mp4", poster: "/custom4.jpg" },
+  // Alternative: Use a working sample video URL for testing
+  // { id: 1, src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4", poster: "/custom1.jpg" },
 ];
 
 
@@ -102,27 +103,71 @@ function CustomDesignCard({ image, title, description }: { image: string, title:
 }
 
 
-// --- NEW: Video Product Card Component ---
-function StaticReelCard({ videoSrc, posterSrc }: { videoSrc: string, posterSrc: string }) {
+// Updated StaticReelCard Component with proper autoplay
+function VideoProductCard({ product }: { product: any }) {
+  // Agar product mein video nahi hai to kuch bhi render na karein
+  if (!product.video || product.video.length === 0) {
+    return null;
+  }
+
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [hasError, setHasError] = useState(false);
+
+  // useEffect se autoplay ko ensure karein
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.play().catch(error => {
+        console.error("Video autoplay was prevented:", error);
+        // Autoplay block hone par user click karke chala sakta hai
+      });
+    }
+  }, []);
+
+  // Agar video URL aane mein error ho to fallback ke taur par image dikhayein
+  if (hasError) {
+    return (
+      <Link href={`/products/${product.slug}`} className="group block overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
+        <div className="relative aspect-square w-full">
+          <Image
+            src={product.images?.[0] || '/custom1.jpg'} // Fallback image
+            alt={product.name}
+            fill
+            className="object-cover"
+          />
+        </div>
+      </Link>
+    );
+  }
+
   return (
-    // Link component poore card ko wrap karega
-    <Link href="/collections" className="group block overflow-hidden rounded-lg border bg-black shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
-      <div className="relative aspect-square w-full">
+    <Link href={`/products/${product.slug}`} className="group block overflow-hidden rounded-lg border shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
+      <div className="relative aspect-[9/16] w-full">
         <video
-          src="/reels/jewel-reel.mp4"
+          ref={videoRef}
+          src={product.video[0]} 
           autoPlay
           loop
           muted
-          playsInline // Mobile devices par autoplay ke liye zaroori
-          // poster={posterSrc} // Video load hone tak yeh image dikhegi
+          playsInline
+          poster={product.images?.[0]} 
+          onError={() => setHasError(true)} 
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        {/* Aap chahein to hover par ek overlay bhi add kar sakte hain */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-300"></div>
+        
+        {/* Hover par dikhne wala Overlay */}
+        <div className="absolute inset-0  bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex flex-col justify-end p-4">
+          {/* Hover par neeche se aane wala text */}
+          <div className="transform translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 text-white">
+            <h3 className="font-semibold text-lg leading-tight">{product.name}</h3>
+            <p className="text-base font-medium">₹{product.price.toLocaleString()}</p>
+          </div>
+        </div>
       </div>
     </Link>
   );
 }
+
 
 
 
@@ -380,33 +425,33 @@ export default function WomenHomePage() {
         </section>
 
 
-          {/* --- NEW SECTION: Products with Videos --- */}
+          {/* Products with Videos Section */}
           <section className="container mx-auto px-4">
             <SectionTitle
               title="Our Collection in Motion"
               subtitle="See our stunning jewelry come to life"
               className="mb-8 text-[#A77C38]"
             />
-            {/* Yahan loading state ki zaroorat nahi hai, kyunki data static hai */}
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {/* Hum staticReelsData par map karenge */}
-                {staticReelsData.map((reel) => (
-                  <StaticReelCard 
-                    key={reel.id} 
-                    videoSrc={reel.src} 
-                    posterSrc={reel.poster} 
-                  />
-                ))}
-              </div>
-              <div className="mt-8 text-center">
-                <Link href="/collections">
-                  <Button variant="outline" size="lg" className="px-8 py-6 text-base hover:bg-[#FFFDF6] hover:cursor-pointer">
-                    View All Collections
-                  </Button>
-                </Link>
-              </div>
-            </>
+            {/* Loading state jo pehle se hai, bilkul sahi hai */}
+            {sectionsLoading.videos ? (
+              <ProductSectionLoading />
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                  {/* Ab hum 'videoProducts' state par map karenge */}
+                  {videoProducts.map((product) => (
+                    <VideoProductCard key={product._id} product={product} />
+                  ))}
+                </div>
+                <div className="mt-8 text-center">
+                  <Link href="/collections">
+                    <Button variant="outline" size="lg" className="px-8 py-6 text-base hover:bg-[#FFFDF6] hover:cursor-pointer">
+                      View All Collections
+                    </Button>
+                  </Link>
+                </div>
+              </>
+            )}
           </section>
         
         {/* Modern Glamour */}
