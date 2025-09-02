@@ -67,9 +67,9 @@ export default function WishlistPage() {
     // Assuming addToCart is also an async thunk from a cartSlice
     try {
       // Optimistically remove from wishlist first
-      dispatch(removeWishlistOptimistic(item.id)); // Use item._id
+      dispatch(removeWishlistOptimistic(item._id)); // Use item._id
       // Add to cart (assuming this is an async thunk that returns the updated cart or item)
-      await dispatch(addToCart({ productId: item.id, quantity: 1 })).unwrap(); // Assuming addToCart takes { productId, quantity }
+      await dispatch(addToCart({ productId: item._id, quantity: 1 })).unwrap(); // Assuming addToCart takes { productId, quantity }
 
       toast({
         title: "Moved to Cart",
@@ -78,7 +78,7 @@ export default function WishlistPage() {
 
       // After successful move to cart, remove from wishlist on backend
       // We already optimistically removed it, so just ensure backend is updated
-      await dispatch(removeFromWishlist(item.id)).unwrap(); // Use item._id
+      await dispatch(removeFromWishlist(item._id)).unwrap(); // Use item._id
     } catch (error: any) {
       toast({
         title: "Error",

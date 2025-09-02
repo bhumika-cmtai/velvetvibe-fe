@@ -46,7 +46,7 @@ export default function CheckoutPage() {
     shippingCost,
     discountAmount,
     finalTotal,
-    appliedCoupon,
+    appliedCoupon, // We will use this to get the coupon code
     loading: cartLoading,
   } = useSelector((state: RootState) => state.cart);
 
@@ -150,7 +150,10 @@ export default function CheckoutPage() {
 
     if (selectedPaymentMethod === 'cod') {
       try {
-        const result = await dispatch(placeCodOrder({ addressId: selectedAddressId })).unwrap();
+        const result = await dispatch(placeCodOrder({
+          addressId: selectedAddressId,
+          couponCode: appliedCoupon?.code // --- MODIFIED --- Pass the coupon code
+        })).unwrap();
         toast({ title: "Order placed successfully!" });
         router.push(`/order-success?orderId=${result.order._id}`);
         dispatch(clearCart());
@@ -161,7 +164,11 @@ export default function CheckoutPage() {
       }
     } else { // Razorpay Logic
       try {
-        const razorpayOrder = await dispatch(createRazorpayOrder({ addressId: selectedAddressId, amount: finalTotal })).unwrap();
+        const razorpayOrder = await dispatch(createRazorpayOrder({
+          addressId: selectedAddressId,
+          amount: finalTotal,
+          couponCode: appliedCoupon?.code // --- MODIFIED --- Pass the coupon code
+        })).unwrap();
         
         const options = {
           key: razorpayOrder.key,
@@ -176,7 +183,8 @@ export default function CheckoutPage() {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                addressId: selectedAddressId
+                addressId: selectedAddressId,
+                couponCode: appliedCoupon?.code // --- MODIFIED --- Pass the coupon code
               })).unwrap();
               toast({ title: "Payment Successful, Order Placed!" });
               dispatch(clearCart());

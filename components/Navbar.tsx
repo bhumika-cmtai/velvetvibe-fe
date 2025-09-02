@@ -60,7 +60,6 @@ const categoryItems = [
 const accountMenuItems = [
   { name: "My Account", href: "/account/user/" },
   { name: "My Orders", href: "/account/user/order-history" },
-  { name: "Settings", href: "/account/user/settings" },
   { name: "Sign Out", href: "#" }, 
 ];
 

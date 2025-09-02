@@ -36,9 +36,11 @@ export interface Order {
   };
   orderItems: OrderItem[];
   shippingAddress: ShippingAddress;
-  itemsPrice: number;
+  itemsPrice: number;       // This is the subtotal
   shippingPrice: number;
   taxPrice: number;
+  discountAmount?: number;   // <-- ADDED
+  couponCode?: string;      // <-- ADDED
   totalPrice: number;
   orderStatus: 'Pending' | 'Paid' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   paymentMethod: 'COD' | 'Razorpay';
@@ -75,11 +77,16 @@ const initialState: OrderState = {
 
 // --- User-specific Thunks ---
 
-export const fetchMyOrders = createAsyncThunk<Order[], void, { rejectValue: string }>(
+export const fetchMyOrders = createAsyncThunk<
+  any, // The backend now returns a pagination object { orders, currentPage, ... }
+  { page?: number; limit?: number },
+  { rejectValue: string }
+>(
   'orders/fetchMyOrders',
-  async (_, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const response = await api.get('/orders');
+      // Pass the page and limit as query parameters
+      const response = await api.get('/orders', { params });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch your orders');
@@ -105,6 +112,8 @@ export const fetchSingleOrder = createAsyncThunk<Order, string, { rejectValue: s
     try {
       // This can be used by both user and admin, so we use the user route by default
       const response = await api.get(`/orders/${orderId}`);
+      console.log("response data data")
+      console.log(response.data.data)
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch order details');
@@ -114,13 +123,13 @@ export const fetchSingleOrder = createAsyncThunk<Order, string, { rejectValue: s
 
 export const placeCodOrder = createAsyncThunk<
   { order: Order },
-  { addressId: string },
+  {addressId: string; couponCode?: string},
   { rejectValue: string }
 >(
   'orders/placeCodOrder',
-  async ({ addressId }, { rejectWithValue }) => {
+  async ({ addressId,couponCode  }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/order/cod', { addressId });
+      const response = await api.post('/order/cod', { addressId, couponCode  });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to place COD order');
@@ -130,7 +139,7 @@ export const placeCodOrder = createAsyncThunk<
 
 export const createRazorpayOrder = createAsyncThunk<
   { orderId: string; amount: number; key: string; addressId: string },
-  { addressId: string; amount: number },
+  { addressId: string; amount: number, couponCode?: string  },
   { rejectValue: string }
 >(
   'orders/createRazorpayOrder',
@@ -147,7 +156,7 @@ export const createRazorpayOrder = createAsyncThunk<
 
 export const verifyRazorpayPayment = createAsyncThunk<
   { order: Order },
-  { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; addressId: string },
+  { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string; addressId: string, couponCode?: string;  },
   { rejectValue: string }
 >(
   'orders/verifyRazorpayPayment',
@@ -230,9 +239,15 @@ const orderSlice = createSlice({
         state.loading = true;
         state.error = null;
       })
-      .addCase(fetchMyOrders.fulfilled, (state, action: PayloadAction<Order[]>) => {
+      .addCase(fetchMyOrders.fulfilled, (state, action: PayloadAction<any>) => {
         state.loading = false;
-        state.orders = action.payload;
+        state.orders = action.payload.orders;
+        // Store the pagination data from the API response
+        state.pagination = {
+          currentPage: action.payload.currentPage,
+          totalPages: action.payload.totalPages,
+          totalOrders: action.payload.totalOrders,
+        };
       })
       .addCase(fetchMyOrders.rejected, (state, action) => {
         state.loading = false;

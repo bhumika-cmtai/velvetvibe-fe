@@ -73,6 +73,15 @@ const customDesigns = [
   }
 ];
 
+const staticReelsData = [
+  { id: 1, src: "/reels/jewel-reel.mp4", poster: "/custom1.jpg" },
+  { id: 2, src: "/reels/jewel-reel.mp4", poster: "/custom2.jpg" },
+  { id: 3, src: "/reels/jewel-reel.mp4", poster: "/custom3.jpg" },
+  { id: 4, src: "/reels/jewel-reel.mp4", poster: "/custom4.jpg" },
+  // Aap yahan aur videos add kar sakte hain
+];
+
+
 function CustomDesignCard({ image, title, description }: { image: string, title: string, description: string }) {
   return (
     <div className="group overflow-hidden rounded-lg border bg-white text-center shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
@@ -94,137 +103,22 @@ function CustomDesignCard({ image, title, description }: { image: string, title:
 
 
 // --- NEW: Video Product Card Component ---
-function VideoProductCard({ product }: { product: any }) {
-  // Check for the correct property name, 'video' if it's an array
-  if (!product.video || product.video.length === 0) {
-    return null; // Don't render if there's no video
-  }
-
-  // Create a ref to access the <video> DOM element
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
-
-  // Handle video load and play
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const handleLoadedData = () => {
-      setIsVideoLoaded(true);
-      // Ensure video is muted before attempting to play
-      video.muted = true;
-      video.volume = 0;
-      
-      // Attempt to play the video
-      const playPromise = video.play();
-      
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            console.log("Video autoplay started successfully");
-          })
-          .catch(error => {
-            console.error("Video autoplay was prevented:", error);
-            setHasError(true);
-          });
-      }
-    };
-
-    const handleError = (e: any) => {
-      console.error("Video loading error:", e);
-      setHasError(true);
-    };
-
-    const handleCanPlay = () => {
-      setIsVideoLoaded(true);
-    };
-
-    // Add event listeners
-    video.addEventListener('loadeddata', handleLoadedData);
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('error', handleError);
-
-    // Force load the video
-    video.load();
-
-    // Cleanup
-    return () => {
-      if (video) {
-        video.removeEventListener('loadeddata', handleLoadedData);
-        video.removeEventListener('canplay', handleCanPlay);
-        video.removeEventListener('error', handleError);
-      }
-    };
-  }, []);
-
-  // Handle mouse enter to ensure video plays
-  const handleMouseEnter = () => {
-    const video = videoRef.current;
-    if (video && isVideoLoaded) {
-      video.muted = true;
-      video.play().catch(console.error);
-    }
-  };
-
-  // If there's an error or no video, fallback to image
-  if (hasError || !product.video[0]) {
-    return (
-      <Link href={`/products/${product.slug}`} className="group block overflow-hidden rounded-lg border bg-white shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
-        <div className="relative aspect-square w-full">
-          <Image
-            src={product.mainImage || '/placeholder-image.jpg'}
-            alt={product.name}
-            fill
-            className="object-cover transition-transform duration-300 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex flex-col justify-end p-4">
-            <div className="transform translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 text-white">
-              <h3 className="font-semibold text-lg leading-tight">{product.name}</h3>
-              <p className="text-base font-medium">₹{product.price.toLocaleString()}</p>
-            </div>
-          </div>
-        </div>
-      </Link>
-    );
-  }
-
+function StaticReelCard({ videoSrc, posterSrc }: { videoSrc: string, posterSrc: string }) {
   return (
-    <Link href={`/products/${product.slug}`} className="group block overflow-hidden rounded-lg border bg-black shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
+    // Link component poore card ko wrap karega
+    <Link href="/collections" className="group block overflow-hidden rounded-lg border bg-black shadow-sm transition-all hover:shadow-lg hover:-translate-y-1">
       <div className="relative aspect-square w-full">
-        {/* Loading placeholder */}
-        {!isVideoLoaded && (
-          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#A77C38]"></div>
-          </div>
-        )}
-        
-        {/* Video element */}
         <video
-          ref={videoRef}
-          src={product.video[0]}
+          src="/reels/jewel-reel.mp4"
           autoPlay
           loop
           muted
-          playsInline
-          preload="metadata"
-          poster={product.mainImage}
-          onMouseEnter={handleMouseEnter}
-          className={`h-full w-full object-cover transition-transform duration-300 group-hover:scale-105 ${
-            !isVideoLoaded ? 'opacity-0' : 'opacity-100'
-          }`}
-          style={{
-            backgroundColor: '#000',
-          }}
+          playsInline // Mobile devices par autoplay ke liye zaroori
+          // poster={posterSrc} // Video load hone tak yeh image dikhegi
+          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
-        
-        {/* Overlay for product details on hover */}
-        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex flex-col justify-end p-4">
-          <div className="transform translate-y-full opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 text-white">
-            <h3 className="font-semibold text-lg leading-tight">{product.name}</h3>
-            <p className="text-base font-medium">₹{product.price.toLocaleString()}</p>
-          </div>
-        </div>
+        {/* Aap chahein to hover par ek overlay bhi add kar sakte hain */}
+        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-300"></div>
       </div>
     </Link>
   );
@@ -488,30 +382,32 @@ export default function WomenHomePage() {
 
           {/* --- NEW SECTION: Products with Videos --- */}
           <section className="container mx-auto px-4">
-          <SectionTitle
-            title="Our Collection in Motion"
-            subtitle="See our stunning jewelry come to life"
-            className="mb-8 text-[#A77C38]"
-          />
-          {sectionsLoading.videos ? (
-            <ProductSectionLoading />
-          ) : (
+            <SectionTitle
+              title="Our Collection in Motion"
+              subtitle="See our stunning jewelry come to life"
+              className="mb-8 text-[#A77C38]"
+            />
+            {/* Yahan loading state ki zaroorat nahi hai, kyunki data static hai */}
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                {videoProducts.map((product) => (
-                  <VideoProductCard key={product._id} product={product} />
+                {/* Hum staticReelsData par map karenge */}
+                {staticReelsData.map((reel) => (
+                  <StaticReelCard 
+                    key={reel.id} 
+                    videoSrc={reel.src} 
+                    posterSrc={reel.poster} 
+                  />
                 ))}
               </div>
               <div className="mt-8 text-center">
-                <Link href="/collections/women">
+                <Link href="/collections">
                   <Button variant="outline" size="lg" className="px-8 py-6 text-base hover:bg-[#FFFDF6] hover:cursor-pointer">
                     View All Collections
                   </Button>
                 </Link>
               </div>
             </>
-          )}
-        </section>
+          </section>
         
         {/* Modern Glamour */}
         <section className="container mx-auto px-4">

@@ -20,9 +20,9 @@ export const store = configureStore({
     user:userReducer,
     product: productReducer,
     cart: cartReducer,
+    order: orderReducer,
     wishlist: wishlistReducer,
     bulkOrder: bulkOrderReducer,
-    order: orderReducer,
     dashboard: dashboardReducer
   },
 });

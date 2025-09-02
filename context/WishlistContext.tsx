@@ -36,7 +36,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   const addToWishlist = (product: Product) => {
     setItems((prev) => {
       // Prevent adding duplicate items
-      const existingItem = prev.find((item) => item.id === product.id)
+      const existingItem = prev.find((item) => item._id === product._id)
       if (existingItem) {
         return prev // If item already exists, do nothing
       }
@@ -45,11 +45,11 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   }
 
   const removeFromWishlist = (productId: string) => {
-    setItems((prev) => prev.filter((item) => item.id !== productId))
+    setItems((prev) => prev.filter((item) => item._id !== productId))
   }
 
   const isAddedToWishlist = (productId: string) => {
-    return items.some((item) => item.id === productId)
+    return items.some((item) => item._id === productId)
   }
 
   const clearWishlist = () => {
