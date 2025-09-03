@@ -7,12 +7,11 @@ import {
   updateUserAddress,
   deleteUserAddress,
   setDefaultUserAddress,
-} from './userSlice'; 
+} from './userSlice';
 import { RootState } from '../store';
 
-
- export interface Address {
-  _id: string; // MongoDB adds an _id to subdocuments
+export interface Address {
+  _id: string;
   fullName: string;
   phone: string;
   type: 'Home' | 'Work';
@@ -24,7 +23,7 @@ import { RootState } from '../store';
   isDefault: boolean;
 }
 
- interface User {
+interface User {
   _id: string;
   fullName: string;
   email: string;
@@ -32,18 +31,16 @@ import { RootState } from '../store';
   role: 'user' | 'admin';
   isVerified: boolean;
   addresses: Address[];
-  wishlist: string[]; // Array of Product ObjectIds
-  createdAt: string; // Timestamps from Mongoose
+  wishlist: string[];
+  createdAt: string;
   updatedAt: string;
 }
 
-// The shape of our Redux authentication state
 interface AuthState {
   isAuthenticated: boolean;
   user: User | null;
   accessToken: string | null;
 }
-
 
 const loadState = (): AuthState => {
   try {
@@ -67,14 +64,11 @@ const saveState = (state: AuthState) => {
 };
 
 const initialState: AuthState = loadState();
+
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    /**
-     * Called after a successful login or OTP verification from the backend.
-     * Sets the entire user session.
-     */
     loginSuccess: (state, action: PayloadAction<{ user: User; accessToken: string }>) => {
       state.isAuthenticated = true;
       state.user = action.payload.user;
@@ -82,40 +76,24 @@ const authSlice = createSlice({
       saveState(state);
     },
 
-    /**
-     * Clears the user session and removes data from local storage.
-     */
     logout: (state) => {
       state.isAuthenticated = false;
       state.user = null;
       state.accessToken = null;
-      // Clear the persisted state from local storage
       if (typeof window !== 'undefined') {
         localStorage.removeItem('authState');
       }
     },
 
-    /**
-     * Updates user profile details in the Redux store without a full re-login.
-     * Useful after a user updates their name or avatar.
-     */
     updateUserProfile: (state, action: PayloadAction<Partial<User>>) => {
-        if (state.user) {
-            state.user = { ...state.user, ...action.payload };
-            saveState(state);
-        }
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+        saveState(state);
+      }
     },
-    
-    // --- Address Management Reducers ---
-    // These reducers now operate on the `addresses` array within the `user` object.
 
-    /**
-     * Adds a new address to the user's address list.
-     * In a real app, you'd dispatch this after a successful API call.
-     */
     addAddress: (state, action: PayloadAction<Address>) => {
       if (state.user) {
-        // If this is the very first address, make it the default
         if (state.user.addresses.length === 0) {
           action.payload.isDefault = true;
         }
@@ -124,29 +102,23 @@ const authSlice = createSlice({
       }
     },
 
-    /**
-     * Removes an address by its _id.
-     */
     removeAddress: (state, action: PayloadAction<string>) => {
-      if (state.user) {
-        const addressIdToRemove = action.payload;
-        state.user.addresses = state.user.addresses.filter(addr => addr._id !== addressIdToRemove);
-        
-        // If the deleted address was the default and there are other addresses left,
-        // make the new first one the default.
-        const wasDefault = state.user.addresses.find(a => a._id === addressIdToRemove)?.isDefault;
-        if (wasDefault && state.user.addresses.length > 0) {
-            if (!state.user.addresses.some(a => a.isDefault)) {
-                state.user.addresses[0].isDefault = true;
+        if (state.user) {
+            const addressIdToRemove = action.payload;
+            const addressToRemove = state.user.addresses.find(addr => addr._id === addressIdToRemove);
+            const wasDefault = addressToRemove?.isDefault;
+
+            state.user.addresses = state.user.addresses.filter(addr => addr._id !== addressIdToRemove);
+
+            if (wasDefault && state.user.addresses.length > 0) {
+                if (!state.user.addresses.some(a => a.isDefault)) {
+                    state.user.addresses[0].isDefault = true;
+                }
             }
+            saveState(state);
         }
-        saveState(state);
-      }
     },
-    
-    /**
-     * Updates an existing address in the list.
-     */
+
     updateAddress: (state, action: PayloadAction<Address>) => {
       if (state.user) {
         const index = state.user.addresses.findIndex(addr => addr._id === action.payload._id);
@@ -157,9 +129,6 @@ const authSlice = createSlice({
       }
     },
 
-    /**
-     * Sets a specific address as the default one.
-     */
     setDefaultAddress: (state, action: PayloadAction<string>) => {
       if (state.user) {
         state.user.addresses.forEach(addr => {
@@ -168,15 +137,13 @@ const authSlice = createSlice({
         saveState(state);
       }
     },
-    
   },
   extraReducers: (builder) => {
     builder
-
       .addCase(fetchUserProfile.fulfilled, (state, action: PayloadAction<any>) => {
-        state.isAuthenticated = true; // Ensure this is set
+        state.isAuthenticated = true;
         state.user = action.payload;
-        saveState(state); // Persist the fresh user data
+        saveState(state);
       })
       .addCase(addUserAddress.fulfilled, (state, action: PayloadAction<Address[]>) => {
         if (state.user) {
@@ -203,17 +170,16 @@ const authSlice = createSlice({
         }
       });
   },
-  
 });
 
-export const { 
-  loginSuccess, 
-  logout, 
+export const {
+  loginSuccess,
+  logout,
   updateUserProfile,
-  addAddress, 
-  removeAddress, 
-  updateAddress, 
-  setDefaultAddress 
+  addAddress,
+  removeAddress,
+  updateAddress,
+  setDefaultAddress,
 } = authSlice.actions;
 
 export default authSlice.reducer;
