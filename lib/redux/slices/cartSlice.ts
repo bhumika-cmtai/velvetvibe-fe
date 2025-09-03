@@ -64,10 +64,15 @@ export const fetchCart = createAsyncThunk<ApiResponse, void, { rejectValue: stri
   'cart/fetchCart',
   async (_, { rejectWithValue }) => {
     try {
+      console.log('--API_BASE_URL--')
+      console.log(API_BASE_URL)
+      console.log("---response---")
       const response = await axios.get(`${API_BASE_URL}/users/cart`);
       // Hum response ko hamesha { data: [...] } format mein normalize karenge
+      console.log(response.data)
       return { data: response.data.data };
     } catch (error: any) {
+      console.log(error)
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
           ? error.response.data.message
