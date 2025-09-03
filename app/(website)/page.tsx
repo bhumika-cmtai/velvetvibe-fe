@@ -118,7 +118,7 @@ function VideoProductCard({ product }: { product: any }) {
     const video = videoRef.current;
     if (video) {
       video.play().catch(error => {
-        console.error("Video autoplay was prevented:", error);
+        console.log("Video autoplay was prevented:", error);
         // Autoplay block hone par user click karke chala sakta hai
       });
     }

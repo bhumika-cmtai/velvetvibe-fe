@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -30,6 +31,7 @@ export default function LoginPage() {
 
       // Dispatch user data to Redux store
       dispatch(loginSuccess({ user, accessToken }));
+      toast.success('Logged in successfully');
       
       // **NEW: Redirect based on user role**
       if (user.role === 'admin') {
@@ -39,6 +41,7 @@ export default function LoginPage() {
       }
 
     } catch (err: any) {
+      toast.error(err.message)
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -66,11 +69,11 @@ export default function LoginPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          <div className="text-right text-sm">
+          {/* <div className="text-right text-sm">
              <Link href="/forgot-password" className="font-medium text-[#D09D13] hover:text-[#b48a10]">
                 Forgot password?
               </Link>
-          </div>
+          </div> */}
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div>
             <Button type="submit" className="w-full" disabled={isLoading}>

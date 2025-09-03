@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/ThemeProvider"
 import { WishlistProvider } from "@/context/WishlistContext"
 import { ReduxProvider } from "@/lib/Provider";
 import { AuthHandler } from "@/components/AuthHandler"
+import { Toaster } from "@/components/ui/sonner"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -47,7 +48,7 @@ export default function RootLayout({
             <AuthHandler /> 
             {children}
             </WishlistProvider>
-            {/* <Toaster /> */}
+            <Toaster />
           </CartProvider>
           </ReduxProvider>
         </ThemeProvider>

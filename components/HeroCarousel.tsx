@@ -72,7 +72,8 @@ export function HeroCarousel({ slides, autoPlay = true, interval = 5000 }: HeroC
   }
 
   return (
-    <div className="relative h-[70vh] md:h-[80vh] overflow-hidden">
+    // The bg-black is what causes the letterbox bars. You can keep it or remove it.
+    <div className="relative h-[70vh] md:h-[80vh] overflow-hidden ">
       <Link href={slides[currentSlide].ctaLink}>
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <motion.div
@@ -82,14 +83,10 @@ export function HeroCarousel({ slides, autoPlay = true, interval = 5000 }: HeroC
           initial="enter"
           animate="center"
           exit="exit"
-          // --- MODIFICATION START ---
-          // Switched from a fast 'spring' to a 'tween' with a longer duration
-          // for a slower, smoother slide.
           transition={{
             x: { type: "tween", ease: "easeInOut", duration: 0.8 },
             opacity: { duration: 0.5 },
           }}
-          // --- MODIFICATION END ---
           className="absolute inset-0"
           >
           {/* Background Image with Next.js <Image> component */}
@@ -97,49 +94,16 @@ export function HeroCarousel({ slides, autoPlay = true, interval = 5000 }: HeroC
             src={slides[currentSlide].image || "/placeholder.svg"}
             alt={slides[currentSlide].title}
             fill
-            className="object-cover"
+            // --- FINAL MODIFICATION ---
+            // Use 'contain' for mobile and 'cover' for medium screens and up.
+            className="object-contain md:object-cover"
+            // --- END MODIFICATION ---
             priority
             />
           
           {/* Gradient Overlay */}
           <div className="absolute inset-0" />
           
-          {/* Content layout and styling */}
-          {/* <div className="relative h-full flex items-center">
-            <div className="container mx-auto px-4">
-            <div className="max-w-2xl">
-            <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="font-heading text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight"
-            >
-            {slides[currentSlide].title}
-            </motion.h1>
-            
-            <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-xl md:text-2xl text-white/90 mb-8 font-body"
-            >
-            {slides[currentSlide].subtitle}
-            </motion.p>
-            
-            <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            >
-            <Link href={slides[currentSlide].ctaLink}>
-            <Button size="lg" className="btn-luxury text-white font-semibold">
-            {slides[currentSlide].cta}
-            </Button>
-            </Link>
-            </motion.div>
-            </div>
-            </div>
-            </div> */}
         </motion.div>
       </AnimatePresence>
             </Link>
