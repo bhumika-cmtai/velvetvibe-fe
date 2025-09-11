@@ -487,7 +487,9 @@ const HomePage = () => {
               Perfect for festive seasons and special occasions.
             </p>
             <button className="mt-8 bg-amber-800 text-white px-10 py-3 rounded-md font-semibold hover:bg-amber-900 transition-colors">
-              Shop Ethnic Wear
+              <Link href="/shop/ethnic-wear">
+                Shop Ethnic Wear
+              </Link>
             </button>
           </div>
           <div className="md:w-1/2 h-80 relative rounded-xl overflow-hidden w-full">
