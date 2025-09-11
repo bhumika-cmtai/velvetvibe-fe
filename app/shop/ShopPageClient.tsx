@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useLayoutEffect } from "react"
+import { useState, useLayoutEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import ProductCard from "@/components/ProductCard"
 import { FiltersSidebar } from "@/components/FiltersSidebar"
@@ -12,10 +12,10 @@ import { Button } from "@/components/ui/button"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 
-// --- UPDATED FILTER CONFIGURATION ---
+// --- Filter Configuration ---
 const filterGroups = [
   { id: "gender", label: "Gender", options: [ { id: "Men", label: "Men" }, { id: "Women", label: "Women" }, { id: "Unisex", label: "Unisex" } ] },
-  { id: "category", label: "Category", options: [ { id: "Clothing", label: "Clothing" }, { id: "Accessories", label: "Accessories" }, { id: "Shoes", label: "Shoes" } ] },
+  { id: "sub_category", label: "Category", options: [ { id: "Shirts", label: "Shirts" }, { id: "Tops", label: "Tops" }, { id: "Dresses", label: "Dresses" }, { id: "Ethnic Wear", label: "Ethnic Wear" } ] },
   { id: "price", label: "Price Range", options: [ { id: "0-20", label: "Under $20" }, { id: "20-40", label: "$20 - $40" }, { id: "40-100", label: "$40 - $100" }, { id: "100+", label: "Above $100" } ] },
   { id: "brand", label: "Brand", options: [ { id: "Urban Threads", label: "Urban Threads" }, { id: "Gentlemen Co.", label: "Gentlemen Co." }, { id: "Summer Ease", label: "Summer Ease" }, { id: "Chic Wear", label: "Chic Wear" }, { id: "Modern Muse", label: "Modern Muse" } ] },
 ]
@@ -29,14 +29,27 @@ export default function ShopPageClient() {
 
   const [currentPage, setCurrentPage] = useState(1)
   const productsPerPage = 9
-  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({})
 
+  // --- THE FIX IS HERE: Initialize state directly from URL params ---
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => {
+    const initialFilters: Record<string, string[]> = {};
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      // URL ka 'category' param humare 'sub_category' filter se map hota hai
+      initialFilters.sub_category = [categoryParam];
+    }
+    return initialFilters;
+  });
+
+  // This useEffect is no longer needed as state is initialized above
+  /*
   useEffect(() => {
     const categoryParam = searchParams.get("category");
     if (categoryParam) {
-      setSelectedFilters(prev => ({ ...prev, category: [categoryParam] }))
+      setSelectedFilters(prev => ({ ...prev, sub_category: [categoryParam] }))
     }
   }, [searchParams])
+  */
 
   const handleFilterChange = (groupId: string, optionId: string, checked: boolean) => {
     setSelectedFilters((prev) => {
@@ -109,7 +122,7 @@ export default function ShopPageClient() {
                 <>
                   <motion.div layout className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {paginatedProducts.map((product) => (
-                      <ProductCard key={product._id} product={product} /> // Corrected key to product.id
+                      <ProductCard key={product._id} product={product} />
                     ))}
                   </motion.div>
                   <div className="flex justify-center items-center mt-10 gap-2 flex-wrap">
