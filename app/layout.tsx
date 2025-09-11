@@ -24,9 +24,9 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: "Luv Kush - Premium Jewelry Collection",
+  title: "Florawear",
   description:
-    "Discover exquisite jewelry collections for men and women. Premium quality, elegant designs.",
+    "",
   generator: "v0.app",
 }
 
