@@ -119,13 +119,13 @@ const HomePage = () => {
 
   const trendingCategories = [
     {
-      name: "T-Shirt",
+      name: "T-Shirts",
       count: 12,
       image:
         "https://i.pinimg.com/1200x/59/3e/92/593e92a347c026b2880ddfce72747c92.jpg",
     },
     {
-      name: "Sweater",
+      name: "Sweaters",
       count: 12,
       image:
         "https://i.pinimg.com/1200x/e5/6c/19/e56c19c8f2d51ec86872c4e3096128ff.jpg",
@@ -137,7 +137,7 @@ const HomePage = () => {
         "https://i.pinimg.com/1200x/b5/a3/c1/b5a3c1bb951ce6e369409033e0f3d557.jpg",
     },
     {
-      name: "Dress",
+      name: "Dresses",
       count: 12,
       image:
         "https://i.pinimg.com/736x/00/40/25/004025b789cf04180dc015fe538f480b.jpg",

@@ -46,11 +46,11 @@ const Footer = () => {
           
           {/* Column 1: Brand Info */}
           <div className="col-span-1 sm:col-span-2 lg:col-span-1">
-            <h2 className="text-3xl font-serif font-bold mb-4">Trendora</h2>
+            <h2 className="text-3xl font-serif font-bold mb-4">Florawear</h2>
             <div className="space-y-3 text-sm text-gray-600">
-              <p><span className="font-semibold text-gray-800">Mail:</span> hi.trendora@example.com</p>
+              <p><span className="font-semibold text-gray-800">Mail:</span> hi.florawear@example.com</p>
               <p><span className="font-semibold text-gray-800">Phone:</span> 1-333-345-6868</p>
-              <p><span className="font-semibold text-gray-800">Address:</span> 549 Oak St, Crystal Lake, IL 60014</p>
+              <p><span className="font-semibold text-gray-800">Address:</span> abcd street, Noida, India</p>
             </div>
           </div>
 
@@ -109,7 +109,7 @@ const Footer = () => {
       <div className="border-t border-gray-200">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 gap-4">
-            <p className="text-center md:text-left">© {new Date().getFullYear()} Trendora. All Rights Reserved.</p>
+            <p className="text-center md:text-left">© {new Date().getFullYear()} Florawear. All Rights Reserved.</p>
             <div className="flex items-center space-x-4">
               <button>English ▼</button>
               <button>USD ▼</button>

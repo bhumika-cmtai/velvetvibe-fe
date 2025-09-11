@@ -1,6 +1,7 @@
+// /shop/ShopPageClient.tsx
 "use client"
 
-import { useState, useLayoutEffect } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import ProductCard from "@/components/ProductCard"
 import { FiltersSidebar } from "@/components/FiltersSidebar"
@@ -12,12 +13,54 @@ import { Button } from "@/components/ui/button"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 
-// --- Filter Configuration ---
+// --- UPDATED FILTER CONFIGURATION ---
 const filterGroups = [
-  { id: "gender", label: "Gender", options: [ { id: "Men", label: "Men" }, { id: "Women", label: "Women" }, { id: "Unisex", label: "Unisex" } ] },
-  { id: "sub_category", label: "Category", options: [ { id: "Shirts", label: "Shirts" }, { id: "Tops", label: "Tops" }, { id: "Dresses", label: "Dresses" }, { id: "Ethnic Wear", label: "Ethnic Wear" } ] },
-  { id: "price", label: "Price Range", options: [ { id: "0-20", label: "Under $20" }, { id: "20-40", label: "$20 - $40" }, { id: "40-100", label: "$40 - $100" }, { id: "100+", label: "Above $100" } ] },
-  { id: "brand", label: "Brand", options: [ { id: "Urban Threads", label: "Urban Threads" }, { id: "Gentlemen Co.", label: "Gentlemen Co." }, { id: "Summer Ease", label: "Summer Ease" }, { id: "Chic Wear", label: "Chic Wear" }, { id: "Modern Muse", label: "Modern Muse" } ] },
+  { 
+    id: "gender", 
+    label: "Gender", 
+    options: [ 
+      { id: "Men", label: "Men" }, 
+      { id: "Women", label: "Women" }, 
+      { id: "Unisex", label: "Unisex" } 
+    ] 
+  },
+  { 
+    id: "sub_category", 
+    label: "Category", 
+    options: [ 
+      { id: "Shirts", label: "Shirts" }, 
+      { id: "T-Shirts", label: "T-Shirts" }, // ADDED
+      { id: "Tops", label: "Tops" },
+      { id: "Sweaters", label: "Sweaters" }, // ADDED
+      { id: "Dresses", label: "Dresses" },   // ADDED
+      { id: "Outerwear", label: "Outerwear" }, // ADDED
+      { id: "Jeans", label: "Jeans" },
+      { id: "Swimwear", label: "Swimwear" },
+      { id: "Ethnic Wear", label: "Ethnic Wear" } 
+    ] 
+  },
+  { 
+    id: "price", 
+    label: "Price Range", 
+    options: [ 
+      { id: "0-20", label: "Under $20" }, 
+      { id: "20-40", label: "$20 - $40" }, 
+      { id: "40-100", label: "$40 - $100" }, 
+      { id: "100+", label: "Above $100" } 
+    ] 
+  },
+  { 
+    id: "brand", 
+    label: "Brand", 
+    options: [ 
+      { id: "Urban Threads", label: "Urban Threads" }, 
+      { id: "Gentlemen Co.", label: "Gentlemen Co." }, 
+      { id: "Summer Ease", label: "Summer Ease" }, 
+      { id: "Chic Wear", label: "Chic Wear" }, 
+      { id: "Bella Grace", label: "Bella Grace" },
+      { id: "Modern Muse", label: "Modern Muse" } 
+    ] 
+  },
 ]
 
 export default function ShopPageClient() {
@@ -29,27 +72,14 @@ export default function ShopPageClient() {
 
   const [currentPage, setCurrentPage] = useState(1)
   const productsPerPage = 9
-
-  // --- THE FIX IS HERE: Initialize state directly from URL params ---
   const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>(() => {
     const initialFilters: Record<string, string[]> = {};
     const categoryParam = searchParams.get("category");
     if (categoryParam) {
-      // URL ka 'category' param humare 'sub_category' filter se map hota hai
       initialFilters.sub_category = [categoryParam];
     }
     return initialFilters;
   });
-
-  // This useEffect is no longer needed as state is initialized above
-  /*
-  useEffect(() => {
-    const categoryParam = searchParams.get("category");
-    if (categoryParam) {
-      setSelectedFilters(prev => ({ ...prev, sub_category: [categoryParam] }))
-    }
-  }, [searchParams])
-  */
 
   const handleFilterChange = (groupId: string, optionId: string, checked: boolean) => {
     setSelectedFilters((prev) => {

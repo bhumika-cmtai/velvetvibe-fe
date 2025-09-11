@@ -20,7 +20,7 @@ export interface Product {
   brand: string;
   gender?: 'Men' | 'Women' | 'Unisex';
   stock_quantity?: number; // Products without variants ke liye
-  tags?: ('New' | 'Sale' | 'Hot Sale' | 'Ethnic')[];
+  tags?: ('New' | 'Sale' | 'Hot Sale' | 'Ethnic' | 'Best Seller')[];
   attributes?: Record<string, any>;
   variants?: Variant[];
 }
