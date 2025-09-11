@@ -1,7 +1,7 @@
 //wishlistContext.tsx
 "use client"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import type { Product } from "@/lib/data"
+import type { Product } from "@/lib/types/product"
 
 // Wishlist items are just products, no quantity needed.
 type WishlistItem = Product

@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence, Variants } from 'framer-motion'; // <-- YAHAN VARIANTS IMPORT KAREIN
+import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext'; 
 
 // --- Data for Navigation and Dropdowns ---
 
@@ -53,6 +55,10 @@ const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
   const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
+  
+  
+  const { totalItems: totalWishlistItems } = useWishlist(); // Get wishlist count
+  const { totalItems } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -85,8 +91,43 @@ const Navbar = () => {
           
           <div className="flex items-center space-x-3 sm:space-x-5">
             <a href="/account" className="text-gray-700 hover:text-black hidden sm:block" aria-label="Account"><User size={24} /></a>
-            <a href="/wishlist" className="text-gray-700 hover:text-black hidden sm:block" aria-label="Wishlist"><Heart size={24} /></a>
-            <div className="relative"><a href="/cart" className="text-gray-700 hover:text-black" aria-label="Shopping Cart"><ShoppingCart size={24} /></a><span className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span></div>
+            <div className="relative">
+              <Link href="/wishlist" className="text-gray-700 hover:text-black" aria-label="Wishlist">
+                <Heart size={24} />
+              </Link>
+              <AnimatePresence>
+                {totalWishlistItems > 0 && (
+                  <motion.span 
+                    initial={{ scale: 0, y: -10 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                    className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+                  >
+                    {totalWishlistItems}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="relative">
+              <Link href="/cart" className="text-gray-700 hover:text-black" aria-label="Shopping Cart">
+                <ShoppingCart size={24} />
+              </Link>
+              <AnimatePresence>
+                {totalItems > 0 && (
+                  <motion.span 
+                    initial={{ scale: 0, y: -10 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 20 }}
+                    className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
+                  >
+                    {totalItems}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Hamburger Menu */}
             <div className="lg:hidden">
