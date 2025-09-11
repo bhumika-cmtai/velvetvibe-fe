@@ -15,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import Link from "next/link";
 
 const HomePage = () => {
   const [activeMensFilter, setActiveMensFilter] = useState("Shirt");
@@ -206,7 +207,9 @@ const HomePage = () => {
                 Discover the beauty of fashion living
               </p>
               <button className="mt-8 bg-black text-white px-8 py-3 rounded-md font-semibold hover:bg-gray-800 transition-colors">
+                <a href="/shop">
                 SHOP NOW
+                </a>
               </button>
             </div>
             <div className="flex-1 hidden md:block absolute right-0 bottom-0 top-0 w-1/2">
@@ -219,7 +222,8 @@ const HomePage = () => {
             </div>
           </div>
           <div className="w-full lg:w-1/3 flex flex-col gap-6 md:gap-8">
-            <div className="bg-[#F5F5F5] p-6 sm:p-8 rounded-xl flex-1 relative overflow-hidden">
+          <Link href="/shop/sale" className="block">
+            <div className="bg-[#F5F5F5] p-6 sm:p-8 rounded-xl flex-1 relative overflow-hidden" >
               <span className="absolute md:top-2 top-[2px] left-4 bg-red-400 text-white text-xs px-2 py-1 rounded">
                 SAVE $10
               </span>
@@ -239,6 +243,8 @@ const HomePage = () => {
                 />
               </div>
             </div>
+            </Link>
+          <Link href="/shop/sale"  className="block">
             <div className="bg-[#F5F5F5] p-6 sm:p-8 rounded-xl flex-1 relative overflow-hidden">
               <span className="absolute md:top-2 top-[2px] left-4 bg-red-400 text-white text-xs px-2 py-1 rounded">
                 SAVE $10
@@ -259,6 +265,7 @@ const HomePage = () => {
                 />
               </div>
             </div>
+            </Link>
           </div>
         </section>
 
@@ -301,6 +308,7 @@ const HomePage = () => {
               }}
             >
               {trendingCategories.map((category) => (
+                <Link key={category.name} href="/shop" className="flex flex-col items-center flex-shrink-0">
                 <div
                   key={category.name}
                   className="flex flex-col items-center flex-shrink-0"
@@ -317,6 +325,7 @@ const HomePage = () => {
                     {category.name}{" "}
                   </p>
                 </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -348,7 +357,9 @@ const HomePage = () => {
                 amazing deals.
               </p>
               <button className="mt-8 bg-white text-black px-10 py-3 rounded-md font-semibold hover:bg-gray-200 transition-colors">
-                Explore Deals
+                <Link href="/shop/sale">
+                  Explore Deals
+                </Link>
               </button>
             </div>
 

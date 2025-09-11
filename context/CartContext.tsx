@@ -1,8 +1,8 @@
-// cartContext.tsx
 "use client"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import type { Product } from "@/lib/data"
+import type { Product } from "@/lib/types/product" // Updated Product type import karein
 
+// CartItem ab Product se _id inherit karega
 interface CartItem extends Product {
   quantity: number
 }
@@ -23,14 +23,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
 
   useEffect(() => {
-    const savedCart = localStorage.getItem("luv-kush-cart")
+    const savedCart = localStorage.getItem("trendora-cart") // App-specific key
     if (savedCart) {
       setItems(JSON.parse(savedCart))
     }
   }, [])
 
   useEffect(() => {
-    localStorage.setItem("luv-kush-cart", JSON.stringify(items))
+    localStorage.setItem("trendora-cart", JSON.stringify(items))
   }, [items])
 
   const addToCart = (product: Product, quantity = 1) => {

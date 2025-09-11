@@ -10,9 +10,9 @@ import { motion, AnimatePresence, Variants } from 'framer-motion'; // <-- YAHAN 
 // --- Data for Navigation and Dropdowns ---
 
 const navLinks = [
-  { name: "New Arrivals", href: "/collections/new-arrivals" },
-  { name: "Best Sellers", href: "/collections/best-sellers" },
-  { name: "Sale", href: "/sale" },
+  { name: "New Arrivals", href: "/shop/new-arrivals" },
+  { name: "Best Sellers", href: "/shop/best-sellers" },
+  { name: "Sale", href: "/shop/sale" },
   { name: "Shop", href: "/shop" },
 ];
 
@@ -139,7 +139,7 @@ const Navbar = () => {
                           <div className="bg-gray-50 rounded-lg p-6 flex flex-col justify-center">
                               <h3 className="font-semibold text-lg">Mid-Season Sale</h3>
                               <p className="text-sm text-gray-600 mt-1">Up to 40% off. Don't miss out!</p>
-                              <a href="/sale" className="text-sm font-bold text-black mt-3">Shop Now &rarr;</a>
+                              <a href="/shop/sale" className="text-sm font-bold text-black mt-3">Shop Now &rarr;</a>
                           </div>
                         </div>
                       </motion.div>
@@ -148,7 +148,7 @@ const Navbar = () => {
                 </div>
                 {navLinks.map(link => (<a key={link.name} href={link.href} className="text-gray-600 hover:text-black">{link.name}</a>))}
             </div>
-            <div><span className="text-gray-600">Hotline: +01 1234 8888</span></div>
+            <div><span className="text-gray-600">Hotline: +01 1234 567890</span></div>
         </div>
       </div>
     </nav>

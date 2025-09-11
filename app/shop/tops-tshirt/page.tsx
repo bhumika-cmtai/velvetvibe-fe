@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const CollectionHeader = () => (
     <div className="relative h-[300px] w-full bg-gray-200">
         <Image 
-            src="https://images.unsplash.com/photo-1551803091-e39132b043e3?q=80&w=2070"
+            src="https://i.pinimg.com/1200x/ce/fa/bb/cefabbcebea8d7e10f383ba5fd81ec98.jpg"
             alt="Shop Banner"
             fill
             className="object-cover object-center"
@@ -27,11 +27,11 @@ const CollectionHeader = () => (
             <h1 className="text-5xl font-serif font-bold">Shop</h1>
             <p className="mt-2 text-sm">Homepage &gt; Shop</p>
             <div className="mt-6 flex items-center space-x-6 text-sm font-semibold tracking-wider">
-                <a href="#" className="hover:text-gray-200">T-SHIRT</a>
+                {/* <a href="#" className="hover:text-gray-200">T-SHIRT</a>
                 <a href="#" className="hover:text-gray-200">DRESS</a>
                 <a href="#" className="hover:text-gray-200">TOP</a>
                 <a href="#" className="hover:text-gray-200">SWIMWEAR</a>
-                <a href="#" className="hover:text-gray-200">SHIRT</a>
+                <a href="#" className="hover:text-gray-200">SHIRT</a> */}
             </div>
         </div>
     </div>
@@ -88,9 +88,9 @@ export default function TopsAndTshirtsPage() {
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* --- Filter & Toolbar Section --- */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 pb-4 border-b">
+        <div className="flex flex-col md:flex-row items-center justify-end gap-4 mb-8 pb-4 border-b">
           {/* Left Side: Filters & View */}
-          <div className="flex items-center gap-4">
+          {/* <div className="flex items-center gap-4">
             <button className="flex items-center gap-2 font-medium text-sm">
               <SlidersHorizontal size={20} /> Filters
             </button>
@@ -102,10 +102,10 @@ export default function TopsAndTshirtsPage() {
               <Checkbox id="sale-only" checked={onSaleOnly} onCheckedChange={(checked) => setOnSaleOnly(checked as boolean)} />
               <label htmlFor="sale-only" className="text-sm font-medium text-gray-700">Show only products on sale</label>
             </div>
-          </div>
+          </div> */}
 
           {/* Right Side: Product Count, Gender & Sorting */}
-          <div className="flex items-center gap-6">
+          <div className="flex items-center  gap-6">
             <p className="text-sm text-gray-600">{filteredAndSortedProducts.length} Products Found</p>
             
             <div className="flex items-center gap-2">

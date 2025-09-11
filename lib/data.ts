@@ -108,6 +108,51 @@ export const products: Product[] = [
     stock_quantity: 110,
     tags: ['New'],
   },
+  //ethnic
+  {
+    _id: 'ethnic-wear-01',
+    name: 'Embroidered Silk Saree',
+    slug: 'embroidered-silk-saree',
+    description: 'A beautifully crafted silk saree with intricate golden embroidery, perfect for weddings and festive occasions.',
+    price: 150.00,
+    base_price: 200.00,
+    images: ['https://i.pinimg.com/1200x/ee/90/2f/ee902f3f3958e1ad2bb8f6d4e61505bd.jpg', 'https://i.pinimg.com/1200x/78/39/0d/78390dd2ce5ddd5d67376746c5832866.jpg'],
+    category: 'Clothing',
+    sub_category: 'Ethnic Wear',
+    brand: 'Desi Weaves',
+    gender: 'Women',
+    stock_quantity: 20,
+    tags: ['Sale', 'Ethnic'],
+  },
+  {
+    _id: 'ethnic-wear-02',
+    name: 'Classic Men\'s Kurta Set',
+    slug: 'classic-mens-kurta-set',
+    description: 'An elegant and comfortable cotton kurta set for men, ideal for traditional events.',
+    price: 80.00,
+    images: ['https://i.pinimg.com/1200x/1f/58/08/1f5808784b4bdf9986ce120f21b7caff.jpg', 'https://i.pinimg.com/1200x/ff/5f/ec/ff5feccf8e6aed72c6cda2e07858fd8c.jpg'],
+    category: 'Clothing',
+    sub_category: 'Ethnic Wear',
+    brand: 'Rajwada Styles',
+    gender: 'Men',
+    stock_quantity: 40,
+    tags: ['New', 'Ethnic'],
+  },
+  {
+    _id: 'ethnic-wear-03',
+    name: 'Royal Blue Anarkali Suit',
+    slug: 'royal-blue-anarkali-suit',
+    description: 'A stunning royal blue Anarkali suit with delicate lacework, perfect for making a grand entrance.',
+    price: 120.00,
+    base_price: 160.00,
+    images: ['https://i.pinimg.com/1200x/1c/f4/2e/1cf42ee6a9f1e7ebadd10b91e707ef7a.jpg', 'https://i.pinimg.com/1200x/ee/88/98/ee88983d713f38ff89a7d54c211d0e41.jpg'],
+    category: 'Clothing',
+    sub_category: 'Ethnic Wear',
+    brand: 'Desi Weaves',
+    gender: 'Women',
+    stock_quantity: 15,
+    tags: ['Sale', 'Ethnic'],
+  }
 ];
 
 export const mockCartItems = [
@@ -155,7 +200,8 @@ export const mockCartItems = [
     price: 10500,
     color: "Blue",
     size: "L"
-  }
+  },
+  
 ];
 
 export const mockSubTotal = mockCartItems.reduce((acc, item) => acc + item.price, 0);
