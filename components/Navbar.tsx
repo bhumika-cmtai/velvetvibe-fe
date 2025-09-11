@@ -77,7 +77,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Top part of Navbar */}
         <div className="flex justify-between items-center py-4">
-          <Link href="/" className="text-3xl md:text-4xl font-serif font-bold text-gray-800">Trendora</Link>
+          <Link href="/" className="text-3xl md:text-4xl font-serif font-bold text-gray-800">Florawear</Link>
           
           <div className="flex-1 max-w-xl mx-8 hidden lg:flex">
             <div className="flex w-full border border-gray-200 rounded-md"><input type="text" placeholder="What are you looking for today?" className="w-full p-2 focus:outline-none rounded-l-md"/><button className="bg-black text-white px-8 py-2 rounded-r-md hover:bg-gray-800 transition-colors">SEARCH</button></div>
