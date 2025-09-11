@@ -11,8 +11,8 @@ import type { RootState, AppDispatch } from '@/lib/redux/store';
 import { fetchUserProfile, updateUserProfile, updateUserAvatar } from '@/lib/redux/slices/userSlice';
 import { updateUserProfile as updateAuthUser } from '@/lib/redux/slices/authSlice';
 
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import Navbar  from '@/components/Navbar';
+import  Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 

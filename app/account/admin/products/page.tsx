@@ -26,7 +26,9 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 // --- FIX: fetchProducts now requires a page argument ---
 import { fetchProducts, deleteProduct, createProduct, updateProduct, fetchProductById } from '@/lib/redux/slices/adminSlice';
 import { ViewProductModal } from '@/components/ViewProductModal';
-import { Product } from '@/lib/data';
+// import {products as Product}  from '@/lib/data';
+import { Product } from '@/lib/types/product';
+
 import { EditProductModal } from '@/components/EditProductModal';
 import { AddProductModal } from '@/components/AddProductModal';
 import { toast } from 'sonner';
@@ -196,8 +198,9 @@ export default function ProductsPage() {
                     </Tooltip>
                 </TableCell>
                 <TableCell>₹{product.price.toLocaleString()}</TableCell>
-                <TableCell>{product.stock}</TableCell>
-                <TableCell className="capitalize">{product.type}</TableCell>
+                {/* <TableCell>{product.stock}</TableCell> */}
+                <TableCell>"product stock"</TableCell>
+                {/* <TableCell className="capitalize">{product.type}</TableCell> */}
                 <TableCell className="space-x-2">
                   <Button variant="default" size="sm" onClick={() => handleViewClick(product._id)}>View</Button>
                   <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>

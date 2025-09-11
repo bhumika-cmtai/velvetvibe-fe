@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { RootState, AppDispatch } from '@/lib/redux/store';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import  Navbar  from '@/components/Navbar';
+import  Footer  from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Loader2, CircleCheck, RefreshCw, Truck, XCircle, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 

@@ -7,8 +7,8 @@ import { RootState, AppDispatch } from '@/lib/redux/store';
 import { Address } from '@/lib/redux/slices/authSlice';
 // --- UPDATED: Import async thunks from userSlice ---
 import { fetchUserProfile, deleteUserAddress, setDefaultUserAddress } from '@/lib/redux/slices/userSlice';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import Navbar  from '@/components/Navbar';
+import Footer  from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';

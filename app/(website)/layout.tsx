@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 // Import the shared components for your main website
 // import Header from "@/components/Header"; 
-// import Footer from "@/components/Footer"; // Assuming you have a Footer component
+import Footer from "@/components/Footer"; // Assuming you have a Footer component
 import FloatingWhatsApp from "@/components/FloatingWhatsApp";
 
 export default function WebsiteLayout({
@@ -30,7 +30,7 @@ export default function WebsiteLayout({
       {pathname === "/" && <FloatingWhatsApp />}
 
       {/* The Footer will also appear on all pages within this group */}
-      {/* <Footer /> */}
+      <Footer />
     </>
   );
 }

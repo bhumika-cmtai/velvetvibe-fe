@@ -37,6 +37,16 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* ecommerce colors */
+  --text-primary: #000000;
+  --text-secondary: #6B7280; /* Gray for subtitles */
+  --accent-primary: #000000; /* Black for buttons and highlights */
+  --accent-secondary: #D9534F; /* Red for sale tags like 'SAVE $10' */
+  --border-color: #E5E7EB; /* Light gray for borders */
+  --sale-badge-bg: #EF4444; /* Red for 'SALE' badge */
+  --sale-badge-text: #FFFFFF;
+  --discount-badge-bg: #DCFCE7; /* Light green for discount percentage */
+  --discount-badge-text: #16A34A; /* Dark green for discount percentage text */
 }
 
 .dark {

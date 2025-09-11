@@ -5,8 +5,8 @@ import Link from "next/link"
 import { useSearchParams, useRouter } from "next/navigation"
 import { CheckCircle, Package, Home } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Navbar } from "@/components/Navbar"
-import { Footer } from "@/components/Footer"
+import Navbar  from "@/components/Navbar"
+import Footer  from "@/components/Footer"
 import { motion } from "framer-motion"
 
 export default function OrderSuccessClient() {

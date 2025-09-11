@@ -1,136 +1,111 @@
-// wishlistPage.tsx
 "use client"
-
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Trash2, Heart, ArrowLeft } from "lucide-react"
+import { Trash2, Heart, ArrowLeft, ShoppingBag } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Navbar } from "@/components/Navbar"
-import { Footer } from "@/components/Footer"
+import Navbar  from "@/components/Navbar"
+import Footer  from "@/components/Footer"
 import { motion, AnimatePresence } from "framer-motion"
 import { useToast } from "@/hooks/use-toast"
-import { Product } from "@/lib/data" // Ensure this Product type has an '_id' field
 
-// REDUX IMPORTS
-import { useDispatch, useSelector } from 'react-redux'
-import {
-  fetchWishlist,
-  removeFromWishlist,
-  selectWishlistItems,
-  selectWishlistStatus,
-  selectTotalWishlistItems,
-  selectWishlistError,
-  removeWishlistOptimistic, // For optimistic UI
-} from '@/lib/redux/slices/wishlistSlice' // Adjust path to your wishlistSlice
-import { addToCart } from '@/lib/redux/slices/cartSlice'; // Assuming you have a cartSlice with addToCart
-import { AppDispatch } from '@/lib/redux/store' // Adjust path to your Redux store type
-import { useEffect } from "react"
+// --- STATIC MOCK DATA IMPORT ---
+import { mockWishlistItems, WishlistItem } from "@/lib/data"
 
+// --- UI Components for the New Layout ---
+const WishlistItemCard = ({ item, onRemove, onAddToCart, loading }: { item: WishlistItem, onRemove: Function, onAddToCart: Function, loading: boolean }) => {
+  const discount = item.base_price && item.base_price > item.price
+    ? Math.round(((item.base_price - item.price) / item.base_price) * 100)
+    : 0;
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="bg-white rounded-md shadow-sm overflow-hidden group flex flex-col"
+    >
+      <div className="relative w-full aspect-[3/4] bg-gray-50">
+        <Link href={`/products/${item.slug}`}>
+          <Image
+            src={item.images[0] || "/placeholder.svg"}
+            alt={item.name}
+            fill
+            className="object-cover transition-transform duration-300 group-hover:scale-105"
+          />
+        </Link>
+        {discount > 0 && (
+          <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">-{discount}%</span>
+        )}
+        <button 
+          onClick={() => onRemove(item._id, item.name)} 
+          className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Remove from wishlist"
+        >
+          <Trash2 size={16} className="text-red-500" />
+        </button>
+      </div>
+
+      <div className="p-4 flex flex-col flex-grow">
+        <div className="flex-grow">
+          <Link href={`/products/${item.slug}`} className="text-sm font-semibold text-gray-800 line-clamp-2 hover:text-[var(--theme-accent)] transition-colors">
+            {item.name}
+          </Link>
+          <div className="flex items-baseline gap-2 mt-2">
+            <span className="text-lg font-bold text-gray-900">₹{(item.price / 100).toLocaleString()}</span>
+            {item.base_price && <span className="text-sm text-gray-500 line-through">₹{(item.base_price / 100).toLocaleString()}</span>}
+          </div>
+        </div>
+        <Button 
+          onClick={() => onAddToCart(item)}
+          className="w-full mt-4 bg-black text-white hover:bg-gray-800 rounded-md h-11 font-semibold"
+          disabled={item.stock === 0}
+        >
+          {item.stock === 0 ? "Out of Stock" : "Move to Bag"}
+        </Button>
+      </div>
+    </motion.div>
+  );
+};
 
 export default function WishlistPage() {
-  const dispatch: AppDispatch = useDispatch()
-  const items = useSelector(selectWishlistItems)
-  const totalItems = useSelector(selectTotalWishlistItems)
-  const wishlistStatus = useSelector(selectWishlistStatus)
-  const wishlistError = useSelector(selectWishlistError)
   const { toast } = useToast()
+  
+  // --- USESTATE FOR STATIC DATA MANAGEMENT ---
+  const [wishlistItems, setWishlistItems] = useState(mockWishlistItems);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Fetch wishlist when the component mounts
-    if (wishlistStatus === 'idle') {
-      dispatch(fetchWishlist());
-    }
-  }, [dispatch, wishlistStatus]);
-
-  const handleRemoveFromWishlist = async (productId: string, productName: string) => {
-    // Optimistic update
-    dispatch(removeWishlistOptimistic(productId));
-    try {
-      await dispatch(removeFromWishlist(productId)).unwrap();
-      toast({
-        title: "Removed from Wishlist",
-        description: `${productName} has been removed from your wishlist.`,
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error || "Failed to remove item from wishlist.",
-        variant: "destructive",
-      });
-      // Revert optimistic update if API call fails (you might need to refetch or re-add)
-      dispatch(fetchWishlist()); // Simplistic way to revert: refetch
-    }
+  const handleRemoveFromWishlist = (itemId: string, itemName: string) => {
+    setWishlistItems(currentItems => currentItems.filter(item => item._id !== itemId));
+    toast({
+      title: "Removed from Wishlist",
+      description: `${itemName} has been removed from your wishlist.`,
+    });
   };
 
-
-  const handleMoveToCart = async (item: Product) => {
-    // Assuming addToCart is also an async thunk from a cartSlice
-    try {
-      // Optimistically remove from wishlist first
-      dispatch(removeWishlistOptimistic(item._id)); // Use item._id
-      // Add to cart (assuming this is an async thunk that returns the updated cart or item)
-      await dispatch(addToCart({ productId: item._id, quantity: 1 })).unwrap(); // Assuming addToCart takes { productId, quantity }
-
-      toast({
-        title: "Moved to Cart",
-        description: `${item.name} has been moved to your cart.`,
-      });
-
-      // After successful move to cart, remove from wishlist on backend
-      // We already optimistically removed it, so just ensure backend is updated
-      await dispatch(removeFromWishlist(item._id)).unwrap(); // Use item._id
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error || "Failed to move item to cart or remove from wishlist.",
-        variant: "destructive",
-      });
-      // If any step fails, refetch both cart and wishlist to ensure consistency
-      dispatch(fetchWishlist());
-      // Optionally, dispatch a fetchCart if you have one
-    }
+  const handleMoveToCart = (item: WishlistItem) => {
+    // Simulate adding to cart and removing from wishlist
+    setWishlistItems(currentItems => currentItems.filter(i => i._id !== item._id));
+    toast({
+      title: "Moved to Bag",
+      description: `${item.name} has been moved to your bag.`,
+    });
   };
 
-
-  // Handle loading and error states
-  if (wishlistStatus === 'loading' && items.length === 0) {
+  // Empty Wishlist State
+  if (wishlistItems.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p>Loading your wishlist...</p>
-      </div>
-    );
-  }
-
-  if (wishlistStatus === 'failed') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-red-500">Error loading wishlist: {wishlistError}</p>
-      </div>
-    );
-  }
-
-  // Empty state remains the same
-  if (items.length === 0) {
-    return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-[var(--theme-background)]">
         <Navbar />
-        <main className="container mx-auto px-4 py-20">
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center max-w-md mx-auto"
-          >
-            <Heart className="h-24 w-24 mx-auto mb-6 text-gray-300" />
-            <h1 className="text-2xl font-serif font-bold mb-4">Your wishlist is empty</h1>
-            <p className="text-gray-600 mb-8">Looks like you haven't added any items to your wishlist yet.</p>
+        <main className="container mx-auto px-4 py-24 text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Heart className="h-20 w-20 mx-auto mb-6 text-gray-300" />
+            <h1 className="text-3xl font-serif font-bold text-gray-800 mb-2">Your Wishlist is Empty</h1>
+            <p className="text-gray-500 mb-8 max-w-sm mx-auto">Looks like you haven’t saved anything yet. Tap the heart on products you love!</p>
             <Link href="/">
-              <Button
-                className="px-8 py-3 rounded-xl font-medium"
-                style={{ backgroundColor: "#AA7E3D", color: "white" }}
-              >
-                Discover Products
-              </Button>
+              <Button className="bg-[var(--theme-accent)] text-white hover:bg-opacity-90 px-8 py-6 rounded-full font-semibold">Discover Products</Button>
             </Link>
           </motion.div>
         </main>
@@ -140,99 +115,33 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--theme-background)]">
       <Navbar />
-
-      <main className="container mx-auto px-4 py-8">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div className="flex items-center space-x-4">
-            <Link href="/">
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-2xl font-bold" style={{ color: "black" }}>
-              My Wishlist ({totalItems} items)
-            </h1>
+      <main className="container mx-auto px-4 py-12">
+        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+          <Link href="/" className="flex items-center gap-2 text-gray-500 hover:text-black mb-6 transition-colors">
+            <ArrowLeft size={16} /> Back to shopping
+          </Link>
+          <div className="text-center md:text-left">
+            <h1 className="text-4xl font-serif font-bold text-gray-800">My Wishlist</h1>
+            <p className="text-gray-500 mt-1">{wishlistItems.length} items saved</p>
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           <AnimatePresence>
-            {items.map((item, index) => (
-              <motion.div
-                key={item._id} // Use item._id for key
-                layout
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-                className="bg-white rounded-2xl border border-gray-200 shadow-md flex flex-col group overflow-hidden"
-              >
-                {/* Product Image */}
-                <div className="relative w-full aspect-square">
-                  {/* Ensure item.mainImage is available from backend or adjust */}
-                  <Image
-                    src={item.images[0] || "/placeholder.svg"}
-                    alt={item.name}
-                    fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
-
-                {/* Product Details & Actions */}
-                <div className="p-3 flex flex-col flex-grow">
-                  <div className="flex-grow">
-                    {/* Price */}
-                    <div className="flex items-baseline space-x-2">
-                      <span className="text-lg font-bold text-gray-900">
-                        ₹{item.price.toLocaleString()} {/* Use item.price from backend */}
-                      </span>
-                      {/* If your backend item includes original/discounted price, adjust here */}
-                      {/* {item.priceOriginal > item.priceDiscounted && (
-                        <span className="text-sm text-gray-500 line-through">
-                          ₹{item.priceOriginal.toLocaleString()}
-                        </span>
-                      )} */}
-                    </div>
-                    {/* Name */}
-                    <p className="text-sm text-gray-700 mt-1 line-clamp-2">
-                      {item.name}
-                    </p>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="pt-3 flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      // Pass item._id and name to the handler
-                      onClick={() => handleRemoveFromWishlist(item._id, item.name)}
-                      className="h-10 w-10 flex-shrink-0 rounded-md"
-                    >
-                      <Trash2 className="h-5 w-5 text-gray-600" />
-                    </Button>
-                    <Button
-                      onClick={() => handleMoveToCart(item as Product)} // Ensure type compatibility
-                      className="flex-1 h-10 rounded-md font-medium text-white"
-                      style={{ backgroundColor: "#AA7E3D" }}
-                      disabled={item.stock === 0} // Disable if out of stock
-                    >
-                      {item.stock === 0 ? "Out of Stock" : "Move to Cart"}
-                    </Button>
-                  </div>
-                </div>
-              </motion.div>
+            {wishlistItems.map((item) => (
+              <WishlistItemCard
+                key={item._id}
+                item={item}
+                onRemove={handleRemoveFromWishlist}
+                onAddToCart={handleMoveToCart}
+                loading={loading}
+              />
             ))}
           </AnimatePresence>
         </div>
       </main>
-
       <Footer />
     </div>
   )

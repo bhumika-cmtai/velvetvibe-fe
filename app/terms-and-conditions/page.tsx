@@ -1,7 +1,7 @@
 "use client"; // Required for using components with hooks or event handlers if you add them later
 
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import Navbar  from "@/components/Navbar";
+import Footer  from "@/components/Footer";
 import { 
   BookText, 
   UserCircle2, 

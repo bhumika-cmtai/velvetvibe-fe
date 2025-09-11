@@ -15,8 +15,8 @@ import {
   MapPin,
   ChevronRight
 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import Navbar  from '@/components/Navbar';
+import Footer  from '@/components/Footer';
 
 // A reusable link component for the profile page
 const ProfileLink = ({ href, icon: Icon, title, subtitle }: { href: string, icon: React.ElementType, title: string, subtitle: string }) => (

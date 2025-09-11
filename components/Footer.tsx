@@ -1,153 +1,128 @@
-"use client"
+// src/components/Footer.tsx
+import React from 'react';
+import { Facebook, Instagram, Twitter, Youtube, ArrowRight } from 'lucide-react';
 
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { useTheme } from "@/components/ThemeProvider"
-import InstagramIcon from "./InstagramIcon" // Your custom icon
-import AmazonIcon from "@/components/AmazonIcon" // Your custom icon
+// Data for footer links to keep JSX clean
+const infoLinks = [
+  { name: 'Contact us', href: '#' },
+  { name: 'Career', href: '#' },
+  { name: 'My Account', href: '#' },
+  { name: 'Order & Returns', href: '#' },
+  { name: 'FAQs', href: '#' },
+];
 
-export function Footer() {
-  const { theme } = useTheme();
+const quickShopLinks = [
+  { name: 'Women', href: '#' },
+  { name: 'Men', href: '#' },
+  { name: 'Clothes', href: '#' },
+  { name: 'Accessories', href: '#' },
+  { name: 'Blog', href: '#' },
+];
 
-  // Define theme-based classes for a consistent look
-  const isDarkTheme = theme === 'men';
-  const bgColor = isDarkTheme ? 'bg-[#1C1C1C]' : 'bg-gray-50';
-  const textColor = isDarkTheme ? 'text-gray-300' : 'text-gray-600';
-  const headingColor = isDarkTheme ? 'text-white' : 'text-gray-900';
-  const linkHoverColor = isDarkTheme ? 'hover:text-[#A77C38]' : 'hover:text-[#A77C38]';
-  const borderColor = isDarkTheme ? 'border-gray-700' : 'border-gray-200';
+const customerServiceLinks = [
+  { name: 'Orders FAQs', href: '#' },
+  { name: 'Shipping', href: '#' },
+  { name: 'Privacy Policy', href: '#' },
+  { name: 'Return & Refund', href: '#' },
+];
 
+// Payment Icons Component
+const PaymentIcons = () => (
+  <div className="flex items-center space-x-2">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/a/ac/Old_Visa_Logo.svg" alt="Visa" className="h-6" />
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/MasterCard_Logo.svg/2560px-MasterCard_Logo.svg.png" alt="Mastercard" className="h-6" />
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/2560px-American_Express_logo_%282018%29.svg.png" alt="Amex" className="h-6" />
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/2560px-PayPal.svg.png" alt="PayPal" className="h-5" />
+    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Discover_Card_logo.svg/2560px-Discover_Card_logo.svg.png" alt="Discover" className="h-4" />
+  </div>
+);
+
+const Footer = () => {
   return (
-    <footer className={`${bgColor} border-t ${borderColor} mt-20`}>
-      <div className="container mx-auto px-4 py-16">
-        {/* --- THIS IS THE LINE THAT WAS CHANGED --- */}
-        <div className="grid md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-            className="space-y-4"
-          >
-            <h3 className="text-2xl font-serif font-bold" style={{ color: "var(--theme-primary)" }}>
-              Luv Kush
-            </h3>
-            <p className={textColor}>
-              Premium jewelry collection for men and women. Crafted with love and attention to detail.
-            </p>
-            <div className="flex space-x-6 items-center">
-              <a
-                href="https://www.instagram.com/gullnaaz925?igsh=NDk5ZzdqYWJ2b3Jx" // Replace with your Instagram URL
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className={`${textColor} ${linkHoverColor} transition-colors`}
-              >
-                <InstagramIcon />
-              </a>
-              <a
-                href="https://www.amazon.in/stores/Gullnaaz/page/A2F2D9A7-DC20-44FE-BDDF-06709004F467?is_byline_deeplink=true&deeplink=A2F2D9A7-DC20-44FE-BDDF-06709004F467&redirect_store_id=A2F2D9A7-DC20-44FE-BDDF-06709004F467&lp_asin=B0FBK948XZ&ref_=ast_bln" // Replace with your Amazon URL
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Amazon"
-                className={`${textColor} ${linkHoverColor} transition-colors`}
-              >
-                <AmazonIcon />
-              </a>
+    <footer className="bg-gray-50 text-gray-800 border-t border-gray-200">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+        {/* Top Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+          
+          {/* Column 1: Brand Info */}
+          <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+            <h2 className="text-3xl font-serif font-bold mb-4">Trendora</h2>
+            <div className="space-y-3 text-sm text-gray-600">
+              <p><span className="font-semibold text-gray-800">Mail:</span> hi.trendora@example.com</p>
+              <p><span className="font-semibold text-gray-800">Phone:</span> 1-333-345-6868</p>
+              <p><span className="font-semibold text-gray-800">Address:</span> 549 Oak St, Crystal Lake, IL 60014</p>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Categories */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            viewport={{ once: true }}
-            className="space-y-4"
-          >
-            <h4 className={`font-semibold ${headingColor}`}>Categories</h4>
-            <div className="space-y-2">
-              <Link href="/collections?category=earrings" className={`block ${textColor} ${linkHoverColor}`}>
-                Earrings
-              </Link>
-              <Link href="/collections?category=bangles" className={`block ${textColor} ${linkHoverColor}`}>
-                Bangles
-              </Link>
-              <Link href="/collections/women/silver-jewellery" className={`block ${textColor} ${linkHoverColor}`}>
-                Silver Jewellery
-              </Link>
-              <Link href="/collections/women/artificial-jewellery" className={`block ${textColor} ${linkHoverColor}`}>
-                Artificial Jewellery
-              </Link>
+          {/* Column 2: Information */}
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-4 tracking-wider">INFORMATION</h3>
+            <ul className="space-y-3">
+              {infoLinks.map(link => (
+                <li key={link.name}><a href={link.href} className="text-gray-600 hover:text-black transition-colors">{link.name}</a></li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 3: Quick Shop */}
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-4 tracking-wider">QUICK SHOP</h3>
+            <ul className="space-y-3">
+              {quickShopLinks.map(link => (
+                <li key={link.name}><a href={link.href} className="text-gray-600 hover:text-black transition-colors">{link.name}</a></li>
+              ))}
+            </ul>
+          </div>
+          
+          {/* Column 4: Customer Services */}
+          <div>
+            <h3 className="font-semibold text-gray-800 mb-4 tracking-wider">CUSTOMER SERVICES</h3>
+            <ul className="space-y-3">
+              {customerServiceLinks.map(link => (
+                <li key={link.name}><a href={link.href} className="text-gray-600 hover:text-black transition-colors">{link.name}</a></li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 5: Newsletter */}
+          <div className="col-span-1 sm:col-span-2 lg:col-span-1">
+            <h3 className="font-semibold text-gray-800 mb-4 tracking-wider">NEWSLETTER</h3>
+            <p className="text-gray-600 mb-4 text-sm">Sign up for our newsletter and get 10% off your first purchase</p>
+            <form className="flex items-center">
+              <input type="email" placeholder="Enter your e-mail" className="w-full text-sm bg-white border border-gray-300 rounded-l-md p-3 focus:outline-none focus:ring-1 focus:ring-black" />
+              <button type="submit" aria-label="Subscribe to newsletter" className="bg-black text-white p-3 rounded-r-md hover:bg-gray-800 transition-colors">
+                <ArrowRight size={20} />
+              </button>
+            </form>
+            <div className="flex items-center space-x-4 mt-6">
+              <a href="#" aria-label="Facebook"><Facebook size={20} className="text-gray-600 hover:text-black"/></a>
+              <a href="#" aria-label="Instagram"><Instagram size={20} className="text-gray-600 hover:text-black"/></a>
+              <a href="#" aria-label="Twitter"><Twitter size={20} className="text-gray-600 hover:text-black"/></a>
+              <a href="#" aria-label="Youtube"><Youtube size={20} className="text-gray-600 hover:text-black"/></a>
+              {/* <a href="#" aria-label="Pinterest"><Pinterest size={20} className="text-gray-600 hover:text-black"/></a> */}
             </div>
-          </motion.div>
-
-          {/* Quick Links */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            viewport={{ once: true }}
-            className="space-y-4"
-          >
-            <h4 className={`font-semibold ${headingColor}`}>Quick Links</h4>
-            <div className="space-y-2">
-              <Link href="/" className={`block ${textColor} ${linkHoverColor}`}>
-                Women
-              </Link>
-              <Link href="/pages/men" className={`block ${textColor} ${linkHoverColor}`}>
-                Men
-              </Link>
-              <Link href="/cart" className={`block ${textColor} ${linkHoverColor}`}>
-                Cart
-              </Link>
-              <Link href="#contact" className={`block ${textColor} ${linkHoverColor}`}>
-                Contact
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* --- NEW COLUMN ADDED HERE --- */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            viewport={{ once: true }}
-            className="space-y-4"
-          >
-            <h4 className={`font-semibold ${headingColor}`}>Our Policies</h4>
-            <div className="space-y-2">
-              <Link href="/privacy-policy" className={`block ${textColor} ${linkHoverColor}`}>
-                Privacy Policy
-              </Link>
-              <Link href="/refund-policy" className={`block ${textColor} ${linkHoverColor}`}>
-                Refund Policy
-              </Link>
-              <Link href="/return-policy" className={`block ${textColor} ${linkHoverColor}`}>
-                Return Policy
-              </Link>
-              <Link href="/shipping-policy" className={`block ${textColor} ${linkHoverColor}`}>
-                Shipping Policy
-              </Link>
-              <Link href="/terms-and-conditions" className={`block ${textColor} ${linkHoverColor}`}>
-                Terms & Conditions
-              </Link>
-            </div>
-          </motion.div>
-
+          </div>
         </div>
-
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          viewport={{ once: true }}
-          className={`border-t ${borderColor} pt-8 mt-12 text-center ${textColor}`}
-        >
-          <p>&copy; {new Date().getFullYear()} Luv Kush. All rights reserved.</p>
-        </motion.div>
+      </div>
+      
+      {/* Bottom Bar */}
+      <div className="border-t border-gray-200">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-600 gap-4">
+            <p className="text-center md:text-left">© {new Date().getFullYear()} Trendora. All Rights Reserved.</p>
+            <div className="flex items-center space-x-4">
+              <button>English ▼</button>
+              <button>USD ▼</button>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span>Payment:</span>
+              <PaymentIcons />
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
-  )
-}
+  );
+};
+
+export default Footer;

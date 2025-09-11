@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import OrderSuccessClient from './OrderSuccessClient'; // Import the new client component
 import { Loader2 } from 'lucide-react';
-import { Navbar } from '@/components/Navbar'; // Import Navbar and Footer for the fallback
-import { Footer } from '@/components/Footer';
+import Navbar  from '@/components/Navbar'; // Import Navbar and Footer for the fallback
+import Footer  from '@/components/Footer';
 
 // This is the loading UI that will be shown while the page waits for the client
 // to provide the URL search parameters.

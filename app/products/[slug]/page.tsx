@@ -1,432 +1,186 @@
 "use client"
-import { useEffect, useMemo, useState, useRef } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
-import { Heart, Minus, Plus, Video } from "lucide-react"
+import { Heart, Minus, Plus, ShieldCheck, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Navbar } from "@/components/Navbar"
-import { Footer } from "@/components/Footer"
+import Navbar from "@/components/Navbar"
+import Footer from "@/components/Footer"
 import { useToast } from "@/hooks/use-toast"
 import { motion } from "framer-motion"
-import Link from "next/link"
-// --- REDUX IMPORTS ---
-import { useDispatch, useSelector } from "react-redux"
-import { fetchProductBySlug } from "@/lib/redux/slices/productSlice"
-import { addToCart, fetchCart } from "@/lib/redux/slices/cartSlice"
-import { RootState } from "@/lib/redux/store"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { RecommendedProducts } from "@/components/RecommendProducts"
 
-export default function WomenProductPage() {
+// STATIC DATA IMPORT (Redux ke badle)
+import { products } from "@/lib/data"
+import { Product } from "@/lib/types/product" // Product type import karein
+
+const ProductDetailsPage = () => {
   const params = useParams()
   const slug = params.slug as string
-  const dispatch = useDispatch<any>()
-  
-  const { selectedProduct: product, productDetailsLoading, productDetailsError } = useSelector(
-    (state: RootState) => state.product
-  )
-  const { loading: cartLoading } = useSelector((state: RootState) => state.cart)
-
-  const [quantity, setQuantity] = useState(1)
-  const [isWishlisted, setIsWishlisted] = useState(false)
-  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0)
-  const [isBuyingNow, setIsBuyingNow] = useState(false)
-
-  // State for magnifier zoom effect
-  const [isHovering, setIsHovering] = useState(false)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const imageContainerRef = useRef<HTMLDivElement>(null)
-
   const { toast } = useToast()
 
-  // Combine product images and video, with video appearing last
-  const media = useMemo(() => {
-    const mediaItems = []
-    // Add images first
-    if (product?.images && product.images.length > 0) {
-      mediaItems.push(...product.images.map((url: string) => ({ type: "image", url })))
-    } else if (product?.mainImage) {
-      // Fallback to mainImage if no images array
-      mediaItems.push({ type: "image", url: product.mainImage })
-    }
-    // Add video last if it exists
-    if (product?.video) {
-      mediaItems.push({ type: "video", url: product.video })
-    }
-    return mediaItems
-  }, [product])
+  // Redux ke badle, hum static data se product find karenge
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch product by slug and cart data
   useEffect(() => {
-    if (slug) {
-      dispatch(fetchProductBySlug(slug))
-      dispatch(fetchCart())
+    const foundProduct = products.find(p => p.slug === slug);
+    setProduct(foundProduct || null);
+    setLoading(false);
+  }, [slug]);
+
+  // State for user selections
+  const [quantity, setQuantity] = useState(1)
+  const [isWishlisted, setIsWishlisted] = useState(false)
+  const [selectedImage, setSelectedImage] = useState(0)
+  const [selectedColor, setSelectedColor] = useState<string | null>(null)
+  const [selectedSize, setSelectedSize] = useState<string | null>(null)
+
+  // Initialize selected color and size on product load
+  useEffect(() => {
+    if (product?.variants && product.variants.length > 0) {
+      setSelectedColor(product.variants[0].color);
+      setSelectedSize(product.variants[0].size);
     }
-  }, [slug, dispatch])
+  }, [product]);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (imageContainerRef.current) {
-        const rect = imageContainerRef.current.getBoundingClientRect()
-        const x = e.clientX - rect.left
-        const y = e.clientY - rect.top
-        setMousePosition({ x, y })
+  // --- Derived State using useMemo for efficiency ---
+  const { availableColors, availableSizes, selectedVariant } = useMemo(() => {
+    if (!product?.variants) return { availableColors: [], availableSizes: [], selectedVariant: null };
+
+    const colors = [...new Set(product.variants.map(v => v.color))];
+    const sizesForSelectedColor = product.variants
+      .filter(v => v.color === selectedColor)
+      .map(v => ({ size: v.size, stock: v.stock }));
+    
+    const variant = product.variants.find(v => v.color === selectedColor && v.size === selectedSize) || null;
+    
+    return {
+      availableColors: colors,
+      availableSizes: sizesForSelectedColor,
+      selectedVariant: variant
+    };
+  }, [product, selectedColor, selectedSize]);
+
+  // --- Handlers ---
+  const handleAddToCart = () => {
+    if (!selectedVariant || selectedVariant.stock < 1) {
+      toast({ title: "Unavailable", description: "Please select an available size and color.", variant: "destructive" });
+      return;
     }
-  }
+    toast({ title: "Added to Bag", description: `${quantity} x ${product?.name} (${selectedColor}, ${selectedSize})` });
+  };
+  const handleWishlist = () => setIsWishlisted(!isWishlisted);
+  const incrementQuantity = () => setQuantity(q => Math.min(q + 1, selectedVariant?.stock || 1));
+  const decrementQuantity = () => setQuantity(q => Math.max(1, q - 1));
 
-  if (productDetailsLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-600 text-lg">Loading product details...</p>
-      </div>
-    )
-  }
+  if (loading) return <div>Loading...</div>
+  if (!product) return <div>Product not found!</div>
 
-  if (productDetailsError || !product) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Product not found</h1>
-          <p className="text-gray-600">{productDetailsError || "The product you're looking for doesn't exist."}</p>
-        </div>
-      </div>
-    )
-  }
-
-  const handleAddToCart = async () => {
-    try {
-      await dispatch(addToCart({ productId: product._id, quantity })).unwrap()
-      toast({
-        title: "Added to cart",
-        description: `${quantity} x ${product.name} added to your cart.`,
-      })
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error || "Failed to add to cart",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const handleBuyNow = async () => {
-    if (product.stock < quantity) {
-        toast({ title: "Not enough stock available.", variant: "destructive" })
-        return
-    }
-    setIsBuyingNow(true)
-    try {
-      await dispatch(addToCart({ productId: product._id, quantity })).unwrap()
-      window.location.href = '/checkout'
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error || "Could not proceed to checkout.",
-        variant: "destructive",
-      })
-      setIsBuyingNow(false)
-    }
-  }
-
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted)
-    toast({
-      title: isWishlisted ? "Removed from wishlist" : "Added to wishlist",
-      description: `${product.name} has been ${isWishlisted ? "removed from" : "added to"} your wishlist.`,
-    })
-  }
-
-  const incrementQuantity = () => {
-    if (quantity < product.stock) {
-      setQuantity((prev) => prev + 1)
-    } else {
-      toast({
-        title: "Stock limit reached",
-        description: `Only ${product.stock} items available in stock.`,
-        variant: "destructive",
-      })
-    }
-  }
-  
-  const decrementQuantity = () => setQuantity((prev) => Math.max(1, prev - 1))
-
-  const selectedMedia = media[selectedMediaIndex]
-  const MAGNIFIER_SIZE = 150
-  const ZOOM_LEVEL = 2.5
+  const discount = product.base_price && product.price < product.base_price ? Math.round(((product.base_price - product.price) / product.base_price) * 100) : 0;
 
   return (
-    <div className="min-h-screen">
+    <div className="bg-white">
       <Navbar />
-
       <main className="container mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-12 mb-20">
-          {/* Product Media */}
-          <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex space-x-4"
-          >
-            {/* Thumbnails */}
-            {media && media.length > 1 && (
-              <div className="flex flex-col space-y-2">
-                {media.map((item, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedMediaIndex(idx)}
-                    className={`relative w-16 h-16 rounded-lg overflow-hidden border-2 ${
-                      idx === selectedMediaIndex ? "border-orange-500" : "border-gray-200"
-                    }`}
-                  >
-                    {item.type === 'image' ? (
-                      <Image src={item.url || "/placeholder.svg"} alt={`${product.name} ${idx + 1}`} fill className="object-cover" />
-                    ) : (
-                      <div className="relative w-full h-full bg-black">
-                        <video src={item.url} muted className="object-cover w-full h-full" />
-                        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40">
-                          <Video className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                    )}
+        <div className="grid lg:grid-cols-2 gap-12">
+          {/* --- LEFT: MEDIA GALLERY --- */}
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col-reverse md:flex-row overflow-hidden  gap-4">
+            <div className="flex md:flex-col gap-3  md:overflow-y-auto pb-2 md:pb-0 md:pr-2 overflow-hidden">
+              {product.images.map((img, idx) => (
+                <button key={idx} onClick={() => setSelectedImage(idx)} className={`relative w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-colors ${selectedImage === idx ? 'border-[var(--theme-accent)]' : 'border-transparent'}`}>
+                  <Image src={img} alt={`${product.name} thumbnail ${idx + 1}`} fill className="object-cover" />
+                </button>
+              ))}
+            </div>
+            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-gray-100">
+              <Image src={product.images[selectedImage]} alt={product.name} fill className="object-cover" />
+            </div>
+          </motion.div>
+
+          {/* --- RIGHT: PRODUCT DETAILS & ACTIONS --- */}
+          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
+            <p className="font-semibold text-[var(--accent-primary)]">{product.brand}</p>
+            <h1 className="text-3xl lg:text-4xl font-serif font-bold text-gray-800 my-2">{product.name}</h1>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="text-3xl font-bold text-gray-900">₹{product.price.toFixed(2)}</span>
+              {discount > 0 && <span className="text-xl text-gray-400 line-through">₹{product.base_price?.toFixed(2)}</span>}
+              {discount > 0 && <span className="bg-red-100 text-red-600 text-sm font-semibold px-2.5 py-1 rounded-full">{discount}% OFF</span>}
+            </div>
+
+            {/* Color Selector */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Color: <span className="font-bold">{selectedColor}</span></h3>
+              <div className="flex gap-2">
+                {availableColors.map(color => (
+                  <button key={color} onClick={() => setSelectedColor(color)} className={`w-8 h-8 rounded-full border-2 transition-all ${selectedColor === color ? 'border-black scale-110' : 'border-gray-200'}`} style={{ backgroundColor: color.toLowerCase() }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Size Selector */}
+            <div className="mb-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">Size: <span className="font-bold">{selectedSize}</span></h3>
+              <div className="flex flex-wrap gap-2">
+                {availableSizes.map(({ size, stock }) => (
+                  <button key={size} onClick={() => setSelectedSize(size)} disabled={stock < 1} className={`px-4 py-2 border rounded-lg text-sm font-semibold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${selectedSize === size ? 'bg-black text-white' : 'bg-white text-black hover:bg-gray-100'}`}>
+                    {size}
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Quantity & Add to Cart */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center border rounded-full font-semibold">
+                <Button variant="ghost" size="icon" onClick={decrementQuantity} className="h-11 w-11 rounded-full"><Minus size={16} /></Button>
+                <span className="w-10 text-center">{quantity}</span>
+                <Button variant="ghost" size="icon" onClick={incrementQuantity} className="h-11 w-11 rounded-full"><Plus size={16} /></Button>
+              </div>
+              <Button onClick={handleAddToCart} className="flex-1 h-12 rounded-full text-base font-bold bg-[var(--accent-primary)] text-white hover:bg-opacity-90">Add to Bag</Button>
+              <Button variant="outline" size="icon" onClick={handleWishlist} className="h-12 w-12 rounded-full flex-shrink-0"><Heart className={`transition-colors ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} /></Button>
+            </div>
+            
+            {/* Stock Message */}
+            {selectedVariant && (
+                selectedVariant.stock > 0 && selectedVariant.stock <= 5 
+                ? <p className="text-sm text-center text-red-600 mb-6">Hurry! Only {selectedVariant.stock} left in stock.</p>
+                : selectedVariant.stock < 1 
+                ? <p className="text-sm text-center text-gray-500 mb-6">This size is currently out of stock.</p>
+                : null
             )}
 
-            {/* Main media view */}
-            <div 
-              ref={imageContainerRef}
-              className="relative aspect-square w-full overflow-hidden rounded-2xl"
-              onMouseEnter={() => setIsHovering(true)}
-              onMouseLeave={() => setIsHovering(false)}
-              onMouseMove={handleMouseMove}
-            >
-              {selectedMedia?.type === 'video' ? (
-                 <video
-                    key={selectedMedia.url}
-                    src={selectedMedia.url}
-                    autoPlay muted loop playsInline controls
-                    className="object-cover w-full h-full"
-                 />
-              ) : (
-                <>
-                  <Image
-                    src={selectedMedia?.url || "/placeholder.svg"}
-                    alt={product.name}
-                    fill
-                    className="object-cover transition-transform duration-300"
-                  />
-                  {/* Magnifier glass effect */}
-                  {isHovering && imageContainerRef.current && (
-                      <div
-                          style={{
-                              position: 'absolute',
-                              left: `${mousePosition.x - MAGNIFIER_SIZE / 2}px`,
-                              top: `${mousePosition.y - MAGNIFIER_SIZE / 2}px`,
-                              pointerEvents: 'none',
-                              height: `${MAGNIFIER_SIZE}px`,
-                              width: `${MAGNIFIER_SIZE}px`,
-                              overflow: 'hidden',
-                              border: '2px solid white',
-                              boxShadow: '0 5px 15px rgba(0,0,0,0.2)',
-                              borderRadius: '0.25rem',
-                              zIndex: 10,
-                          }}
-                      >
-                          <div
-                              style={{
-                                  position: 'relative',
-                                  width: `${imageContainerRef.current.clientWidth * ZOOM_LEVEL}px`,
-                                  height: `${imageContainerRef.current.clientHeight * ZOOM_LEVEL}px`,
-                                  transform: `translate(-${mousePosition.x * ZOOM_LEVEL - MAGNIFIER_SIZE / 2}px, -${mousePosition.y * ZOOM_LEVEL - MAGNIFIER_SIZE / 2}px)`,
-                              }}
-                          >
-                              <Image
-                                  src={selectedMedia?.url || "/placeholder.svg"}
-                                  alt={product.name}
-                                  fill
-                                  className="object-cover"
-                              />
-                          </div>
-                      </div>
-                  )}
-                </>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Product Details */}
-          <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="space-y-6"
-          >
-            <div>
-              <h1 className="text-3xl font-serif font-bold mb-2">
-                {product.name}
-              </h1>
-              {product.stock <= 0 && (
-                <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded-lg mb-4">
-                  Out of Stock
-                </div>
-              )}
-              {product.stock > 0 && product.stock <= 5 && (
-                <div className="bg-yellow-100 border border-yellow-300 text-yellow-700 px-4 py-2 rounded-lg mb-4">
-                  Only {product.stock} left in stock!
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <span className="text-3xl font-bold" style={{ color: "var(--theme-primary)" }}>
-                ₹{product.price.toLocaleString()}
-              </span>
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span className="text-xl text-gray-500 line-through">₹{product.originalPrice.toLocaleString()}</span>
-              )}
-              {product.originalPrice && product.originalPrice > product.price && (
-                <span
-                  className="px-2 py-1 rounded-full text-sm font-medium text-white"
-                  style={{ backgroundColor: "var(--theme-primary)" }}
-                >
-                  {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
-                </span>
-              )}
-            </div>
-
-            {/* Quantity Selector */}
-            {product.stock > 0 && (
-              <div className="flex items-center space-x-4">
-                <span className="font-medium">Quantity:</span>
-                <div className="flex items-center border rounded-lg">
-                  <Button variant="ghost" size="icon" onClick={decrementQuantity} className="h-10 w-10">
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <span className="px-4 py-2 font-medium">{quantity}</span>
-                  <Button variant="ghost" size="icon" onClick={incrementQuantity} className="h-10 w-10">
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <span className="text-sm text-gray-500">({product.stock} available)</span>
-              </div>
-            )}
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0 || cartLoading || isBuyingNow}
-                  className="w-full py-3 rounded-xl font-medium"
-                >
-                  {cartLoading ? "Adding..." : "Add to Cart"}
-                </Button>
-                <Button
-                  onClick={handleBuyNow}
-                  disabled={product.stock <= 0 || cartLoading || isBuyingNow}
-                  variant="outline"
-                  className="w-full py-3 rounded-xl font-medium"
-                >
-                  {isBuyingNow ? "Processing..." : "Buy Now"}
-                </Button>
-              </div>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleWishlist}
-                className="rounded-full h-12 w-12 flex-shrink-0"
-              >
-                <Heart className={`h-5 w-5 ${isWishlisted ? "fill-red-500 text-red-500" : "text-gray-600"}`} />
-              </Button>
-            </div>
-            <div className="text-center mt-3">
-              <Link href={`/bulk-order/${product.slug}`} passHref>
-                  <p className="text-sm text-gray-600 underline hover:text-theme-primary transition-colors">
-                      Want to order in bulk? Inquire for special pricing.
-                  </p>
-              </Link>
-            </div>
-
-            {/* --- CORRECTED PRODUCT DETAILS SECTION --- */}
-            <div className="border-t pt-6">
-                <div className="mx-auto max-w-md space-y-4">
-                    {product.type && (
-                        <div className="grid grid-cols-2 items-start gap-4">
-                            <span className="font-medium text-gray-700 text-left">Type:</span>
-                            <span className="text-gray-900 text-right">{product.type}</span>
-                        </div>
-                    )}
-
-                    {product.gender && (
-                        <div className="grid grid-cols-2 items-start gap-4">
-                            <span className="font-medium text-gray-700 text-left">Gender:</span>
-                            <span className="text-gray-900 text-right">{product.gender}</span>
-                        </div>
-                    )}
-                    
-                    {product.tags && product.tags.length > 0 && (
-                        <div className="grid grid-cols-2 items-start gap-4">
-                            <span className="font-medium text-gray-700 text-left">Tags:</span>
-                            <div className="flex flex-wrap justify-end gap-2">
-                                {product.tags.map((tag: string, idx: number) => (
-                                <span
-                                    key={idx}
-                                    className="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-sm"
-                                >
-                                    {tag}
-                                </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {product.material && (
-                         <div className="grid grid-cols-2 items-start gap-4">
-                            <span className="font-medium text-gray-700 text-left">Material:</span>
-                            <span className="text-gray-900 text-right">{product.material}</span>
-                        </div>
-                    )}
-
-                    {product.color && product.color.length > 0 && (
-                        <div className="grid grid-cols-2 items-start gap-4">
-                            <span className="font-medium text-gray-700 text-left">Color:</span>
-                            <div className="flex flex-wrap justify-end gap-2">
-                                {product.color.map((c: string, idx: number) => (
-                                    <span key={idx} className="px-2 py-1 bg-gray-100 rounded-full text-sm">{c}</span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {product.stones && product.stones.length > 0 && (
-                        <div className="grid grid-cols-2 items-start gap-4">
-                            <span className="font-medium text-gray-700 text-left">Stones:</span>
-                            <div className="flex flex-wrap justify-end gap-2">
-                                {product.stones.map((s: string, idx: number) => (
-                                <span key={idx} className="px-2 py-1 bg-gray-100 rounded-full text-sm">{s}</span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    
-                    {product.jewelleryCategory && (
-                         <div className="grid grid-cols-2 items-start gap-4">
-                            <span className="font-medium text-gray-700 text-left">Jewellery Category:</span>
-                            <span className="text-gray-900 text-right">{product.jewelleryCategory}</span>
-                        </div>
-                    )}
-                    
-                    {product.materialType && (
-                        <div className="grid grid-cols-2 items-start gap-4">
-                            <span className="font-medium text-gray-700 text-left">Material Type:</span>
-                            <span className="text-gray-900 text-right">{product.materialType}</span>
-                        </div>
-                    )}
-                </div>
-            </div>
+            {/* Accordion for Details */}
+            <Accordion type="single" collapsible defaultValue="description" className="w-full">
+              <AccordionItem value="description">
+                <AccordionTrigger>Description</AccordionTrigger>
+                <AccordionContent className="text-gray-600 prose">{product.description}</AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="details">
+                <AccordionTrigger>Product Details</AccordionTrigger>
+                <AccordionContent className="space-y-2 text-sm">
+                   <p><span className="font-semibold">Category:</span> {product.category} &gt; {product.sub_category}</p>
+                   <p><span className="font-semibold">Gender:</span> {product.gender}</p>
+                   {product.tags && <p><span className="font-semibold">Tags:</span> {product.tags.join(', ')}</p>}
+                </AccordionContent>
+              </AccordionItem>
+              <AccordionItem value="shipping">
+                <AccordionTrigger>Shipping & Returns</AccordionTrigger>
+                <AccordionContent className="text-gray-600 prose-sm">
+                  <p>Free standard shipping on all orders. Express shipping available at checkout.</p>
+                  <p>We accept returns within 14 days of delivery. Please visit our returns policy page for more details.</p>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </motion.div>
         </div>
-      </main>
 
+        {/* <RecommendedProducts cartItems={[]} /> */}
+      </main>
       <Footer />
     </div>
   )
 }
+
+export default ProductDetailsPage;
