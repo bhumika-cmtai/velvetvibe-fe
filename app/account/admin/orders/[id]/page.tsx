@@ -93,7 +93,7 @@ export default function AdminOrderDetailsPage() {
       console.log("Redirecting: User is not an admin.");
       router.push('/login');
     } else if (adminUser && orderId) {
-      console.log(`Dispatching fetchSingleOrderAsAdmin with orderId: ${orderId}`);
+      console.log(`Dispatching fetchSingleOrderAsAdmin with orderId: ₹{orderId}`);
       dispatch(fetchSingleOrderAsAdmin(orderId));
     } else {
       console.log("Did not dispatch: either adminUser or orderId is missing.");

@@ -15,12 +15,12 @@ export interface Product {
   price: number;
   base_price?: number; // Original price
   images: string[];
-  category: 'Clothing' | 'Skincare' | 'Accessories' | 'Shoes';
+  category: 'Clothing' | 'Decor' | 'Accessories' | 'Shoes';
   sub_category?: string;
   brand: string;
   gender?: 'Men' | 'Women' | 'Unisex';
   stock_quantity?: number; // Products without variants ke liye
-  tags?: ('New' | 'Sale' | 'Hot Sale' | 'Ethnic' | 'Best Seller')[];
+  tags?: ('New' | 'Sale' | 'Hot Sale' | 'Ethnic' | 'Best Seller' | 'Decor')[];
   attributes?: Record<string, any>;
   variants?: Variant[];
 }

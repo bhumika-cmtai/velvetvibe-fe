@@ -63,7 +63,7 @@ export default function SignUpPage() {
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-[var(--primary-button-theme)] hover:bg-[var(--secondary-button-theme)] text-[var(--primary-button-text)] hover:text-[var(--secondary-button-text)] " disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
           </div>

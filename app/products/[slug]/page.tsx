@@ -14,6 +14,7 @@ import { RecommendedProducts } from "@/components/RecommendProducts"
 // STATIC DATA IMPORT (Redux ke badle)
 import { products } from "@/lib/data"
 import { Product } from "@/lib/types/product" // Product type import karein
+import ProductDetailsSkeleton from "@/components/skeleton/ProductPageSkeleton"
 
 const ProductDetailsPage = () => {
   const params = useParams()
@@ -23,11 +24,23 @@ const ProductDetailsPage = () => {
   // Redux ke badle, hum static data se product find karenge
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  
 
   useEffect(() => {
     const foundProduct = products.find(p => p.slug === slug);
     setProduct(foundProduct || null);
     setLoading(false);
+  }, [slug]);
+
+  useEffect(() => {
+    // Simulate network delay for fetching product
+    const timer = setTimeout(() => {
+      const foundProduct = products.find(p => p.slug === slug);
+      setProduct(foundProduct || null);
+      setLoading(false);
+    }, 1500); // Simulate 1.5 second load time
+
+    return () => clearTimeout(timer);
   }, [slug]);
 
   // State for user selections
@@ -80,8 +93,18 @@ const ProductDetailsPage = () => {
 
   const discount = product.base_price && product.price < product.base_price ? Math.round(((product.base_price - product.price) / product.base_price) * 100) : 0;
 
+  if (loading) {
+    return (
+        <div className="bg-[var(--base-50)]/30">
+            <Navbar />
+            <ProductDetailsSkeleton />
+            <Footer />
+        </div>
+    )
+  }
+
   return (
-    <div className="bg-white">
+    <div className="bg-[var(--base-50)]/30">
       <Navbar />
       <main className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-2 gap-12">

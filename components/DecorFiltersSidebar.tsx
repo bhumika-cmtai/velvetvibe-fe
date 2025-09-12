@@ -1,4 +1,4 @@
-// src/components/FiltersSidebar.tsx
+// src/components/DecorFiltersSidebar.tsx
 "use client"
 
 import { useState } from "react"
@@ -29,7 +29,8 @@ interface FiltersSidebarProps {
     className?: string
 }
 
-export function FiltersSidebar({
+// Renamed to be more specific, but the logic is reusable
+export function DecorFiltersSidebar({
     filters,
     selectedFilters,
     onFilterChange,

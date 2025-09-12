@@ -2,67 +2,7 @@
 import { Product } from '@/lib/types/product';
 
 export const products: Product[] = [
-  // Men's Fashion
-  {
-    _id: 'men-shirt-01',
-    name: 'Men\'s Casual Short Sleeve Shirt',
-    slug: 'mens-casual-short-sleeve-shirt',
-    description: 'A comfortable and stylish casual shirt for men, perfect for summer days. Made from a lightweight cotton blend, it features a classic button-down collar and a relaxed fit for all-day comfort.',
-    price: 19.00,
-    base_price: 27.00,
-    images: [
-      'https://i.pinimg.com/736x/34/3a/c8/343ac8d11dbad8e57bdeef4a16656337.jpg', // Main Pink
-      'https://i.pinimg.com/736x/85/85/e1/8585e176f83aebfacb7db58ca9717526.jpg', // Main Blue
-      'https://i.pinimg.com/736x/01/a0/03/01a0032a1b405520e58852e3f5397397.jpg'  // Main Green
-    ],
-    category: 'Clothing',
-    sub_category: 'Shirts',
-    brand: 'Urban Threads',
-    gender: 'Men',
-    stock_quantity: 0, // Main stock is 0 when variants exist
-    tags: ['Sale', 'Hot Sale'],
-    attributes: { material: "Cotton Blend", fit: "Relaxed" },
-    variants: [
-      { color: 'Pink', size: 'S', stock: 10, images: ['https://i.pinimg.com/736x/34/3a/c8/343ac8d11dbad8e57bdeef4a16656337.jpg'] },
-      { color: 'Pink', size: 'M', stock: 15, images: ['https://i.pinimg.com/736x/34/3a/c8/343ac8d11dbad8e57bdeef4a16656337.jpg'] },
-      { color: 'Pink', size: 'L', stock: 0, images: ['https://i.pinimg.com/736x/34/3a/c8/343ac8d11dbad8e57bdeef4a16656337.jpg'] },
-      { color: 'Blue', size: 'M', stock: 5, images: ['https://i.pinimg.com/736x/85/85/e1/8585e176f83aebfacb7db58ca9717526.jpg'] },
-      { color: 'Blue', size: 'L', stock: 8, images: ['https://i.pinimg.com/736x/85/85/e1/8585e176f83aebfacb7db58ca9717526.jpg'] },
-      { color: 'Green', size: 'S', stock: 12, images: ['https://i.pinimg.com/736x/01/a0/03/01a0032a1b405520e58852e3f5397397.jpg'] },
-      { color: 'Green', size: 'L', stock: 3, images: ['https://i.pinimg.com/736x/01/a0/03/01a0032a1b405520e58852e3f5397397.jpg'] },
-    ]
-  },
-  {
-    _id: 'men-shirt-02',
-    name: 'Men\'s Striped Oxford Shirt',
-    slug: 'mens-striped-oxford-shirt',
-    description: 'Classic striped oxford shirt made from premium cotton.',
-    price: 22.00,
-    base_price: 30.00,
-    images: ['https://i.pinimg.com/1200x/c0/35/c2/c035c2634612ab00326b95486857a730.jpg', 'https://i.pinimg.com/736x/13/60/37/136037d8ceaf7bcee08a2c50bec62c9a.jpg'],
-    category: 'Clothing',
-    sub_category: 'Shirts',
-    brand: 'Gentlemen Co.',
-    gender: 'Men',
-    stock_quantity: 80,
-    tags: ['Sale'],
-  },
-  {
-    _id: 'men-shirt-03',
-    name: 'Men\'s Linen Camp Collar Shirt',
-    slug: 'mens-linen-camp-collar-shirt',
-    description: 'Breathable linen shirt with a relaxed camp collar.',
-    price: 25.00,
-    base_price: 35.00,
-    images: ['https://i.pinimg.com/1200x/8d/ed/bc/8dedbcc733e506d259690e69c6e329c8.jpg', 'https://i.pinimg.com/1200x/b3/e8/83/b3e883b35875bb9f5478057852acbf83.jpg'],
-    category: 'Clothing',
-    sub_category: 'Shirts',
-    brand: 'Summer Ease',
-    gender: 'Men',
-    stock_quantity: 120,
-    tags: ['Sale'],
-  },
-  // Women's Fashion
+  // --- Tops & T-Shirts ---
   {
     _id: 'women-top-01',
     name: 'Women\'s Raglan Sleeve T-Shirt',
@@ -72,7 +12,7 @@ export const products: Product[] = [
     base_price: 36.00,
     images: ['https://afends.com/cdn/shop/files/W234001-MRL_1740.png?v=1750389636&width=1080', 'https://afends.com/cdn/shop/files/W234001-MRL_1747.png?v=1750389636&width=1080'],
     category: 'Clothing',
-    sub_category: 'Tops',
+    sub_category: 'T-Shirts',
     brand: 'Chic Wear',
     gender: 'Women',
     stock_quantity: 200,
@@ -95,9 +35,9 @@ export const products: Product[] = [
   },
   {
     _id: 'women-top-03',
-    name: 'Casual Mesh Panel Shirt',
-    slug: 'casual-mesh-panel-shirt',
-    description: 'A trendy white shirt with unique mesh panel details on the sleeves.',
+    name: 'Casual Mesh Panel Top',
+    slug: 'casual-mesh-panel-top',
+    description: 'A trendy white top with unique mesh panel details on the sleeves.',
     price: 35.00,
     base_price: 45.00,
     images: ['https://images.unsplash.com/photo-1508427953056-b00b8d78ebf5?q=80&w=1887', 'https://images.unsplash.com/photo-1564584217132-2271feaeb3c5?q=80&w=2070'],
@@ -108,53 +48,40 @@ export const products: Product[] = [
     stock_quantity: 110,
     tags: ['New'],
   },
-  //ethnic
   {
-    _id: 'ethnic-wear-01',
-    name: 'Embroidered Silk Saree',
-    slug: 'embroidered-silk-saree',
-    description: 'A beautifully crafted silk saree with intricate golden embroidery, perfect for weddings and festive occasions.',
-    price: 150.00,
-    base_price: 200.00,
-    images: ['https://i.pinimg.com/1200x/ee/90/2f/ee902f3f3958e1ad2bb8f6d4e61505bd.jpg', 'https://i.pinimg.com/1200x/78/39/0d/78390dd2ce5ddd5d67376746c5832866.jpg'],
+    _id: 'women-tshirt-01',
+    name: 'V-Neck Basic Cotton T-Shirt',
+    slug: 'v-neck-basic-cotton-t-shirt',
+    description: 'An essential v-neck t-shirt made from pure, soft cotton. A versatile piece for any wardrobe.',
+    price: 25.00,
+    base_price: 30.00,
+    images: ['https://i.pinimg.com/736x/5d/97/ed/5d97ededa83fb5e2c730ef07b1953eca.jpg', 'https://i.pinimg.com/1200x/95/b3/ee/95b3eecbbff8cf004eb519f6dd5cc73f.jpg'],
     category: 'Clothing',
-    sub_category: 'Ethnic Wear',
-    brand: 'Desi Weaves',
+    sub_category: 'T-Shirts',
+    brand: 'Chic Wear',
     gender: 'Women',
-    stock_quantity: 20,
-    tags: ['Sale', 'Ethnic'],
+    stock_quantity: 150,
+    tags: ['Sale'],
   },
+  
+  // --- Sweaters ---
   {
-    _id: 'ethnic-wear-02',
-    name: 'Classic Men\'s Kurta Set',
-    slug: 'classic-mens-kurta-set',
-    description: 'An elegant and comfortable cotton kurta set for men, ideal for traditional events.',
-    price: 80.00,
-    images: ['https://i.pinimg.com/1200x/1f/58/08/1f5808784b4bdf9986ce120f21b7caff.jpg', 'https://i.pinimg.com/1200x/ff/5f/ec/ff5feccf8e6aed72c6cda2e07858fd8c.jpg'],
+    _id: 'women-sweater-01',
+    name: 'Oversized Knit Cardigan',
+    slug: 'oversized-knit-cardigan',
+    description: 'A cozy and stylish oversized cardigan with a chunky knit texture. Perfect for layering.',
+    price: 70.00,
+    base_price: 90.00,
+    images: ['https://i.pinimg.com/1200x/c4/c2/87/c4c287b6789a00ce1770873ab53f7de4.jpg', 'https://i.pinimg.com/1200x/bc/ea/a7/bceaa777018b239a7e3e09b631e73e34.jpg'],
     category: 'Clothing',
-    sub_category: 'Ethnic Wear',
-    brand: 'Rajwada Styles',
-    gender: 'Men',
-    stock_quantity: 40,
-    tags: ['New', 'Ethnic'],
-  },
-  {
-    _id: 'ethnic-wear-03',
-    name: 'Royal Blue Anarkali Suit',
-    slug: 'royal-blue-anarkali-suit',
-    description: 'A stunning royal blue Anarkali suit with delicate lacework, perfect for making a grand entrance.',
-    price: 120.00,
-    base_price: 160.00,
-    images: ['https://i.pinimg.com/1200x/1c/f4/2e/1cf42ee6a9f1e7ebadd10b91e707ef7a.jpg', 'https://i.pinimg.com/1200x/ee/88/98/ee88983d713f38ff89a7d54c211d0e41.jpg'],
-    category: 'Clothing',
-    sub_category: 'Ethnic Wear',
-    brand: 'Desi Weaves',
+    sub_category: 'Sweaters',
+    brand: 'Bella Grace',
     gender: 'Women',
-    stock_quantity: 15,
-    tags: ['Sale', 'Ethnic'],
+    stock_quantity: 55,
+    tags: ['Sale', 'Hot Sale'],
   },
 
-  // --- ADDED: Dresses ---
+  // --- Dresses ---
   {
     _id: 'women-dress-01',
     name: 'Floral Summer Midi Dress',
@@ -185,23 +112,23 @@ export const products: Product[] = [
     tags: ['Sale'],
   },
 
-  // --- ADDED: Jeans ---
+  // --- Jeans ---
   {
-    _id: 'unisex-jeans-01',
-    name: 'Relaxed Fit Denim Jeans',
-    slug: 'relaxed-fit-denim-jeans',
-    description: 'Comfortable relaxed fit jeans made from high-quality denim, suitable for all.',
-    price: 75.00,
+    _id: 'women-jeans-01',
+    name: 'High-Waist Skinny Jeans',
+    slug: 'high-waist-skinny-jeans',
+    description: 'Flattering high-waist skinny jeans with a comfortable stretch, designed for a perfect fit.',
+    price: 80.00,
     images: ['https://i.pinimg.com/1200x/50/21/b9/5021b9c39e824e1935f8b4bf24b3c315.jpg', 'https://i.pinimg.com/736x/0c/2f/21/0c2f211260f580169e275aeb614dac3a.jpg'],
     category: 'Clothing',
     sub_category: 'Jeans',
     brand: 'Denim Co.',
-    gender: 'Unisex',
-    stock_quantity: 150,
-    tags: ['Best Seller'],
+    gender: 'Women',
+    stock_quantity: 120,
+    tags: ['Best Seller', 'Hot Sale'],
   },
 
-  // --- ADDED: Swimwear ---
+  // --- Swimwear ---
   {
     _id: 'women-swim-01',
     name: 'One-Piece Halter Swimsuit',
@@ -218,105 +145,136 @@ export const products: Product[] = [
     tags: ['Sale', 'New'],
   },
 
-  // --- ADDED: Outerwear ---
+  // --- Outerwear ---
   {
-    _id: 'men-outerwear-01',
-    name: 'Men\'s Classic Trench Coat',
-    slug: 'mens-classic-trench-coat',
-    description: 'A timeless trench coat for men, perfect for layering in cooler weather.',
-    price: 180.00,
+    _id: 'women-outerwear-01',
+    name: 'Classic Beige Trench Coat',
+    slug: 'womens-classic-trench-coat',
+    description: 'A timeless and elegant trench coat for women, perfect for layering.',
+    price: 190.00,
     images: ['https://i.pinimg.com/736x/49/e8/6a/49e86a99eff894882f506ec4c5b1ac4c.jpg', 'https://i.pinimg.com/736x/74/31/3e/74313eaa71486839c2541450547c6470.jpg'],
     category: 'Clothing',
     sub_category: 'Outerwear',
-    brand: 'Gentlemen Co.',
-    gender: 'Men',
-    stock_quantity: 25,
+    brand: 'Atelier Luxe',
+    gender: 'Women',
+    stock_quantity: 35,
     tags: ['New', 'Hot Sale'],
   },
-
-  // tshirt data
+  
+  // --- Ethnic Wear ---
   {
-    _id: 'men-tshirt-01',
-    name: 'Graphic Print Crewneck T-Shirt',
-    slug: 'graphic-print-crewneck-t-shirt',
-    description: 'A soft, breathable cotton t-shirt with a bold graphic print on the front. Perfect for a casual, stylish look.',
-    price: 30.00,
-    images: ['https://thesting.xcdn.nl/409480-LILA_F03.jpg?f=width:3000', 'https://assets-manager.abtasty.com/41fe25de75c6c792d964dc12b3ce657e/pop-up_pop-up-desktop-628x792-_-2.jpg'],
+    _id: 'ethnic-wear-01',
+    name: 'Embroidered Silk Saree',
+    slug: 'embroidered-silk-saree',
+    description: 'A beautifully crafted silk saree with intricate golden embroidery, perfect for weddings and festive occasions.',
+    price: 150.00,
+    base_price: 200.00,
+    images: ['https://i.pinimg.com/1200x/ee/90/2f/ee902f3f3958e1ad2bb8f6d4e61505bd.jpg', 'https://i.pinimg.com/1200x/78/39/0d/78390dd2ce5ddd5d67376746c5832866.jpg'],
     category: 'Clothing',
-    sub_category: 'T-Shirts',
-    brand: 'Urban Threads',
-    gender: 'Men',
-    stock_quantity: 100,
+    sub_category: 'Ethnic Wear',
+    brand: 'Desi Weaves',
+    gender: 'Women',
+    stock_quantity: 20,
+    tags: ['Sale', 'Ethnic'],
+  },
+  {
+    _id: 'ethnic-wear-03',
+    name: 'Royal Blue Anarkali Suit',
+    slug: 'royal-blue-anarkali-suit',
+    description: 'A stunning royal blue Anarkali suit with delicate lacework, perfect for making a grand entrance.',
+    price: 120.00,
+    base_price: 160.00,
+    images: ['https://i.pinimg.com/1200x/1c/f4/2e/1cf42ee6a9f1e7ebadd10b91e707ef7a.jpg', 'https://i.pinimg.com/1200x/ee/88/98/ee88983d713f38ff89a7d54c211d0e41.jpg'],
+    category: 'Clothing',
+    sub_category: 'Ethnic Wear',
+    brand: 'Desi Weaves',
+    gender: 'Women',
+    stock_quantity: 15,
+    tags: ['Sale', 'Ethnic'],
+  },
+
+  //decor items
+  {
+    _id: 'decor-item-01',
+    name: 'Minimalist Ceramic Vase',
+    slug: 'minimalist-ceramic-vase',
+    description: 'A beautifully simple and elegant ceramic vase, perfect for modern home decor. Its clean lines and matte finish complement any space.',
+    price: 45.00,
+    base_price: 60.00,
+    images: ['https://i.pinimg.com/1200x/66/2c/42/662c427c00e1c721bcc75992805cf59d.jpg', 'https://i.etsystatic.com/11738683/r/il/796706/6753473629/il_1588xN.6753473629_dwpk.jpg'],
+    category: 'Decor',
+    sub_category: 'Vases',
+    brand: 'Artisan Home',
+    gender: 'Unisex',
+    stock_quantity: 80,
     tags: ['New', 'Best Seller'],
   },
   {
-    _id: 'women-tshirt-01',
-    name: 'V-Neck Basic Cotton T-Shirt',
-    slug: 'v-neck-basic-cotton-t-shirt',
-    description: 'An essential v-neck t-shirt made from pure, soft cotton. A versatile piece for any wardrobe.',
-    price: 25.00,
-    base_price: 30.00,
-    images: ['https://i.pinimg.com/736x/5d/97/ed/5d97ededa83fb5e2c730ef07b1953eca.jpg', 'https://i.pinimg.com/1200x/95/b3/ee/95b3eecbbff8cf004eb519f6dd5cc73f.jpg'],
-    category: 'Clothing',
-    sub_category: 'T-Shirts',
-    brand: 'Chic Wear',
-    gender: 'Women',
-    stock_quantity: 150,
+    _id: 'decor-item-02',
+    name: 'Abstract Canvas Wall Art',
+    slug: 'abstract-canvas-wall-art',
+    description: 'Vibrant and expressive abstract painting on high-quality canvas. Adds a pop of color and sophistication to any room.',
+    price: 120.00,
+    images: ['https://i.pinimg.com/736x/0a/40/14/0a40146f6d4467ac4baf39b78d7b3b48.jpg', 'https://i.pinimg.com/1200x/86/e5/69/86e569f58ff459d7141f7c063e566534.jpg'],
+    category: 'Decor',
+    sub_category: 'Wall Art',
+    brand: 'Modern Canvas',
+    gender: 'Unisex',
+    stock_quantity: 40,
+    tags: ['Hot Sale'],
+  },
+  {
+    _id: 'decor-item-03',
+    name: 'Modern Nordic Table Lamp',
+    slug: 'modern-nordic-table-lamp',
+    description: 'Sleek and functional, this Nordic-style table lamp features a minimalist design with a metal base and a soft-glow bulb.',
+    price: 75.00,
+    base_price: 90.00,
+    images: ['https://i.pinimg.com/1200x/1a/6b/71/1a6b718dbca7fb3c8d2887b09c7bde78.jpg', 'https://i.pinimg.com/736x/93/af/05/93af0566e1b285392083d499dec299cc.jpg'],
+    category: 'Decor',
+    sub_category: 'Lamps',
+    brand: 'Lumina',
+    gender: 'Unisex',
+    stock_quantity: 65,
     tags: ['Sale'],
   },
-  
-  // --- ADDED: Sweaters ---
   {
-    _id: 'men-sweater-01',
-    name: 'Merino Wool Crewneck Sweater',
-    slug: 'merino-wool-crewneck-sweater',
-    description: 'A luxurious and warm sweater crafted from 100% merino wool. Lightweight yet incredibly insulating.',
-    price: 85.00,
-    images: ['https://i.pinimg.com/1200x/c8/28/a2/c828a26c5d7a8b10e82f41992e91e9ee.jpg', 'https://i.pinimg.com/1200x/84/5e/72/845e72c0e07bbde422be45af7ae9424d.jpg'],
-    category: 'Clothing',
-    sub_category: 'Sweaters',
-    brand: 'Gentlemen Co.',
-    gender: 'Men',
-    stock_quantity: 40,
+    _id: 'decor-item-04',
+    name: 'Golden Geometric Figurine',
+    slug: 'golden-geometric-figurine',
+    description: 'An eye-catching golden figurine with sharp geometric angles. This decorative piece adds a touch of modern luxury to shelves or tables.',
+    price: 35.00,
+    images: ['https://i.pinimg.com/736x/5a/2a/3a/5a2a3a1f3c3d52d4a6f8a8fa3624f1b8.jpg', 'https://i.pinimg.com/736x/3d/3d/3d/3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d3d.jpg'],
+    category: 'Decor',
+    sub_category: 'Sculptures',
+    brand: 'Artisan Home',
+    gender: 'Unisex',
+    stock_quantity: 110,
     tags: ['New'],
   },
   {
-    _id: 'women-sweater-01',
-    name: 'Oversized Knit Cardigan',
-    slug: 'oversized-knit-cardigan',
-    description: 'A cozy and stylish oversized cardigan with a chunky knit texture. Perfect for layering.',
-    price: 70.00,
-    base_price: 90.00,
-    images: ['https://i.pinimg.com/1200x/c4/c2/87/c4c287b6789a00ce1770873ab53f7de4.jpg', 'https://i.pinimg.com/1200x/bc/ea/a7/bceaa777018b239a7e3e09b631e73e34.jpg'],
-    category: 'Clothing',
-    sub_category: 'Sweaters',
-    brand: 'Bella Grace',
-    gender: 'Women',
-    stock_quantity: 55,
+    _id: 'decor-item-05',
+    name: 'Ornate Gold Wall Mirror',
+    slug: 'ornate-gold-wall-mirror',
+    description: 'A stunning wall mirror featuring an intricately designed ornate gold frame. Perfect as a statement piece for an entryway or living room.',
+    price: 150.00,
+    base_price: 180.00,
+    images: ['https://i.pinimg.com/1200x/3f/f2/19/3ff219a0e6f2e1c32d160a9a73b3d723.jpg', 'https://i.pinimg.com/736x/c8/67/44/c86744cb3ac2979245105e556866f9dd.jpg'],
+    category: 'Decor',
+    sub_category: 'Mirrors',
+    brand: 'Reflections Co.',
+    gender: 'Unisex',
+    stock_quantity: 25,
     tags: ['Sale', 'Hot Sale'],
-  },
+  }
 ];
 
+// --- MOCK CART ITEMS (Women's Products Only) ---
 export const mockCartItems = [
-  {
-    _id: "cart_item_1",
-    product: {
-      _id: "product_1",
-      name: "Men's Casual Short Sleeve Shirt",
-      slug: "mens-casual-short-sleeve-shirt",
-      images: ['https://i.pinimg.com/736x/34/3a/c8/343ac8d11dbad8e57bdeef4a16656337.jpg'],
-      price: 1900, // Price in paise or lowest currency unit
-      stock: 10
-    },
-    quantity: 2,
-    price: 3800, // quantity * product.price
-    color: "Pink",
-    size: "M"
-  },
   {
     _id: "cart_item_2",
     product: {
-      _id: "product_2",
+      _id: "women-top-02",
       name: "Elegant Kimono Sleeve Top",
       slug: "elegant-kimono-sleeve-top",
       images: ['https://i.pinimg.com/736x/bd/43/09/bd43096e2457346ceae6520b1bb5eaac.jpg'],
@@ -331,23 +289,23 @@ export const mockCartItems = [
   {
     _id: "cart_item_3",
     product: {
-      _id: "product_3",
-      name: "Casual Mesh Panel Shirt",
-      slug: "casual-mesh-panel-shirt",
-      images: ['https://images.unsplash.com/photo-1508427953056-b00b8d78ebf5?q=80&w=1887'],
-      price: 3500,
+      _id: "women-dress-01",
+      name: "Floral Summer Midi Dress",
+      slug: "floral-summer-midi-dress",
+      images: ['https://i.pinimg.com/1200x/1a/c5/fd/1ac5fd8e19241ef9b2594dfbf4a55ccf.jpg'],
+      price: 5500,
       stock: 15
     },
-    quantity: 3,
-    price: 10500,
-    color: "Blue",
-    size: "L"
-  },
-  
+    quantity: 1,
+    price: 5500,
+    color: "Floral",
+    size: "M"
+  }
 ];
 
 export const mockSubTotal = mockCartItems.reduce((acc, item) => acc + item.price, 0);
 
+// --- MOCK WISHLIST ITEMS (Women's Products Only) ---
 export interface WishlistItem {
   _id: string;
   name: string;
@@ -355,42 +313,34 @@ export interface WishlistItem {
   images: string[];
   price: number;
   base_price?: number;
-  stock: number;
+  stock_quantity: number; // Corrected from stock to stock_quantity
 }
 
 export const mockWishlistItems: WishlistItem[] = [
   {
-      _id: "product_1",
-      name: "Men's Casual Short Sleeve Shirt",
-      slug: "mens-casual-short-sleeve-shirt",
-      images: ['https://i.pinimg.com/736x/34/3a/c8/343ac8d11dbad8e57bdeef4a16656337.jpg'],
-      price: 1900,
-      base_price: 2700,
-      stock: 10
+      _id: "women-top-01",
+      name: "Women's Raglan Sleeve T-Shirt",
+      slug: "womens-raglan-sleeve-t-shirt",
+      images: ['https://afends.com/cdn/shop/files/W234001-MRL_1740.png?v=1750389636&width=1080'],
+      price: 2800,
+      base_price: 3600,
+      stock_quantity: 10
   },
   {
-      _id: "product_2",
-      name: "Elegant Kimono Sleeve Top",
-      slug: "elegant-kimono-sleeve-top",
-      images: ['https://i.pinimg.com/736x/bd/43/09/bd43096e2457346ceae6520b1bb5eaac.jpg'],
-      price: 2400,
-      stock: 5
+      _id: "women-dress-02",
+      name: "Classic Black Evening Dress",
+      slug: "classic-black-evening-dress",
+      images: ['https://i.pinimg.com/736x/11/77/8b/11778b85fe0b0bc4ad66e01f39aaa7d8.jpg'],
+      price: 9500,
+      stock_quantity: 5
   },
   {
-      _id: "product_3",
-      name: "Casual Mesh Panel Shirt",
-      slug: "casual-mesh-panel-shirt",
-      images: ['https://images.unsplash.com/photo-1508427953056-b00b8d78ebf5?q=80&w=1887'],
-      price: 3500,
-      base_price: 4500,
-      stock: 0, // Out of stock example
-  },
-  {
-      _id: "product_4",
-      name: "Men's Striped Oxford Shirt",
-      slug: "mens-striped-oxford-shirt",
-      images: ['https://i.pinimg.com/1200x/c0/35/c2/c035c2634612ab00326b95486857a730.jpg'],
-      price: 2200,
-      stock: 8,
+      _id: "ethnic-wear-01",
+      name: "Embroidered Silk Saree",
+      slug: "embroidered-silk-saree",
+      images: ['https://i.pinimg.com/1200x/ee/90/2f/ee902f3f3958e1ad2bb8f6d4e61505bd.jpg'],
+      price: 15000,
+      base_price: 20000,
+      stock_quantity: 0, // Out of stock example
   }
 ];

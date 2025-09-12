@@ -58,7 +58,7 @@ const OrderCard = ({ order }: { order: Order }) => {
           <div className="flex-grow">
             <h3 className="font-semibold text-gray-800">
               {order.orderItems[0]?.name || 'Order Item'}
-              {order.orderItems.length > 1 && ` + ${order.orderItems.length - 1} more item(s)`}
+              {order.orderItems.length > 1 && ` + ₹{order.orderItems.length - 1} more item(s)`}
             </h3>
             <p className="text-sm text-gray-500">Total: <span className="font-bold text-gray-900">₹{order.totalPrice.toLocaleString()}</span></p>
           </div>

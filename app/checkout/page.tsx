@@ -438,13 +438,13 @@
 //               <div className="space-y-3">
 //                 <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>₹{subTotal.toLocaleString()}</span></div>
 //                 {discountAmount > 0 && (<div className="flex justify-between text-green-600"><span>Discount</span><span>-₹{discountAmount.toLocaleString()}</span></div>)}
-//                 <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span>{shippingCost === 0 ? "Free" : `₹${shippingCost.toLocaleString()}`}</span></div>
+//                 <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span>{shippingCost === 0 ? "Free" : `₹{shippingCost.toLocaleString()}`}</span></div>
 //                 <hr className="my-4" />
 //                 <div className="flex justify-between text-lg font-semibold"><span>Total</span><span className="text-[#A77C38]">₹{finalTotal.toLocaleString()}</span></div>
 //               </div>
               
 //               <Button type="submit" disabled={isProcessing || !selectedAddressId} className="w-full py-3 mt-6 font-medium bg-[#A77C38] hover:bg-[#966b2a]">
-//                 {isProcessing ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>) : (`Place Order - ₹${finalTotal.toLocaleString()}`)}
+//                 {isProcessing ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>) : (`Place Order - ₹{finalTotal.toLocaleString()}`)}
 //               </Button>
               
 //               <div className="flex items-center justify-center space-x-2 mt-3 text-sm text-gray-600"><Shield className="h-4 w-4" /><span>Secure SSL Encrypted Payment</span></div>

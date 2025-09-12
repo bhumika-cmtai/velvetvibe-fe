@@ -15,15 +15,15 @@ import Footer from "@/components/Footer"
 
 // --- UPDATED FILTER CONFIGURATION ---
 const filterGroups = [
-  { 
-    id: "gender", 
-    label: "Gender", 
-    options: [ 
-      { id: "Men", label: "Men" }, 
-      { id: "Women", label: "Women" }, 
-      { id: "Unisex", label: "Unisex" } 
-    ] 
-  },
+  // { 
+  //   id: "gender", 
+  //   label: "Gender", 
+  //   options: [ 
+  //     { id: "Men", label: "Men" }, 
+  //     { id: "Women", label: "Women" }, 
+  //     { id: "Unisex", label: "Unisex" } 
+  //   ] 
+  // },
   { 
     id: "sub_category", 
     label: "Category", 
@@ -43,10 +43,10 @@ const filterGroups = [
     id: "price", 
     label: "Price Range", 
     options: [ 
-      { id: "0-20", label: "Under $20" }, 
-      { id: "20-40", label: "$20 - $40" }, 
-      { id: "40-100", label: "$40 - $100" }, 
-      { id: "100+", label: "Above $100" } 
+      { id: "0-20", label: "Under ₹20" }, 
+      { id: "20-40", label: "₹20 - ₹40" }, 
+      { id: "40-100", label: "₹40 - ₹100" }, 
+      { id: "100+", label: "Above ₹100" } 
     ] 
   },
   { 
@@ -131,7 +131,7 @@ export default function ShopPageClient() {
     <div className="bg-gray-50 min-h-screen">
       <Navbar />
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-gray-100 rounded-2xl p-8 text-center mb-12">
+        <div className="bg-[var(--base-100)] rounded-2xl p-8 text-center mb-12">
             <h1 className="text-4xl font-serif font-bold text-[var(--text-primary)]">All Products</h1>
             <p className="mt-2 text-[var(--text-secondary)] max-w-lg mx-auto">Discover our curated collection of fashion essentials. Quality pieces for your modern wardrobe.</p>
         </div>

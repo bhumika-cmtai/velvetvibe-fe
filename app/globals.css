@@ -40,6 +40,36 @@
   /* ecommerce colors */
   --text-primary: #000000;
   --text-secondary: #6B7280; /* Gray for subtitles */
+
+
+  --gold-dark-500: #A5823F;
+  --gold-dark: #BE9E53;
+  --gold-light: #FCEDA4;
+
+  --primary-text-theme: #A5823F;
+  --secondary-text-theme: #000000;
+
+  --primary-button-theme: #000000;
+  --secondary-button-theme: #313131;
+
+  --primary-button-text: #ffffff;
+  --secondary-button-text: #FCEDA4;
+
+  --pallete-50:#FCEDA4;
+  --pallete-100: #DDC175;
+  --pallete-300: #BE9E53;
+  --pallete-500: #A5823F;
+
+  --base-10: #e9f1f9;
+  --base-50: #eaf2fa;
+  --base-100: #e1edf6;
+  --base-200: #c1dbef; 
+  --base-300: #AFCBD7; 
+  --base-500: #90B7C8;
+
+
+  --blue-light-300: #AFCBD7;
+
   --accent-primary: #000000; /* Black for buttons and highlights */
   --accent-secondary: #D9534F; /* Red for sale tags like 'SAVE $10' */
   --border-color: #E5E7EB; /* Light gray for borders */

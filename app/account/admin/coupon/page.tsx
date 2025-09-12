@@ -62,7 +62,7 @@
 //         <Dialog open={isOpen} onOpenChange={onClose}>
 //             <DialogContent className="sm:max-w-md">
 //                 <DialogHeader>
-//                     <DialogTitle>{isEditMode ? `Edit Coupon: ${coupon.code}` : 'Add New Coupon'}</DialogTitle>
+//                     <DialogTitle>{isEditMode ? `Edit Coupon: ₹{coupon.code}` : 'Add New Coupon'}</DialogTitle>
 //                 </DialogHeader>
 //                 <form onSubmit={handleSubmit}>
 //                     <div className="py-4 space-y-4">
