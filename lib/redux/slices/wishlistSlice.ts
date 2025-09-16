@@ -1,7 +1,7 @@
 // wishlistSlice.tsx
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store'; 
-import { Product } from '@/lib/data'; 
+// import { Product } from '@/lib/data'; 
 import api from '@/lib/api/user'; 
 
 interface WishlistItemBackend {
@@ -63,6 +63,19 @@ export const removeFromWishlist = createAsyncThunk<WishlistItemBackend[], string
   }
 );
 
+export const mergeWishlist = createAsyncThunk<WishlistItemBackend[], string[], { state: RootState }>(
+  'wishlist/mergeWishlist',
+  async (productIds, { rejectWithValue }) => {
+    try {
+      // Backend mein naye merge endpoint ko call karein
+      const response = await api.post('/wishlist/merge', { productIds }); 
+      return response.data.data; 
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to merge wishlist');
+    }
+  }
+);
+
 const wishlistSlice = createSlice({
   name: 'wishlist',
   initialState,
@@ -118,8 +131,15 @@ const wishlistSlice = createSlice({
       .addCase(removeFromWishlist.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload as string;
+      })
+      .addCase(mergeWishlist.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.items = action.payload; // Update the state with the merged list
+      })
+      .addCase(mergeWishlist.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload as string;
       });
-      
   },
 });
 

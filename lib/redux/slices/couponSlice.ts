@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { toast } from 'sonner';
-import { createCouponApi, deleteCouponApi, getAllCouponsApi,getCouponByNameApi ,updateCouponApi } from '@/lib/api/admin';
+import { createCouponApi, deleteCouponApi, getAllCouponsApi, getCouponByNameApi, updateCouponApi } from '@/lib/api/admin';
 
 // --- Type Definitions (No change) ---
 export interface Coupon {
@@ -25,21 +25,12 @@ const initialState: CouponState = {
     error: null,
 };
 
-// Helper to get token (No change)
-const getToken = (getState: () => unknown): string => {
-    const token = (getState() as { auth: { accessToken: string } }).auth.accessToken;
-    if (!token) throw new Error('Authentication token is not available.');
-    return token;
-};
-
-// --- Async Thunks (Corrected Data & Error Handling) ---
+// --- Async Thunks (CORRECTED: Removed all getToken and getState logic) ---
 export const fetchCoupons = createAsyncThunk(
     'coupons/fetchAll',
-    // The thunk now accepts an optional 'status' payload
-    async (status: 'active' | 'inactive' | undefined, { getState, rejectWithValue }) => {
+    async (status: 'active' | 'inactive' | undefined, { rejectWithValue }) => {
         try {
-            const token = getToken(getState);
-            // Pass the status along to the updated API function
+            // The apiClient from admin.ts will automatically add the token.
             const response = await getAllCouponsApi(status);
             return response.data.data;
         } catch (error: any) {
@@ -48,59 +39,58 @@ export const fetchCoupons = createAsyncThunk(
     }
 );
 
-// Fetch a single coupon by its code name (for cart validation)
 export const fetchCouponByName = createAsyncThunk(
     'coupons/fetchByName',
     async (couponCode: string, { rejectWithValue }) => {
         try {
-            // This API call fetches the coupon and validates if it's active on the backend
             const response = await getCouponByNameApi(couponCode);
-            return response.data.data as Coupon; // The backend returns the full coupon object
+            return response.data.data as Coupon;
         } catch (error: any) {
-            // The backend API sends specific error messages for "not found" or "inactive"
             return rejectWithValue(error.response?.data?.message || 'An error occurred.');
         }
     }
 );
 
-
-
-export const createCoupon = createAsyncThunk('coupons/create', async (couponData: { code: string; discountPercentage: number }, { getState, rejectWithValue }) => {
-    try {
-        const token = getToken(getState);
-        const response = await createCouponApi(couponData);
-        // --- FIX: Extract the new coupon object from the ApiResponse ---
-        return response.data.data;
-    } catch (error: any) {
-        // --- FIX: Extract the specific backend message (e.g., "coupon already exists") ---
-        return rejectWithValue(error.response?.data?.message || 'Failed to create coupon.');
+export const createCoupon = createAsyncThunk(
+    'coupons/create',
+    async (couponData: { code: string; discountPercentage: number }, { rejectWithValue }) => {
+        try {
+            // The apiClient from admin.ts will automatically add the token.
+            const response = await createCouponApi(couponData);
+            return response.data.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to create coupon.');
+        }
     }
-});
+);
 
-export const updateCoupon = createAsyncThunk('coupons/update', async ({ couponId, couponData }: { couponId: string; couponData: Partial<Coupon> }, { getState, rejectWithValue }) => {
-    try {
-        const token = getToken(getState);
-        const response = await updateCouponApi(couponId, couponData);
-        // --- FIX: Extract the updated coupon object ---
-        return response.data.data;
-    } catch (error: any) {
-        // --- FIX: Extract the specific backend message ---
-        return rejectWithValue(error.response?.data?.message || 'Failed to update coupon.');
+export const updateCoupon = createAsyncThunk(
+    'coupons/update',
+    async ({ couponId, couponData }: { couponId: string; couponData: Partial<Coupon> }, { rejectWithValue }) => {
+        try {
+            // The apiClient from admin.ts will automatically add the token.
+            const response = await updateCouponApi(couponId, couponData);
+            return response.data.data;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to update coupon.');
+        }
     }
-});
+);
 
-export const deleteCoupon = createAsyncThunk('coupons/delete', async (couponId: string, { getState, rejectWithValue }) => {
-    try {
-        const token = getToken(getState);
-        await deleteCouponApi(couponId);
-        return couponId;
-    } catch (error: any) {
-        // --- FIX: Extract the specific backend message ---
-        return rejectWithValue(error.response?.data?.message || 'Failed to delete coupon.');
+export const deleteCoupon = createAsyncThunk(
+    'coupons/delete',
+    async (couponId: string, { rejectWithValue }) => {
+        try {
+            // The apiClient from admin.ts will automatically add the token.
+            await deleteCouponApi(couponId);
+            return couponId;
+        } catch (error: any) {
+            return rejectWithValue(error.response?.data?.message || 'Failed to delete coupon.');
+        }
     }
-});
+);
 
-// --- Slice Definition (Corrected to show toasts on rejection) ---
+// --- Slice Definition (No changes needed here, it was already correct) ---
 const couponSlice = createSlice({
     name: 'coupons',
     initialState,
@@ -116,17 +106,14 @@ const couponSlice = createSlice({
             .addCase(fetchCoupons.rejected, (state, action) => {
                 state.status = 'failed';
                 state.error = action.payload as string;
-                // Also show a toast for fetch errors
                 toast.error(state.error); 
             })
             // Create
             .addCase(createCoupon.fulfilled, (state, action: PayloadAction<Coupon>) => {
                 state.coupons.unshift(action.payload);
-                // This success toast will now work correctly
                 toast.success('Coupon created successfully!');
             })
             .addCase(createCoupon.rejected, (_, action) => {
-                // This will now show the specific message from the backend
                 toast.error(action.payload as string);
             })
             // Update

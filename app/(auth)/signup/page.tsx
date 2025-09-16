@@ -3,47 +3,54 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { registerUserApi } from '@/lib/api/auth'; // Ensure this path is correct
+import { registerUserApi } from '@/lib/api/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import { toast } from 'sonner'; 
 
 export default function SignUpPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-    
+    // setError(''); // <-- Iski ab zaroorat nahi hai
+
     try {
-      // The API call uses the function defined in lib/api/auth.ts
-      await registerUserApi({ name: fullName, email, password });
-      
-      // On success, redirect to the OTP page with the email as a query param
+      await registerUserApi({ name: fullName, email, password, role: "user" });
+
+      // Success toast dikhayein
+      toast.success("Account created successfully!", {
+        description: "An OTP has been sent to your email for verification.",
+      });
+
+      // OTP page par redirect karein
       router.push(`/verify-otp?email=${encodeURIComponent(email)}`);
+
     } catch (err: any) {
-      // The error message comes directly from our API wrapper
-      setError(err.message);
+      // Error ko toast mein dikhayein
+      console.log("err.message")
+      console.log(err.message)
+      toast.error(err.message || "An unknown error occurred.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md space-y-8 rounded-xl border bg-white p-10 shadow-sm">
+    <div className="flex min-h-screen items-center justify-center bg-background-subtle">
+      <div className="w-full max-w-md space-y-8 rounded-xl border bg-background-main p-10 shadow-sm">
         <div>
-          <h2 className="text-center text-3xl font-bold">Create an Account</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <h2 className="text-center text-3xl font-bold text-text-main">Create an Account</h2>
+          <p className="mt-2 text-center text-sm text-text-subtle">
             Already registered?{' '}
-            <Link href="/login" className="font-medium text-[#D09D13] hover:text-[#b48a10]">
+            <Link href="/login" className="font-medium text-primary hover:text-primary-hover">
               Sign in
             </Link>
           </p>
@@ -61,9 +68,11 @@ export default function SignUpPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {/* Error paragraph ko hata diya gaya hai */}
+          
           <div>
-            <Button type="submit" className="w-full bg-[var(--primary-button-theme)] hover:bg-[var(--secondary-button-theme)] text-[var(--primary-button-text)] hover:text-[var(--secondary-button-text)] " disabled={isLoading}>
+            <Button type="submit" className="w-full bg-primary hover:bg-primary-hover text-text-on-primary" disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
           </div>

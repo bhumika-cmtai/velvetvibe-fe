@@ -4,21 +4,35 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useRouter } from 'next/navigation';
-import { loginSuccess } from '@/lib/redux/slices/authSlice';
-import { loginUserApi } from '@/lib/api/auth'; // Ensure this path is correct
+import Link from 'next/link';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Link from 'next/link';
 import { toast } from 'sonner';
+
+import { loginUserApi } from '@/lib/api/auth'; // Ensure this path is correct
+import { loginSuccess } from '@/lib/redux/slices/authSlice';
+import { mergeCarts } from '@/lib/redux/slices/cartSlice';
+import { AppDispatch } from '@/lib/redux/store';
+
+import { useCart } from "@/context/CartContext";
+import { useWishlist as useLocalWishlist } from "@/context/WishlistContext";
+import { mergeWishlist } from "@/lib/redux/slices/wishlistSlice";
+
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const dispatch = useDispatch();
+  
+  const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+
+  const { items: localCartItems, clearCart: clearLocalCart } = useCart();
+  const { items: localWishlistItems, clearWishlist: clearLocalWishlist } = useLocalWishlist();
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,20 +43,47 @@ export default function LoginPage() {
       const response = await loginUserApi({ email, password });
       const { user, accessToken } = response.data;
 
-      // Dispatch user data to Redux store
       dispatch(loginSuccess({ user, accessToken }));
       toast.success('Logged in successfully');
       
-      // **NEW: Redirect based on user role**
+      if (localCartItems && localCartItems.length > 0) {
+        toast.info("Syncing your cart...");
+        console.log(`Found ${localCartItems.length} items to merge.`);
+        const itemsToMerge = localCartItems.map(item => ({ 
+          _id: item._id, // This should be the product ID
+          quantity: item.quantity 
+        }));
+        
+        await dispatch(mergeCarts({ localCartItems: itemsToMerge }));
+
+        clearLocalCart();
+        console.log("Local cart cleared after successful merge.");
+        toast.success("Cart synced successfully!");
+      }
+      else{
+        console.log("No local cart items found. Skipping merge.");
+      }
+
+      if (localWishlistItems && localWishlistItems.length > 0) {
+        toast.info("Syncing your wishlist...");
+        const productIdsToMerge = localWishlistItems.map(item => item._id);
+        
+        await dispatch(mergeWishlist(productIdsToMerge));
+
+        clearLocalWishlist();
+        toast.success("Wishlist synced!");
+    }
+
       if (user.role === 'admin') {
-        router.push('/account/admin'); // Redirect admins to their dashboard
+        router.push('/account/admin'); 
       } else {
-        router.push('/'); // Redirect regular users to the homepage
+        router.push('/'); 
       }
 
     } catch (err: any) {
-      toast.error(err.message)
-      setError(err.message);
+      const errorMessage = err.response?.data?.message || err.message || 'An unknown error occurred.';
+      toast.error(errorMessage);
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -69,11 +110,7 @@ export default function LoginPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          {/* <div className="text-right text-sm">
-             <Link href="/forgot-password" className="font-medium text-[#D09D13] hover:text-[#b48a10]">
-                Forgot password?
-              </Link>
-          </div> */}
+
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div>
             <Button type="submit" className="w-full bg-[var(--primary-button-theme)] hover:bg-[var(--secondary-button-theme)] text-[var(--primary-button-text)] hover:text-[var(--secondary-button-text)]" disabled={isLoading}>

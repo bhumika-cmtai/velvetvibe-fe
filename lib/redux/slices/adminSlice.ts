@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { toast } from 'sonner';
 
@@ -14,7 +13,7 @@ import {
   deleteUserApi
 } from '@/lib/api/admin';
 
-import type { Product } from '@/lib/data';
+import type { Product } from '@/lib/types/product';
 import type { AdminUser } from '@/lib/api/admin';
 
 interface AdminState {
@@ -59,7 +58,6 @@ export const fetchProducts = createAsyncThunk(
   async (params: { page?: number; limit?: number }, { rejectWithValue }) => {
     try {
       const response = await getAllProductsApi(params);
-      // Your backend wraps data in a 'data' property
       return response.data.data; 
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -81,6 +79,7 @@ export const createProduct = createAsyncThunk('admin/createProduct', async (form
     const response = await createProductApi(formData);
     return response.data.data;
   } catch (error: any) {
+    console.log(error)
     return rejectWithValue(error.response?.data?.message || error.message);
   }
 });
@@ -90,6 +89,7 @@ export const updateProduct = createAsyncThunk('admin/updateProduct', async ({ pr
     const response = await updateProductApi(productId, formData);
     return response.data.data;
   } catch (error: any) {
+    console.log(error)
     return rejectWithValue(error.response?.data?.message || error.message);
   }
 });
@@ -108,14 +108,12 @@ export const fetchUsers = createAsyncThunk(
   async (params: { page?: number; limit?: number; name?: string }, { rejectWithValue }) => {
     try {
       const response = await getAllUsersApi(params);
-      
       return response.data.data; 
     } catch (error: any) { 
       return rejectWithValue(error.response?.data?.message || error.message); 
     }
   }
 );
-
 
 export const fetchUserById = createAsyncThunk('admin/fetchUserById', async (userId: string, { rejectWithValue }) => {
   try { 
@@ -144,13 +142,13 @@ export const deleteUser = createAsyncThunk('admin/deleteUser', async (userId: st
   }
 });
 
-
 const adminSlice = createSlice({
   name: 'admin',
   initialState,
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // Product Reducers
       .addCase(fetchProducts.pending, (state) => { state.status = 'loading'; })
       .addCase(fetchProducts.fulfilled, (state, action: PayloadAction<any>) => {
         state.status = 'succeeded';
@@ -164,7 +162,6 @@ const adminSlice = createSlice({
       .addCase(fetchProducts.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload as string;
-        toast.error(`Fetch Error: ${state.error}`);
       })
 
       .addCase(fetchProductById.pending, (state) => { state.selectedProductStatus = 'loading'; state.selectedProduct = null; })
@@ -172,24 +169,19 @@ const adminSlice = createSlice({
         state.selectedProductStatus = 'succeeded';
         state.selectedProduct = action.payload;
       })
-      .addCase(fetchProductById.rejected, (state, action) => { state.selectedProductStatus = 'failed'; toast.error(`Fetch Details Error: ${action.payload as string}`); })
-
-      .addCase(createProduct.fulfilled, (state, action: PayloadAction<Product>) => {
-        state.products.unshift(action.payload);
-        toast.success("Product created successfully!");
+      .addCase(fetchProductById.rejected, (state, action) => { 
+          state.selectedProductStatus = 'failed'; 
+          toast.error(`Fetch Details Error: ${action.payload as string}`); 
       })
+
       .addCase(updateProduct.fulfilled, (state, action: PayloadAction<Product>) => {
-        const index = state.products.findIndex(p => p._id === action.payload._id); // Use _id for consistency with DB
+        const index = state.products.findIndex(p => p._id === action.payload._id);
         if (index !== -1) {
           state.products[index] = action.payload;
         }
-        toast.success("Product updated successfully!");
       })
-      .addCase(deleteProduct.fulfilled, (state, action: PayloadAction<string>) => {
-        state.products = state.products.filter(p => p._id !== action.payload); // Use _id
-        toast.success("Product deleted successfully!");
-      })
-
+      
+      // User Reducers
       .addCase(fetchUsers.pending, (state) => { state.userStatus = 'loading'; })
       .addCase(fetchUsers.fulfilled, (state, action: PayloadAction<any>) => {
         state.userStatus = 'succeeded';
@@ -200,30 +192,73 @@ const adminSlice = createSlice({
           totalUsers: action.payload.totalUsers,
         };
       })
-      .addCase(fetchUsers.rejected, (state, action) => { state.userStatus = 'failed'; state.error = action.payload as string; toast.error(`Fetch Users Error: ${state.error}`); })
+      .addCase(fetchUsers.rejected, (state, action) => { 
+          state.userStatus = 'failed'; 
+          state.error = action.payload as string; 
+      })
+
       .addCase(fetchUserById.pending, (state) => { state.selectedUserStatus = 'loading'; state.selectedUser = null; })
       .addCase(fetchUserById.fulfilled, (state, action: PayloadAction<AdminUser>) => {
-        state.selectedUserStatus = 'succeeded'; state.selectedUser = action.payload;
+        state.selectedUserStatus = 'succeeded'; 
+        state.selectedUser = action.payload;
       })
-      .addCase(fetchUserById.rejected, (state, action) => { state.selectedUserStatus = 'failed'; toast.error(`Fetch User Details Error: ${action.payload as string}`); })
+      .addCase(fetchUserById.rejected, (state, action) => { 
+          state.selectedUserStatus = 'failed'; 
+          toast.error(`Fetch User Details Error: ${action.payload as string}`); 
+      })
+      
+      // Toast Notifications and State Logic Combined
+      
+      .addCase(createProduct.pending, () => { 
+        toast.loading("Creating product...", { id: 'product-action-toast' }); 
+      })
+      .addCase(createProduct.fulfilled, () => { 
+        toast.success("Product created successfully!", { id: 'product-action-toast' }); 
+      })
+      .addCase(createProduct.rejected, (state, action) => { 
+        toast.error(`Create failed: ${action.payload as string}`, { id: 'product-action-toast' }); 
+      })
+
+      .addCase(updateProduct.pending, () => { 
+        toast.loading("Updating product...", { id: 'product-action-toast' }); 
+      })
+      .addCase(updateProduct.rejected, (state, action) => { 
+        toast.error(`Update failed: ${action.payload as string}`, { id: 'product-action-toast' }); 
+      })
+
+      .addCase(deleteProduct.pending, () => {
+        toast.loading("Deleting product...", { id: 'product-delete-toast' });
+      })
+      .addCase(deleteProduct.fulfilled, (state, action: PayloadAction<string>) => {
+        state.products = state.products.filter(p => p._id !== action.payload);
+        toast.success("Product deleted successfully!", { id: 'product-delete-toast' });
+      })
+      .addCase(deleteProduct.rejected, (state, action) => { 
+        toast.error(`Delete failed: ${action.payload as string}`, { id: 'product-delete-toast' });
+      })
+
+      .addCase(updateUser.pending, () => { 
+        toast.loading("Updating user...", { id: 'user-action-toast' }); 
+      })
       .addCase(updateUser.fulfilled, (state, action: PayloadAction<AdminUser>) => {
         const index = state.users.findIndex(u => u._id === action.payload._id);
         if (index !== -1) state.users[index] = action.payload;
-        toast.success("User updated!");
+        toast.success("User updated successfully!", { id: 'user-action-toast' });
       })
-      .addCase(deleteUser.fulfilled, (state, action: PayloadAction<string>) => {
-        state.users = state.users.filter(u => u._id !== action.payload); 
-        toast.success("User deleted!");
+      .addCase(updateUser.rejected, (state, action) => { 
+        toast.error(`Update failed: ${action.payload as string}`, { id: 'user-action-toast' }); 
       })
       
-      .addCase(createProduct.pending, () => { toast.loading("Creating product...", { id: 'product-toast' }); })
-      .addCase(createProduct.rejected, (state, action) => { toast.error(`Create failed: ${action.payload as string}`, { id: 'product-toast' }); })
-      .addCase(updateProduct.pending, () => { toast.loading("Updating product...", { id: 'product-toast' }); })
-      .addCase(updateProduct.rejected, (state, action) => { toast.error(`Update failed: ${action.payload as string}`, { id: 'product-toast' }); })
-      .addCase(deleteProduct.rejected, (state, action) => { toast.error(`Delete Error: ${action.payload as string}`); })
-      .addCase(updateUser.pending, () => { toast.loading("Updating user...", { id: 'user-toast' }); })
-      .addCase(updateUser.rejected, (state, action) => { toast.error(`Update failed: ${action.payload as string}`, { id: 'user-toast' }); })
-      .addCase(deleteUser.rejected, (state, action) => { toast.error(`Delete failed: ${action.payload as string}`); });
+      .addCase(deleteUser.pending, () => {
+        toast.loading("Deleting user...", { id: 'user-delete-toast' });
+      })
+      .addCase(deleteUser.fulfilled, (state, action: PayloadAction<string>) => {
+        state.users = state.users.filter(u => u._id !== action.payload);
+        toast.success("User deleted successfully!", { id: 'user-delete-toast' });
+      })
+      .addCase(deleteUser.rejected, (state, action) => { 
+        toast.error(`Delete failed: ${action.payload as string}`, { id: 'user-delete-toast' });
+      });
   },
 });
 

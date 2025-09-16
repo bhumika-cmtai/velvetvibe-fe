@@ -1,18 +1,24 @@
 // src/app/ethnic-wear/page.tsx
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import Image from "next/image"
+import { motion } from "framer-motion"
+import { Frown } from "lucide-react"
+
+// --- Redux Imports (Naye imports) ---
+import { useDispatch, useSelector } from "react-redux"
+import { AppDispatch, RootState } from "@/lib/redux/store"
+import { fetchProducts } from "@/lib/redux/slices/productSlice"
+
+// --- Component Imports ---
 import Navbar  from "@/components/Navbar"
 import Footer  from "@/components/Footer"
 import ProductCard  from "@/components/ProductCard"
-import { products } from "@/lib/data" // Static data
-import { Product } from "@/lib/types/product"
-import { motion } from "framer-motion"
-import { Frown } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import ProductGridSkeleton from "@/components/skeleton/ProductGridSkeleton" // Loading state ke liye
 
-// --- Ethnic Collection Header ---
+// --- Ethnic Collection Header (Isme koi change nahi) ---
 const CollectionHeader = () => (
     <div className="relative h-[250px] md:h-[350px] w-full bg-[#FFF8F0]">
         <div className="absolute top-0 right-0 h-full w-1/3 hidden md:block">
@@ -20,7 +26,7 @@ const CollectionHeader = () => (
                 src="/ethenicmodel.png"
                 alt="Ethnic Wear Banner"
                 fill
-                className="object-cover"
+                className="object-contain object-right-bottom" // Changed to contain for better image fit
             />
         </div>
         <div className="relative z-10 flex flex-col items-center md:items-start justify-center h-full text-center md:text-left container mx-auto px-4 sm:px-6 lg:px-8">
@@ -31,39 +37,62 @@ const CollectionHeader = () => (
     </div>
 );
 
-// --- Main Page Component ---
+// --- Main Page Component (Isme major changes hain) ---
 export default function EthnicWearPage() {
+  const dispatch = useDispatch<AppDispatch>();
+
+  // --- Redux se state la rahe hain ---
+  const { items: ethnicProducts, loading, error } = useSelector((state: RootState) => state.product);
   
-  // State Management
+  // --- Local state UI control ke liye ---
   const [sortOption, setSortOption] = useState('featured');
   const [genderFilter, setGenderFilter] = useState('all');
 
-  // Filtering and Sorting Logic
-  const filteredAndSortedProducts = useMemo(() => {
-    // 1. Filter for products in the "Ethnic Wear" sub-category
-    let filtered = products.filter(p => p.sub_category === 'Ethnic Wear');
+  // --- Data Fetching Effect ---
+  // Yeh effect component load hone par aur gender filter change hone par chalega
+  useEffect(() => {
+    const queryParams: { tags: string, gender?: string } = {
+        tags: 'Ethnic' // Hamesha 'Ethnic' tag wale products fetch karo
+        // Note: Agar aapke backend mein tag 'Ethnic Wear' hai to yahan 'Ethnic Wear' likhein
+    };
 
-    // 2. Filter by Gender
     if (genderFilter !== 'all') {
-      filtered = filtered.filter(p => p.gender && p.gender.toLowerCase() === genderFilter);
+        queryParams.gender = genderFilter;
     }
-    
-    // 3. Sort the results
+
+    dispatch(fetchProducts(queryParams));
+  }, [dispatch, genderFilter]);
+
+  // --- Client-side sorting ke liye useMemo ---
+  const sortedProducts = useMemo(() => {
+    const sorted = [...ethnicProducts]; // Redux se aaye products ki copy banayein
     switch (sortOption) {
       case 'price-asc':
-        filtered.sort((a, b) => a.price - b.price);
+        sorted.sort((a, b) => (a.sale_price ?? a.price) - (b.sale_price ?? b.price));
         break;
       case 'price-desc':
-        filtered.sort((a, b) => b.price - a.price);
+        sorted.sort((a, b) => (b.sale_price ?? b.price) - (a.sale_price ?? a.price));
         break;
       case 'newest':
-        filtered.sort((a, b) => b._id.localeCompare(a._id));
+        sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
-      default:
+      default: // 'featured'
         break;
     }
-    return filtered;
-  }, [sortOption, genderFilter]);
+    return sorted;
+  }, [sortOption, ethnicProducts]);
+
+  // ProductCard ke liye data map karein
+  const mappedProducts = useMemo(() => sortedProducts.map(p => ({
+    _id: p._id,
+    name: p.name,
+    slug: p.slug,
+    images: p.images,
+    tags: p.tags,
+    price: p.sale_price ?? p.price,
+    base_price: p.sale_price ? p.price : undefined,
+    originalProduct: p,
+  })), [sortedProducts]);
 
   return (
     <div className="bg-white">
@@ -71,7 +100,7 @@ export default function EthnicWearPage() {
       <CollectionHeader />
       
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* --- Responsive Filter & Toolbar Section --- */}
+        {/* --- Filter & Toolbar --- */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 pb-4 border-b">
           <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">For:</span>
@@ -97,13 +126,17 @@ export default function EthnicWearPage() {
           </div>
         </div>
 
-        {/* --- Product Grid --- */}
-        {filteredAndSortedProducts.length > 0 ? (
+        {/* --- Product Grid with Loading/Error/Empty States --- */}
+        {loading ? (
+            <ProductGridSkeleton count={8} />
+        ) : error ? (
+            <div className="text-center py-20 text-red-500">Failed to load products.</div>
+        ) : mappedProducts.length > 0 ? (
           <motion.div 
             layout
             className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8"
           >
-            {filteredAndSortedProducts.map((product) => (
+            {mappedProducts.map((product) => (
               <ProductCard key={product._id} product={product} />
             ))}
           </motion.div>

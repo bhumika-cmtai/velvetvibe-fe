@@ -1,4 +1,4 @@
-"use client"; // Client component directive for using hooks
+"use client";
 
 import React, { useState, useEffect } from 'react';
 import { User, Heart, ShoppingCart, ChevronDown, Menu } from 'lucide-react';
@@ -9,6 +9,12 @@ import { motion, AnimatePresence, Variants } from 'framer-motion';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import Image from 'next/image';
+
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '@/lib/redux/store';
+import { selectIsAuthenticated, selectCurrentUser, logout } from '@/lib/redux/slices/authSlice';
+import { DropdownMenu, DropdownMenuTrigger,DropdownMenuContent,DropdownMenuLabel,DropdownMenuSeparator,DropdownMenuItem } from './ui/dropdown-menu';
+import { toast } from 'sonner';
 
 // --- UPDATED DATA AS PER YOUR REQUEST ---
 
@@ -59,7 +65,16 @@ const megaMenuData = {
     },
 };
 
+
+
 const Navbar = () => {
+    const dispatch = useDispatch<AppDispatch>();
+    const isAuthenticated = useSelector(selectIsAuthenticated);
+    const currentUser = useSelector(selectCurrentUser);
+
+
+   
+
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
@@ -83,6 +98,56 @@ const Navbar = () => {
         exit: { opacity: 0, y: -10, transition: { duration: 0.2 } }
     };
 
+    const handleLogout = () => {
+        dispatch(logout());
+        // Optional: You can add a toast notification here
+        toast.success("You have been logged out.");
+    };
+
+
+    const UserNav = () => (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="text-gray-700 hover:text-black " aria-label="Account">
+                <User size={24} />
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56" align="end">
+                {isAuthenticated && currentUser ? (
+                    <>
+                        <DropdownMenuLabel>
+                            My Account
+                            <p className="text-xs font-normal text-gray-500">{currentUser.email}</p>
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link href="/account/profile">My Profile</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/account/orders">My Orders</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">
+                            Sign Out
+                        </DropdownMenuItem>
+                    </>
+                ) : (
+                    <>
+                        <DropdownMenuLabel>Welcome!</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                            <Link href="/login">Login</Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                            <Link href="/signup">Sign Up</Link>
+                        </DropdownMenuItem>
+                    </>
+                )}
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+
+
     return (
         <nav
             className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[var(--base-10)] shadow-md' : 'bg-[var(--base-10)] shadow-none'}`}
@@ -105,7 +170,11 @@ const Navbar = () => {
                     </div>
 
                     <div className="flex items-center space-x-3 sm:space-x-5">
-                        <a href="/account/user" className="text-gray-700 hover:text-black hidden sm:block" aria-label="Account"><User size={24} /></a>
+                        {/* <a href="/account/user" className="text-gray-700 hover:text-black hidden sm:block" aria-label="Account"><User size={24} />
+                        </a> */}
+                        <div className="hidden sm:block">
+                            <UserNav />
+                        </div>
                         <div className="relative">
                             <Link href="/wishlist" className="text-gray-700 hover:text-black" aria-label="Wishlist">
                                 <Heart size={24} />

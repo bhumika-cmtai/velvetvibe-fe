@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
+import HeaderDashboard from "@/components/HeaderDashboard";
 
 export default function AdminLayout({
   children,
@@ -19,7 +20,7 @@ export default function AdminLayout({
       />
 
       <div className="flex flex-1 flex-col lg:ml-64"> {/* Margin is now responsive */}
-        <Header 
+        <HeaderDashboard
           title="Dashboard" 
           onMenuClick={() => setIsSidebarOpen(true)} 
         />

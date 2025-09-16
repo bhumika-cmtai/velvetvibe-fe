@@ -1,26 +1,40 @@
-// src/types/product.ts
-
+// src/types/product.ts (Updated for Simpler Price Model)
 export interface Variant {
-  color: string;
   size: string;
-  stock: number;
+  color: string;
+  price: number; // MRP for this variant
+  sale_price?: number; // Optional selling price for this variant
+  stock_quantity: number; 
+  sku_variant: string;
   images?: string[];
 }
 
 export interface Product {
-  _id: string; // Mock data ke liye unique ID
+  _id: string;
   name: string;
   slug: string;
   description: string;
+  
   price: number;
-  base_price?: number; // Original price
+  sale_price?: number;
+
+  stock_quantity?: number;
+  
+  variants?: Variant[];
+
   images: string[];
-  category: 'Clothing' | 'Decor' | 'Accessories' | 'Shoes';
-  sub_category?: string;
+  video?: string;
+  category: 'Clothing' | 'Decorative' | string;
   brand: string;
   gender?: 'Men' | 'Women' | 'Unisex';
-  stock_quantity?: number; // Products without variants ke liye
-  tags?: ('New' | 'Sale' | 'Hot Sale' | 'Ethnic' | 'Best Seller' | 'Decor')[];
-  attributes?: Record<string, any>;
-  variants?: Variant[];
+  tags?: string[];
+  
+  fit?: string;
+  careInstructions?: string;
+  sleeveLength?: string;
+  neckType?: string;
+  pattern?: string;
+  
+  createdAt: string;
+  updatedAt: string;
 }

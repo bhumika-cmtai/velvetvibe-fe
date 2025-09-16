@@ -1,17 +1,25 @@
 // wishlistPage.tsx
-"use client"
-import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { Trash2, Heart, ArrowLeft, ShoppingBag } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import Navbar  from "@/components/Navbar"
-import Footer  from "@/components/Footer"
-import { motion, AnimatePresence } from "framer-motion"
-import { useToast } from "@/hooks/use-toast"
-import { useWishlist } from "@/context/WishlistContext" // Import useWishlist
-import { useCart } from "@/context/CartContext"
+"use client";
+import { useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { Trash2, Heart, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
+import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
+// --- REDUX & CONTEXT IMPORTS (Yahan changes hain) ---
+import { useSelector, useDispatch } from 'react-redux';
+import { AppDispatch, RootState } from "@/lib/redux/store";
+import { selectIsAuthenticated } from "@/lib/redux/slices/authSlice";
+import { fetchWishlist, removeFromWishlist as removeWishlistFromDb } from "@/lib/redux/slices/wishlistSlice";
+import { addToCart as addCartToDb } from "@/lib/redux/slices/cartSlice";
+import { useWishlist as useLocalWishlist } from "@/context/WishlistContext";
+import { useCart as useLocalCart } from "@/context/CartContext";
+
+// --- WishlistItemCard Component (Isme koi change nahi hai) ---
 const WishlistItemCard = ({ item, onRemove, onAddToCart }: { item: any, onRemove: Function, onAddToCart: Function }) => {
   const discount = item.base_price && item.base_price > item.price
     ? Math.round(((item.base_price - item.price) / item.base_price) * 100)
@@ -19,7 +27,7 @@ const WishlistItemCard = ({ item, onRemove, onAddToCart }: { item: any, onRemove
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="bg-white rounded-md shadow-sm overflow-hidden group flex flex-col">
       <div className="relative w-full aspect-[3/4] bg-gray-50">
-        <Link href={`/products/${item.slug}`}>
+        <Link href={`/product/${item.slug}`}>
           <Image src={item.images[0] || "/placeholder.svg"} alt={item.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
         </Link>
         {discount > 0 && <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">-{discount}%</span>}
@@ -29,7 +37,7 @@ const WishlistItemCard = ({ item, onRemove, onAddToCart }: { item: any, onRemove
       </div>
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex-grow">
-          <Link href={`/products/${item.slug}`} className="text-sm font-semibold text-gray-800 line-clamp-2 hover:text-[var(--theme-accent)] transition-colors">{item.name}</Link>
+          <Link href={`/product/${item.slug}`} className="text-sm font-semibold text-gray-800 line-clamp-2 hover:text-[var(--theme-accent)] transition-colors">{item.name}</Link>
           <div className="flex items-baseline gap-2 mt-2">
             <span className="text-lg font-bold text-gray-900">₹{(item.price).toLocaleString()}</span>
             {item.base_price && <span className="text-sm text-gray-500 line-through">₹{(item.base_price).toLocaleString()}</span>}
@@ -43,13 +51,33 @@ const WishlistItemCard = ({ item, onRemove, onAddToCart }: { item: any, onRemove
   );
 };
 
+// --- WishlistPage Component (Isme major changes hain) ---
 export default function WishlistPage() {
   const { toast } = useToast();
-  const { items: wishlistItems, removeFromWishlist } = useWishlist();
-  const { addToCart } = useCart();
+  const dispatch = useDispatch<AppDispatch>();
+  const isAuthenticated = useSelector(selectIsAuthenticated);
 
+  // Data Source #1: Local Wishlist (Guest) from Context
+  const { items: localWishlistItems, removeFromWishlist: removeWishlistFromLocal } = useLocalWishlist();
+  const { addToCart: addCartToLocal } = useLocalCart();
+
+  // Data Source #2: DB Wishlist (Logged-in User) from Redux Store
+  const dbWishlistItems = useSelector((state: RootState) => state.wishlist.items);
+
+  // Agar user logged in hai, to database se wishlist fetch karo
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchWishlist());
+    }
+  }, [isAuthenticated, dispatch]);
+
+  // --- UNIFIED HANDLERS (Jo dono cases mein kaam karenge) ---
   const handleRemoveFromWishlist = (itemId: string, itemName: string) => {
-    removeFromWishlist(itemId);
+    if (isAuthenticated) {
+      dispatch(removeWishlistFromDb(itemId));
+    } else {
+      removeWishlistFromLocal(itemId);
+    }
     toast({
       title: "Removed from Wishlist",
       description: `${itemName} has been removed from your wishlist.`,
@@ -57,15 +85,25 @@ export default function WishlistPage() {
   };
 
   const handleMoveToCart = (item: any) => {
-    addToCart(item);
-    removeFromWishlist(item._id);
+    if (isAuthenticated) {
+      dispatch(addCartToDb({ productId: item._id, quantity: 1 }));
+      dispatch(removeWishlistFromDb(item._id)); // DB wishlist se remove karo
+    } else {
+      addCartToLocal(item);
+      removeWishlistFromLocal(item._id); // Local wishlist se remove karo
+    }
     toast({
       title: "Moved to Bag",
       description: `${item.name} has been moved to your bag.`,
     });
   };
 
-  if (wishlistItems.length === 0) {
+  // --- DATA SELECTION LOGIC (Sabse important hissa) ---
+  // Agar user logged in hai to `dbWishlistItems` use karo, warna `localWishlistItems`
+  const wishlistItems = isAuthenticated ? dbWishlistItems : localWishlistItems;
+
+  // --- RENDER LOGIC (Ab yeh 'wishlistItems' variable use karega) ---
+  if (!wishlistItems || wishlistItems.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--theme-background)]">
         <Navbar />

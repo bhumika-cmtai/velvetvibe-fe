@@ -1,6 +1,6 @@
 // admin.ts
 import apiClient from './adminClient'; // Ensure this is your centralized, interceptor-based client
-import type { Product } from '@/lib/data';
+import type { Product } from '@/lib/types/product';
 
 // Define the types needed for the API responses
 export interface AdminUser {
@@ -14,12 +14,13 @@ export interface AdminUser {
 
 export interface Inquiry {
   _id: string;
-  name: string;
+  fullName: string; 
   email: string;
+  phoneNumber?: string; 
   message: string;
-  status: 'Pending' | 'Reviewed' | 'Resolved';
-  adminNotes?: string;
+  status: "New" | "Contacted" | "Completed" | "Rejected"; 
   createdAt: string;
+  updatedAt: string; 
 }
 
 export interface Coupon {
@@ -73,20 +74,10 @@ export const getAllInquiriesApi = async (status?: string) => {
   const params = status ? { status } : {};
   return apiClient.get('/contact/admin', { params });
 };
-export const updateInquiryApi = async (inquiryId: string, updates: FormData | { status?: string; adminNotes?: string }) => {
-  // If updates is FormData, send it as is (for multipart/form-data)
-  // Otherwise, send as application/json
-  if (updates instanceof FormData) {
-    return apiClient.put(`/contact/admin/${inquiryId}`, updates);
-  } else {
-    // If it's a plain object, set the Content-Type header explicitly for JSON
-    return apiClient.put(`/contact/admin/${inquiryId}`, updates, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-  }
+export const updateInquiryApi = async (inquiryId: string, updates: Partial<Inquiry>) => {
+  return apiClient.put(`/contact/admin/${inquiryId}`, updates);
 };
+
 
 
 

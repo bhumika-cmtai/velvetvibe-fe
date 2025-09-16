@@ -8,11 +8,12 @@ import {
   IndianRupee, 
   PackageSearch, 
   ShieldAlert, 
-  Home 
+  Home,
+  Globe, // New Icon for International Shipping
 } from "lucide-react";
 import { ReactNode } from "react";
 
-// Reusable component for each policy section
+// Reusable component for each policy section (Themed)
 const PolicySection = ({
   id,
   icon: Icon,
@@ -24,40 +25,44 @@ const PolicySection = ({
   title: string;
   children: ReactNode;
 }) => (
-  <section id={id} className="mb-12 scroll-mt-20">
+  <section id={id} className="mb-12 scroll-mt-24">
     <div className="flex items-center">
-      <Icon className="h-8 w-8 flex-shrink-0 text-[#A77C38]" />
-      <h2 className="ml-4 text-2xl font-semibold text-gray-800">{title}</h2>
+      <Icon className="h-8 w-8 flex-shrink-0 text-primary" /> {/* Using theme color */}
+      <h2 className="ml-4 text-2xl font-semibold text-[var(--pallete-300)]">{title}</h2>
     </div>
     <hr className="my-4 border-gray-200" />
-    <div className="prose prose-lg max-w-none text-gray-700">{children}</div>
+    <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">{children}</div>
   </section>
 );
 
 export default function ShippingPolicyPage() {
   const sections = [
     { id: "processing-time", title: "Order Processing Time" },
-    { id: "methods-timelines", title: "Shipping Methods & Timelines" },
-    { id: "shipping-costs", title: "Shipping Costs" },
-    { id: "order-tracking", title: "Order Tracking" },
+    { id: "shipping-timelines", title: "Shipping Timelines & Costs" },
+    { id: "order-tracking", title: "Tracking Your Vibe" },
+    { id: "international-shipping", title: "International Shipping" },
     { id: "damaged-lost", title: "Damaged or Lost Packages" },
     { id: "address-accuracy", title: "Address Accuracy" },
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFFDF6]">
+    // --- FIX: Using --base-10 for the background ---
+    <div className="min-h-screen bg-[var(--base-10)]">
       <Navbar />
       <main className="container mx-auto max-w-5xl px-4 py-12 md:py-20">
+        
+        {/* --- Header rewritten for Velvet Vibe brand --- */}
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-[#A77C38] md:text-5xl font-serif">
+          <h1 className="text-4xl font-bold text-[var(--pallete-500)] md:text-5xl font-serif">
             Shipping Policy
           </h1>
           <p className="mt-4 text-lg text-gray-600">
-            How we deliver your Gullnaaz treasures to you.
+            Getting your Velvet Vibe treasures from our home to yours.
           </p>
         </div>
 
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+          {/* --- Sticky navigation (themed) --- */}
           <aside className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-gray-800">Quick Navigation</h3>
@@ -66,7 +71,7 @@ export default function ShippingPolicyPage() {
                   <li key={section.id}>
                     <a
                       href={`#${section.id}`}
-                      className="text-gray-600 transition-colors hover:text-[#A77C38] hover:underline"
+                      className="text-gray-600 transition-colors hover:text-primary hover:underline"
                     >
                       {section.title}
                     </a>
@@ -76,46 +81,41 @@ export default function ShippingPolicyPage() {
             </div>
           </aside>
 
+          {/* --- Main content area with updated policies --- */}
           <div className="lg:col-span-2">
             <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm md:p-12">
+              
               <PolicySection id="processing-time" icon={Clock} title="1. Order Processing Time">
+                <p>We are thrilled you've chosen Velvet Vibe! We lovingly prepare and pack every order with care. Our processing times are as follows:</p>
                 <ul>
-                  <li><strong>In-Stock Items:</strong> Dispatched within <strong>2-3 business days</strong>.</li>
-                  <li><strong>Made-to-Order & Custom Jewellery:</strong> Crafted and dispatched within <strong>10-15 business days</strong>.</li>
-                  <li>Orders are not shipped on weekends or public holidays.</li>
+                  <li><strong>In-Stock Clothing & Decor:</strong> Your order will be dispatched from our studio within <strong>2-3 business days</strong>.</li>
+                  <li>Orders are processed Monday through Friday, excluding public holidays.</li>
                 </ul>
               </PolicySection>
 
-              <PolicySection id="methods-timelines" icon={Truck} title="2. Shipping Methods & Timelines">
+              <PolicySection id="shipping-timelines" icon={Truck} title="2. Shipping Timelines & Costs">
+                <p>Once dispatched, you can expect your package to arrive based on the following timelines:</p>
                 <ul>
-                  <li><strong>Standard Shipping:</strong> Free on orders over ₹1,999. Estimated delivery in <strong>5-7 business days</strong> post-dispatch.</li>
-                  <li><strong>Express Shipping:</strong> Available at checkout. Estimated delivery in <strong>2-4 business days</strong> post-dispatch.</li>
+                  <li><strong>Standard Shipping:</strong> We offer complimentary standard shipping on all orders over ₹1,999. Estimated delivery is <strong>5-7 business days</strong> after dispatch.</li>
+                  <li><strong>Standard Shipping (below ₹1,999):</strong> A flat fee of <strong>₹99</strong> will be applied.</li>
+                  <li><strong>Express Shipping:</strong> Need your items sooner? Express shipping is available for a fee calculated at checkout, with an estimated delivery of <strong>2-4 business days</strong> post-dispatch.</li>
                 </ul>
               </PolicySection>
 
-              <PolicySection id="shipping-costs" icon={IndianRupee} title="3. Shipping Costs">
-                <ul>
-                  <li>A flat rate of <strong>₹99</strong> is charged for standard shipping on orders below ₹1,999.</li>
-                  <li>Express shipping costs are calculated at checkout.</li>
-                </ul>
+              <PolicySection id="order-tracking" icon={PackageSearch} title="3. Tracking Your Vibe">
+                <p>The moment your order leaves our studio, we'll send you a shipping confirmation email and/or SMS containing your tracking number. You can use this to follow your package's journey to your doorstep.</p>
               </PolicySection>
               
-              <PolicySection id="order-tracking" icon={PackageSearch} title="4. Order Tracking">
-                <p>
-                  Once dispatched, you will receive an email and/or SMS with your tracking number and a link to track your shipment in real-time.
-                </p>
+              <PolicySection id="international-shipping" icon={Globe} title="4. International Shipping">
+                <p>Currently, Velvet Vibe ships exclusively within India. We are working on bringing our collections to a global audience, so please stay tuned for updates!</p>
               </PolicySection>
 
               <PolicySection id="damaged-lost" icon={ShieldAlert} title="5. Damaged or Lost Packages">
-                <p>
-                  In the rare event your item arrives damaged, please contact us at <a href="mailto:gullnaaz2025@gmail.com" className="text-[#A77C38] underline">gullnaaz2025@gmail.com</a> within <strong>48 hours</strong> with your Order ID and photos. We will resolve any issues with lost packages directly with the courier.
-                </p>
+                <p>We pack every item securely to ensure it arrives in perfect condition. In the rare event that your order arrives damaged, please contact us within <strong>48 hours</strong> of delivery at <a href="mailto:support@velvetvibe.com" className="text-primary underline">support@velvetvibe.com</a> with your Order ID and photos of the damage. We will assist you promptly. For packages lost in transit, we will coordinate directly with our courier partners to resolve the issue.</p>
               </PolicySection>
 
               <PolicySection id="address-accuracy" icon={Home} title="6. Address Accuracy">
-                <p>
-                  Please ensure your shipping address is complete and correct. Gullnaaz is not responsible for delays or failures due to an incorrect address.
-                </p>
+                <p>To ensure a smooth delivery, please double-check that your shipping address is complete and correct at checkout. Velvet Vibe is not responsible for shipping delays or lost packages resulting from an incorrect or incomplete address provided by the customer.</p>
               </PolicySection>
             </div>
           </div>

@@ -140,7 +140,7 @@ export default function UsersPage() {
                       <TableCell className="font-medium">{user.fullName}</TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant={user.isVerified ? 'default' : 'destructive'}>
+                        <Badge variant={user.isVerified ? 'default' : 'destructive-outline'}>
                           {user.isVerified ? 'Verified' : 'Not Verified'}
                         </Badge>
                       </TableCell>

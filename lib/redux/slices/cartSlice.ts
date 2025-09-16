@@ -1,6 +1,8 @@
+// cartSlicet.ts
+
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { Coupon } from './couponSlice'; // Ensure this path is correct
+import { Coupon } from './couponSlice'; 
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
   ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
@@ -12,6 +14,11 @@ axios.defaults.withCredentials = true;
 // --- TYPE DEFINITIONS ---
 // =================================================================
 
+// This interface is for items coming from the local cart
+interface LocalCartItem {
+  _id: string;
+  quantity: number;
+}
 export interface CartItem {
   _id: string;
   product: {
@@ -49,30 +56,21 @@ const initialState: CartState = {
   finalTotal: 0,
 };
 
-// Yeh type batata hai ki API se successful response mein kya aayega
-// Aapke response ke hisab se, items 'data' property ke andar aate hain
 interface ApiResponse {
   data: CartItem[];
 }
 
 // =================================================================
 // --- ASYNC THUNKS (API Calls) ---
-// Har thunk ko theek se type kiya gaya hai taaki woh ApiResponse return kare
 // =================================================================
 
 export const fetchCart = createAsyncThunk<ApiResponse, void, { rejectValue: string }>(
   'cart/fetchCart',
   async (_, { rejectWithValue }) => {
     try {
-      console.log('--API_BASE_URL--')
-      console.log(API_BASE_URL)
-      console.log("---response---")
       const response = await axios.get(`${API_BASE_URL}/users/cart`);
-      // Hum response ko hamesha { data: [...] } format mein normalize karenge
-      console.log(response.data)
       return { data: response.data.data };
     } catch (error: any) {
-      console.log(error)
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
           ? error.response.data.message
@@ -87,7 +85,7 @@ export const addToCart = createAsyncThunk<ApiResponse, { productId: string; quan
   async (params, { rejectWithValue }) => {
     try {
       const response = await axios.post(`${API_BASE_URL}/users/cart`, params);
-      return response.data; // Backend se { data: [...] } format aa raha hai
+      return response.data; 
     } catch (error: any) {
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
@@ -103,7 +101,7 @@ export const removeFromCart = createAsyncThunk<ApiResponse, string, { rejectValu
   async (cartItemId, { rejectWithValue }) => {
     try {
       const response = await axios.delete(`${API_BASE_URL}/users/cart/item/${cartItemId}`);
-      return response.data; // Backend se { data: [...] } format aa raha hai
+      return response.data; 
     } catch (error: any) {
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
@@ -119,7 +117,7 @@ export const updateCartQuantity = createAsyncThunk<ApiResponse, { productId: str
   async (params, { rejectWithValue }) => {
     try {
       const response = await axios.patch(`${API_BASE_URL}/users/cart/item/quantity/${params.productId}`, { quantity: params.quantity });
-      return response.data; // Backend se { data: [...] } format aa raha hai
+      return response.data;
     } catch (error: any) {
       return rejectWithValue(
         axios.isAxiosError(error) && error.response?.data?.message
@@ -130,6 +128,25 @@ export const updateCartQuantity = createAsyncThunk<ApiResponse, { productId: str
   }
 );
 
+// --- NEW ASYNC THUNK FOR MERGING CART ---
+export const mergeCarts = createAsyncThunk<ApiResponse, { localCartItems: LocalCartItem[] }, { rejectValue: string }>(
+    'cart/mergeCarts',
+    async ({ localCartItems }, { rejectWithValue }) => {
+        try {
+            // This endpoint should be created in your backend to handle the merge logic
+            const response = await axios.post(`${API_BASE_URL}/users/cart/merge`, { items: localCartItems });
+            return response.data;
+        } catch (error: any) {
+            return rejectWithValue(
+                axios.isAxiosError(error) && error.response?.data?.message
+                    ? error.response.data.message
+                    : 'Failed to merge carts'
+            );
+        }
+    }
+);
+
+
 // =================================================================
 // --- SLICE DEFINITION ---
 // =================================================================
@@ -138,10 +155,11 @@ const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    clearCart: (state) => {
-      state.items = [];
-      state.appliedCoupon = null;
-      cartSlice.caseReducers.calculateTotals(state);
+    // This is a local clear, for when a user logs out
+    clearLocalCartState: (state) => {
+        state.items = [];
+        state.appliedCoupon = null;
+        cartSlice.caseReducers.calculateTotals(state);
     },
     applyCoupon: (state, action: PayloadAction<Coupon>) => {
       state.appliedCoupon = action.payload;
@@ -167,7 +185,6 @@ const cartSlice = createSlice({
       state.finalTotal = finalTotal;
     },
   },
-  // --- YEH SABSE SAHI AUR SIMPLE extraReducers HAI ---
   extraReducers: (builder) => {
     builder
       .addMatcher(
@@ -184,17 +201,16 @@ const cartSlice = createSlice({
           state.error = action.payload;
         }
       )
-      // Har successful action ke baad, hum state.items ko backend se aaye data se replace kar denge
       .addMatcher(
         (action) => action.type.startsWith('cart/') && action.type.endsWith('/fulfilled'),
         (state, action: PayloadAction<ApiResponse>) => {
           state.loading = false;
-          state.items = action.payload.data || []; // 'data' property se items nikalenge
+          state.items = action.payload.data || []; 
           cartSlice.caseReducers.calculateTotals(state);
         }
       );
   },
 });
 
-export const { clearCart, applyCoupon, removeCoupon, calculateTotals } = cartSlice.actions;
+export const { clearLocalCartState, applyCoupon, removeCoupon, calculateTotals } = cartSlice.actions;
 export default cartSlice.reducer;

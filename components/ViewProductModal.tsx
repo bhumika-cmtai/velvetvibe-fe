@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Product } from '@/lib/data';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Product, Variant } from '@/lib/types/product';
 import Image from "next/image";
 
 interface ViewProductModalProps {
@@ -14,30 +15,24 @@ interface ViewProductModalProps {
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
 }
 
-// Helper component for displaying a detail row
-const DetailRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  // Only render the row if the value is meaningful (not null, undefined, or an empty array)
-  value && (!Array.isArray(value) || value.length > 0) ? (
+const DetailRow = ({ label, value }: { label: string; value: React.ReactNode }) => {
+  const isValuePresent = value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0);
+  return isValuePresent ? (
     <div className="grid grid-cols-3 gap-4 py-3 border-b last:border-b-0">
       <dt className="font-semibold text-gray-600 break-words">{label}</dt>
       <dd className="col-span-2 text-gray-800">{value}</dd>
     </div>
-  ) : null
-);
+  ) : null;
+};
 
 export function ViewProductModal({ isOpen, onClose, product, status }: ViewProductModalProps) {
   const renderContent = () => {
-    // --- ENHANCED SKELETON LOADER ---
     if (status === 'loading') {
       return (
         <div className="space-y-4">
           <Skeleton className="h-40 w-40 mx-auto rounded-lg" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-32 w-full" />
+          <div className="space-y-2"><Skeleton className="h-4 w-3/4" /><Skeleton className="h-4 w-1/2" /></div>
+          <Skeleton className="h-20 w-full" /><Skeleton className="h-32 w-full" />
         </div>
       );
     }
@@ -45,14 +40,10 @@ export function ViewProductModal({ isOpen, onClose, product, status }: ViewProdu
       return <div className="text-center text-red-500 py-10">Failed to load product details. Please try again.</div>;
     }
 
-    const priceString = `₹${product.price.toLocaleString()}` +
-      (product.originalPrice && product.originalPrice > product.price 
-        ? ` (Original: ₹${product.originalPrice.toLocaleString()})` 
-        : '');
+    const isVariable = product.variants && product.variants.length > 0;
 
     return (
       <dl>
-        {/* --- MAIN IMAGE (UNCHANGED) --- */}
         <div className="flex justify-center mb-4">
             <Image 
                 src={product.images[0] || '/placeholder.svg'} 
@@ -62,87 +53,84 @@ export function ViewProductModal({ isOpen, onClose, product, status }: ViewProdu
                 className="object-cover rounded-lg border bg-gray-50"
             />
         </div>
-
-        {/* ================================================================= */}
-        {/* --- CHANGE START: DISPLAY ALL IMAGES --- */}
-        {/* ================================================================= */}
-        <DetailRow 
-          label="All Images" 
-          value={
-            <div className="flex overflow-x-auto space-x-2 p-2 bg-gray-100 rounded-md">
-              {Array.isArray(product.images) && product.images.map((url, index) => (
-                <Image 
-                  key={index}
-                  src={url}
-                  alt={`${product.name} - image ${index + 1}`}
-                  width={80}
-                  height={80}
-                  className="object-cover rounded-md flex-shrink-0 border"
-                />
-              ))}
-            </div>
-          }
-        />
-        {/* ================================================================= */}
-        {/* --- CHANGE END --- */}
-        {/* ================================================================= */}
+        
+        <DetailRow label="All Images" value={
+          <div className="flex overflow-x-auto space-x-2 p-2 bg-gray-100 rounded-md">
+            {product.images.map((url, index) => (
+              <Image key={index} src={url} alt={`${product.name} - image ${index + 1}`} width={80} height={80} className="object-cover rounded-md flex-shrink-0 border" />
+            ))}
+          </div>
+        }/>
         
         <DetailRow label="Name" value={product.name} />
         <DetailRow label="Description" value={<p className="whitespace-pre-wrap">{product.description}</p>} />
+        <DetailRow label="Video" value={ product.video && <video src={product.video} controls className="w-full rounded-lg border bg-black" /> } />
         
-        {/* ================================================================= */}
-        {/* --- CHANGE START: DISPLAY VIDEO --- */}
-        {/* ================================================================= */}
-        <DetailRow
-          label="Product Video"
-          value={
-            product.video && product.video[0] && (
-              <video 
-                src={product.video[0]} 
-                controls 
-                className="w-full rounded-lg border bg-black"
-              >
-                Your browser does not support the video tag.
-              </video>
-            )
-          }
+        {/* --- SIMPLIFIED PRICE DISPLAY --- */}
+        <DetailRow 
+            label={isVariable ? "Starting Price" : "Price"}
+            value={
+                <div className="flex items-center space-x-2">
+                    <span className="text-xl font-bold text-black">₹{product.sale_price?.toLocaleString() ?? product.price.toLocaleString()}</span>
+                    {product.sale_price && (
+                        <span className="text-sm text-gray-500 line-through">₹{product.price.toLocaleString()}</span>
+                    )}
+                </div>
+            }
         />
-        {/* ================================================================= */}
-        {/* --- CHANGE END --- */}
-        {/* ================================================================= */}
-
-        <DetailRow label="Price" value={priceString} />
-        <DetailRow label="Stock" value={product.stock} />
-        <DetailRow label="Type" value={<Badge variant="outline" className="capitalize">{product.type}</Badge>} />
-        <DetailRow label="Gender" value={product.gender} />
-        <DetailRow label="Material" value={product.material} />
         
-        <DetailRow 
-          label="Tags" 
-          value={
-            <div className="flex flex-wrap gap-1">
-              {Array.isArray(product.tags) && product.tags.map((t: string) => <Badge key={t}>{t}</Badge>)}
-            </div>
-          } 
-        />
-        <DetailRow 
-          label="Colors" 
-          value={
-            <div className="flex flex-wrap gap-1">
-              {Array.isArray(product.color) && product.color.map((c: string) => <Badge key={c} variant="secondary">{c}</Badge>)}
-            </div>
-          } 
-        />
-
-        {product.type === 'jewellery' && (
-            <>
-                <DetailRow label="Jewellery Category" value={product.jewelleryCategory} />
-                <DetailRow label="Material Type" value={product.materialType} />
-                <DetailRow label="Stones" value={Array.isArray(product.stones) ? product.stones.join(', ') : product.stones} />
-            </>
+        {!isVariable && <DetailRow label="Stock" value={product.stock_quantity} />}
+        
+        <DetailRow label="Category" value={<Badge variant="outline" className="capitalize">{product.category}</Badge>} />
+        <DetailRow label="Brand" value={product.brand} />
+        
+        {product.category === 'Clothing' && (
+          <>
+            <DetailRow label="Gender" value={product.gender} />
+            <DetailRow label="Fit" value={product.fit} />
+            <DetailRow label="Sleeve Length" value={product.sleeveLength} />
+            <DetailRow label="Neck Type" value={product.neckType} />
+            <DetailRow label="Pattern" value={product.pattern} />
+            <DetailRow label="Care Instructions" value={<p className="whitespace-pre-wrap">{product.careInstructions}</p>} />
+          </>
         )}
-         {product.type === 'bag' && (
-            <DetailRow label="Sizes" value={Array.isArray(product.size) ? product.size.join(', ') : product.size} />
+
+        <DetailRow label="Tags" value={
+          <div className="flex flex-wrap gap-1">
+            {product.tags?.map((t: string) => <Badge key={t}>{t}</Badge>)}
+          </div>
+        }/>
+
+        {isVariable && (
+          <div className="pt-4 mt-4 border-t">
+            <h3 className="text-lg font-semibold mb-2">Variants</h3>
+            <div className="border rounded-lg">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Size</TableHead>
+                    <TableHead>Color</TableHead>
+                    <TableHead>Price (MRP)</TableHead>
+                    <TableHead>Sale Price</TableHead>
+                    <TableHead>Stock</TableHead>
+                    <TableHead>SKU</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {product.variants?.map((variant, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{variant.size}</TableCell>
+                      <TableCell>{variant.color}</TableCell>
+                      <TableCell className={variant.sale_price ? 'line-through text-gray-500' : ''}>₹{variant.price.toLocaleString()}</TableCell>
+                      <TableCell>{variant.sale_price ? `₹${variant.sale_price.toLocaleString()}` : 'N/A'}</TableCell>
+                      <TableCell>{variant.stock_quantity}</TableCell>
+                      <TableCell>{variant.sku_variant}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         )}
       </dl>
     );

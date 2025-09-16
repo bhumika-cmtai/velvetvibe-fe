@@ -1,7 +1,7 @@
-"use client"; // Required for using components with hooks or event handlers if you add them later
+"use client";
 
-import Navbar  from "@/components/Navbar";
-import Footer  from "@/components/Footer";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 import { 
   BookText, 
   UserCircle2, 
@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { ReactNode } from "react";
 
-// Reusable component for each policy section to keep the code clean
+// Reusable component for each policy section (Themed)
 const PolicySection = ({
   id,
   icon: Icon,
@@ -26,22 +26,22 @@ const PolicySection = ({
   title: string;
   children: ReactNode;
 }) => (
-  <section id={id} className="mb-12 scroll-mt-20">
+  <section id={id} className="mb-12 scroll-mt-24">
     <div className="flex items-center">
-      <Icon className="h-8 w-8 flex-shrink-0 text-[#A77C38]" />
-      <h2 className="ml-4 text-2xl font-semibold text-gray-800">{title}</h2>
+      <Icon className="h-8 w-8 flex-shrink-0 text-primary" /> {/* Using theme color */}
+      <h2 className="ml-4 text-2xl font-semibold text-[var(--pallete-300)]">{title}</h2>
     </div>
     <hr className="my-4 border-gray-200" />
-    <div className="prose prose-lg max-w-none text-gray-700">{children}</div>
+    <div className="prose prose-lg max-w-none text-gray-700 leading-relaxed">{children}</div>
   </section>
 );
 
 export default function TermsAndConditionsPage() {
   const sections = [
     { id: "introduction", title: "Introduction" },
-    { id: "user-account", title: "User Account" },
-    { id: "products-pricing", title: "Products and Pricing" },
-    { id: "orders-payment", title: "Orders and Payment" },
+    { id: "user-account", title: "Your Account" },
+    { id: "products-pricing", title: "Products & Pricing" },
+    { id: "orders-payment", title: "Orders & Payment" },
     { id: "intellectual-property", title: "Intellectual Property" },
     { id: "liability", title: "Limitation of Liability" },
     { id: "governing-law", title: "Governing Law" },
@@ -49,25 +49,26 @@ export default function TermsAndConditionsPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FFFDF6]">
+    // --- FIX: Using --base-10 for the background ---
+    <div className="min-h-screen bg-[var(--base-10)]">
       <Navbar />
       <main className="container mx-auto max-w-5xl px-4 py-12 md:py-20">
-        {/* Page Header */}
+        
+        {/* --- Header rewritten for Velvet Vibe brand --- */}
         <div className="mb-12 text-center">
-          <h1 className="text-4xl font-bold text-[#A77C38] md:text-5xl font-serif">
-            Terms and Conditions
+          <h1 className="text-4xl font-bold text-[var(--pallete-500)] md:text-5xl font-serif">
+            Terms of Service
           </h1>
           <p className="mt-4 text-lg text-gray-600">
-            Your guide to using our services and website.
+            The guidelines for using the Velvet Vibe website and services.
           </p>
           <p className="mt-2 text-sm text-gray-500">
-            Last Updated: 8 September 2025
+            Last Updated: 16 September 2025
           </p>
         </div>
 
-        {/* Summary and Navigation Grid */}
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
-          {/* Left Column: Navigation */}
+          {/* --- Sticky navigation (themed) --- */}
           <aside className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
             <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-gray-800">Quick Navigation</h3>
@@ -76,7 +77,7 @@ export default function TermsAndConditionsPage() {
                   <li key={section.id}>
                     <a
                       href={`#${section.id}`}
-                      className="text-gray-600 transition-colors hover:text-[#A77C38] hover:underline"
+                      className="text-gray-600 transition-colors hover:text-primary hover:underline"
                     >
                       {section.title}
                     </a>
@@ -86,58 +87,58 @@ export default function TermsAndConditionsPage() {
             </div>
           </aside>
 
-          {/* Right Column: Content */}
+          {/* --- Main content area with updated policies --- */}
           <div className="lg:col-span-2">
             <div className="rounded-lg border border-gray-200 bg-white p-8 shadow-sm md:p-12">
               
               <PolicySection id="introduction" icon={BookText} title="1. Introduction">
                 <p>
-                  Welcome to Gullnaaz. These Terms and Conditions ("Terms") govern your use of our website and the purchase of our products. By accessing or using our website, you agree to be bound by these Terms and our Privacy Policy. If you do not agree with any part of these terms, you must not use our website.
+                  Welcome to Velvet Vibe! These Terms of Service ("Terms") govern your use of our website (velvetvibe.com) and the purchase of our women's clothing and decorative home goods. By accessing our site and placing an order, you agree to be bound by these Terms and our <a href="/privacy-policy" className="text-primary underline">Privacy Policy</a>.
                 </p>
               </PolicySection>
 
-              <PolicySection id="user-account" icon={UserCircle2} title="2. User Account">
+              <PolicySection id="user-account" icon={UserCircle2} title="2. Your Account">
                 <p>
-                  To place an order, you may be required to create an account. You are responsible for maintaining the confidentiality of your account and password and for restricting access to your computer. You agree to accept responsibility for all activities that occur under your account or password.
+                  To enhance your shopping experience, you may create an account. You are responsible for safeguarding your password and for all activities that occur under your account. Please ensure your account information is accurate and notify us immediately of any unauthorized use.
                 </p>
               </PolicySection>
               
-              <PolicySection id="products-pricing" icon={Gem} title="3. Products and Pricing">
+              <PolicySection id="products-pricing" icon={Gem} title="3. Products & Pricing">
                 <p>
-                  We strive to display our products, including colors and details, as accurately as possible. However, we cannot guarantee that your computer monitor's display of any color will be completely accurate.
+                  We take great care to display our clothing and decor items as accurately as possible. However, please note that colors may vary slightly depending on your monitor settings.
                 </p>
                 <p>
-                  All product descriptions and prices are subject to change at any time without notice, at our sole discretion. We reserve the right to discontinue any product at any time.
+                  All product descriptions and prices are subject to change at any time without notice. We reserve the right to modify or discontinue a product at our discretion.
                 </p>
               </PolicySection>
 
-              <PolicySection id="orders-payment" icon={ShoppingCart} title="4. Orders and Payment">
+              <PolicySection id="orders-payment" icon={ShoppingCart} title="4. Orders & Payment">
                 <p>
-                  We reserve the right to refuse or cancel any order for any reason. By placing an order, you agree to provide current, complete, and accurate purchase and account information so that we can complete your transactions and contact you as needed.
+                  We reserve the right to refuse or cancel any order for any reason, such as limitations on quantities available for purchase or inaccuracies in product or pricing information. By placing an order, you confirm that all information you provide is true, accurate, and complete.
                 </p>
               </PolicySection>
 
               <PolicySection id="intellectual-property" icon={Copyright} title="5. Intellectual Property">
                 <p>
-                  This website contains material which is owned by or licensed to us. This material includes, but is not limited to, the design, layout, logo, images, and graphics. Reproduction is strictly prohibited.
+                  All content on this website, including but not limited to text, graphics, logos, images, and designs, is the property of Velvet Vibe or its content suppliers and is protected by international copyright laws. Reproduction is strictly prohibited without our express written consent.
                 </p>
               </PolicySection>
 
               <PolicySection id="liability" icon={ShieldAlert} title="6. Limitation of Liability">
                 <p>
-                  In no case shall Gullnaaz, our directors, employees, or affiliates be liable for any injury, loss, claim, or any damages of any kind arising from your use of the website or any products procured using the service.
+                  In no event shall Velvet Vibe, our directors, employees, or affiliates be liable for any direct, indirect, incidental, or consequential damages arising from your use of this website or from any products purchased from it.
                 </p>
               </PolicySection>
 
               <PolicySection id="governing-law" icon={Landmark} title="7. Governing Law">
                 <p>
-                  These Terms and Conditions shall be governed by and construed in accordance with the laws of India and the jurisdiction of the courts of Delhi.
+                  These Terms of Service shall be governed by and construed in accordance with the laws of India. Any disputes will be subject to the exclusive jurisdiction of the courts in the state where our business is registered.
                 </p>
               </PolicySection>
 
               <PolicySection id="contact" icon={Mail} title="8. Contact Information">
                 <p>
-                  Questions about the Terms and Conditions should be sent to us at <a href="mailto:gullnaaz2025@gmail.com" className="text-[#A77C38] underline">gullnaaz2025@gmail.com</a>.
+                  Questions about these Terms of Service should be sent to us at <a href="mailto:legal@velvetvibe.com" className="text-primary underline">legal@velvetvibe.com</a>.
                 </p>
               </PolicySection>
 

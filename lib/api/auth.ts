@@ -57,7 +57,7 @@ const apiClient = axios.create({
  * Registers a new user.
  * Corresponds to the `registerUser` controller.
  */
-export const registerUserApi = async (userData: { name: string; email: string; password: string }) => {
+export const registerUserApi = async (userData: { name: string; email: string; password: string, role:string }) => {
   try {
     const response = await apiClient.post<BackendResponse<{ email: string }>>(
       '/auth/register', 

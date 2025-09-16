@@ -23,14 +23,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
 
   useEffect(() => {
-    const savedCart = localStorage.getItem("trendora-cart") // App-specific key
+    const savedCart = localStorage.getItem("velvetvibe-cart") // App-specific key
     if (savedCart) {
       setItems(JSON.parse(savedCart))
     }
   }, [])
 
   useEffect(() => {
-    localStorage.setItem("trendora-cart", JSON.stringify(items))
+    localStorage.setItem("velvetvibe-cart", JSON.stringify(items))
   }, [items])
 
   const addToCart = (product: Product, quantity = 1) => {

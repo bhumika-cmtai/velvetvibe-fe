@@ -3,17 +3,22 @@
 
 import { useState, useMemo, useEffect } from "react"
 import Image from "next/image"
+import { motion } from "framer-motion"
+import { Frown } from "lucide-react"
+
+// --- Redux Imports (Naye imports) ---
+import { useDispatch, useSelector } from "react-redux"
+import { AppDispatch, RootState } from "@/lib/redux/store"
+import { fetchProducts } from "@/lib/redux/slices/productSlice"
+
+// --- Component Imports ---
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProductCard from "@/components/ProductCard"
-import { products } from "@/lib/data" // Static data
-import { Product } from "@/lib/types/product"
-import { motion } from "framer-motion"
-import { Frown, SlidersHorizontal } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Button } from "@/components/ui/button"
+import ProductGridSkeleton from "@/components/skeleton/ProductGridSkeleton" // Skeleton component
 
-// --- Countdown Timer Component (Responsive) ---
+// --- Countdown Timer Component (Isme koi change nahi) ---
 const CountdownTimer = () => {
     const calculateTimeLeft = () => {
         const difference = +new Date("2025-12-31T23:59:59") - +new Date();
@@ -45,7 +50,7 @@ const CountdownTimer = () => {
     );
 };
 
-// --- Sale Header Component ---
+// --- Sale Header Component (Isme koi change nahi) ---
 const SaleHeader = () => (
     <div className="relative w-full bg-black">
         <div className="absolute inset-0 opacity-20"><Image src="https://images.unsplash.com/photo-1508056830983- unvexb21d582?q=80&w=2070" alt="Abstract background" fill className="object-cover" /></div>
@@ -58,31 +63,55 @@ const SaleHeader = () => (
     </div>
 );
 
-// --- Main Page Component ---
+// --- Main Page Component (Isme major changes hain) ---
 export default function SalePage() {
+    const dispatch = useDispatch<AppDispatch>();
 
+    // --- Redux se state la rahe hain ---
+    const { items: saleProducts, loading, error } = useSelector((state: RootState) => state.product);
+
+    // --- Local state UI control ke liye ---
     const [sortOption, setSortOption] = useState('featured');
     const [categoryFilter, setCategoryFilter] = useState('all');
 
-    const filteredAndSortedProducts = useMemo(() => {
-        // Start with only sale products
-        let filtered = products.filter(p => p.tags?.includes('Sale'));
+    // --- Data Fetching Effect ---
+    // Yeh effect tab chalega jab component load hoga ya category filter change hoga
+    useEffect(() => {
+        const queryParams: { tags: string, type?: string } = {
+            tags: 'Sale' // Hamesha sale wale products fetch karo
+        };
 
-        // Apply category filter
         if (categoryFilter !== 'all') {
-            filtered = filtered.filter(p => p.sub_category && p.sub_category.toLowerCase() === categoryFilter);
+            queryParams.type = categoryFilter; // Backend `type` ko as a category use karta hai
         }
 
-        // Apply sorting
-        const sorted = [...filtered]; // Create a new array for sorting
+        dispatch(fetchProducts(queryParams));
+    }, [dispatch, categoryFilter]);
+
+
+    // --- Client-side sorting ke liye useMemo ---
+    const sortedProducts = useMemo(() => {
+        const sorted = [...saleProducts]; // Redux se aaye products ki copy banayein
         switch (sortOption) {
-            case 'price-asc': sorted.sort((a, b) => a.price - b.price); break;
-            case 'price-desc': sorted.sort((a, b) => b.price - a.price); break;
-            case 'newest': sorted.sort((a, b) => b._id.localeCompare(a._id)); break;
-            default: break;
+            case 'price-asc': sorted.sort((a, b) => (a.sale_price ?? a.price) - (b.sale_price ?? b.price)); break;
+            case 'price-desc': sorted.sort((a, b) => (b.sale_price ?? b.price) - (a.sale_price ?? a.price)); break;
+            case 'newest': sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
+            default: break; // 'featured' ke liye default order hi rakhein
         }
         return sorted;
-    }, [sortOption, categoryFilter]);
+    }, [sortOption, saleProducts]);
+
+    // ProductCard ke liye data map karein
+    const mappedProducts = useMemo(() => sortedProducts.map(p => ({
+        _id: p._id,
+        name: p.name,
+        slug: p.slug,
+        images: p.images,
+        tags: p.tags,
+        price: p.sale_price ?? p.price,
+        base_price: p.sale_price ? p.price : undefined,
+        originalProduct: p,
+    })), [sortedProducts]);
 
     return (
         <div className="bg-white">
@@ -90,21 +119,16 @@ export default function SalePage() {
             <SaleHeader />
 
             <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* --- Responsive Filter & Toolbar Section --- */}
+                {/* --- Filter & Toolbar --- */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 pb-4 border-b">
-                    {/* Left Side: Category Filter */}
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold">Filter:</span>
                         <div className="flex gap-1 bg-gray-100 p-1 rounded-full">
                             <button onClick={() => setCategoryFilter('all')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'all' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>All</button>
-                            <button onClick={() => setCategoryFilter('tops')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'tops' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>Tops</button>
-                            <button onClick={() => setCategoryFilter('shirts')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'shirts' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>Shirts</button>
-                            <button onClick={() => setCategoryFilter('jeans')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'jeans' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>Jeans</button>
-                            <button onClick={() => setCategoryFilter('dresses')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'dresses' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>Dress</button>
+                            <button onClick={() => setCategoryFilter('Clothing')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'Clothing' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>Clothing</button>
+                            <button onClick={() => setCategoryFilter('Decorative')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'Decorative' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>Decorative</button>
                         </div>
                     </div>
-
-                    {/* Right Side: Sorting */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold">Sort By:</span>
                         <Select value={sortOption} onValueChange={setSortOption}>
@@ -121,13 +145,17 @@ export default function SalePage() {
                     </div>
                 </div>
 
-                {/* --- Product Grid --- */}
-                {filteredAndSortedProducts.length > 0 ? (
+                {/* --- Product Grid with Loading/Error/Empty States --- */}
+                {loading ? (
+                    <ProductGridSkeleton count={8} />
+                ) : error ? (
+                    <div className="text-center py-20 text-red-500">Failed to load products.</div>
+                ) : mappedProducts.length > 0 ? (
                     <motion.div
                         layout
                         className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8"
                     >
-                        {filteredAndSortedProducts.map((product) => (
+                        {mappedProducts.map((product) => (
                             <ProductCard key={product._id} product={product} />
                         ))}
                     </motion.div>
