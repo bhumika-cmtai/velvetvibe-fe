@@ -28,7 +28,7 @@ const CartItemCard = ({ item, onUpdate, onRemove, isGuestCart }: { item: any, on
     const productDetails = isGuestCart ? item : item.product;
     const productName = productDetails.name;
     const productSlug = productDetails.slug;
-    const productImage = isGuestCart ? (item.images?.[0] || "/placeholder.svg") : (productDetails.mainImage || "/placeholder.svg");
+    const productImage = isGuestCart ? (item.images?.[0] || "/placeholder.svg") : (productDetails.images?.[0] || "/placeholder.svg");
     const productPrice = productDetails.price;
 
     // The ID for updating quantity is always the product's ID
@@ -230,7 +230,7 @@ export default function CartPage() {
                                 </div>
                             </div>
                             <Link href={isAuthenticated ? "/checkout" : "/login?redirect=/checkout"}>
-                                <Button className="w-full h-12 rounded-lg font-bold text-base bg-[var(--theme-accent)] text-white hover:bg-opacity-90">
+                                <Button className="w-full h-12 rounded-lg font-bold text-base bg-[var(--primary-button-theme)] text-white hover:bg-opacity-90">
                                     <Lock size={16} className="mr-2" />
                                     Proceed to Checkout
                                 </Button>

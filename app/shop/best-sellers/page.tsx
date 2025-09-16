@@ -1,4 +1,3 @@
-// src/app/best-sellers/page.tsx
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
@@ -6,7 +5,10 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { Frown } from "lucide-react"
 
-// --- Redux Imports (Naye imports) ---
+// --- Next.js Navigation Hooks ---
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+
+// --- Redux Imports ---
 import { useDispatch, useSelector } from "react-redux"
 import { AppDispatch, RootState } from "@/lib/redux/store"
 import { fetchProducts } from "@/lib/redux/slices/productSlice"
@@ -16,14 +18,15 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProductCard from "@/components/ProductCard"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import ProductGridSkeleton from "@/components/skeleton/ProductGridSkeleton" // Loading state ke liye
+import ProductGridSkeleton from "@/components/skeleton/ProductGridSkeleton"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
-// --- Collection Header Component (Isme koi change nahi) ---
+// --- Collection Header Component ---
 const CollectionHeader = () => (
     <div className="relative h-[200px] md:h-[300px] w-full bg-gray-200">
         <Image
             src="https://images.unsplash.com/photo-1523381294911-8d3cead13475?q=80&w=2070"
-            alt="Best Sellers Banner"
+            alt="Best Seller Banner"
             fill
             className="object-cover object-center"
         />
@@ -35,34 +38,43 @@ const CollectionHeader = () => (
     </div>
 );
 
-// --- Main Page Component (Isme major changes hain) ---
 export default function BestSellersPage() {
     const dispatch = useDispatch<AppDispatch>();
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
-    // --- Redux se state la rahe hain ---
-    const { items: bestSellerProducts, loading, error } = useSelector((state: RootState) => state.product);
+    // Redux se data aur pagination info nikalein
+    const { 
+        items: bestSellerProducts, 
+        loading, 
+        error, 
+        currentPage, 
+        totalPages 
+    } = useSelector((state: RootState) => state.product);
 
-    // --- Local state UI control ke liye ---
+    // Local state UI control ke liye
     const [sortOption, setSortOption] = useState('featured');
     const [categoryFilter, setCategoryFilter] = useState('all');
 
-    // --- Data Fetching Effect ---
-    // Component load hone par aur category filter change hone par data fetch karo
+    // Data Fetching Effect (ab page number par bhi depend karega)
     useEffect(() => {
-        const queryParams: { tags: string, type?: string } = {
-            tags: 'Hot' // Sirf 'Hot' tag wale products fetch karo
+        const page = searchParams.get('page') || '1';
+        const queryParams: { tags: string, category?: string, page: string } = {
+            tags: 'Bestseller',
+            page: page,
         };
         
         if (categoryFilter !== 'all') {
-            queryParams.type = categoryFilter; // Backend 'type' ko as a category use karta hai
+            queryParams.category = categoryFilter; 
         }
 
         dispatch(fetchProducts(queryParams));
-    }, [dispatch, categoryFilter]);
+    }, [dispatch, categoryFilter, searchParams]); // searchParams dependency mein hai
 
-    // --- Client-side sorting ke liye useMemo ---
+    // Client-side sorting
     const sortedProducts = useMemo(() => {
-        const sorted = [...bestSellerProducts]; // Redux se aaye products ki copy banayein
+        const sorted = [...bestSellerProducts];
         switch (sortOption) {
             case 'price-asc':
                 sorted.sort((a, b) => (a.sale_price ?? a.price) - (b.sale_price ?? b.price));
@@ -90,6 +102,13 @@ export default function BestSellersPage() {
         base_price: p.sale_price ? p.price : undefined,
         originalProduct: p,
     })), [sortedProducts]);
+
+    // Page change handle karne ke liye function
+    const handlePageChange = (page: number) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('page', page.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    }
 
     return (
         <div className="bg-white">
@@ -124,25 +143,64 @@ export default function BestSellersPage() {
                     </div>
                 </div>
 
-                {/* --- Product Grid with Loading/Error/Empty States --- */}
-                {loading ? (
-                    <ProductGridSkeleton count={8} />
-                ) : error ? (
-                    <div className="text-center py-20 text-red-500">Failed to load best sellers.</div>
-                ) : mappedProducts.length > 0 ? (
-                    <motion.div
-                        layout
-                        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8"
-                    >
-                        {mappedProducts.map((product) => (
-                            <ProductCard key={product._id} product={product} />
-                        ))}
-                    </motion.div>
-                ) : (
-                    <div className="text-center py-20 border-2 border-dashed rounded-2xl">
-                        <Frown className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-lg font-semibold">No Best Sellers Found</h3>
-                        <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or check back later!</p>
+                {/* --- Product Grid & States --- */}
+                <div className="product-grid-container">
+                    {loading ? (
+                        <ProductGridSkeleton count={8} />
+                    ) : error ? (
+                        <div className="text-center py-20 text-red-500">Failed to load best sellers.</div>
+                    ) : mappedProducts.length > 0 ? (
+                        <motion.div
+                            layout
+                            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8"
+                        >
+                            {mappedProducts.map((product) => (
+                                <ProductCard key={product._id} product={product} />
+                            ))}
+                        </motion.div>
+                    ) : (
+                        <div className="text-center py-20 border-2 border-dashed rounded-2xl">
+                            <Frown className="mx-auto h-12 w-12 text-gray-400" />
+                            <h3 className="mt-2 text-lg font-semibold">No Best Sellers Found</h3>
+                            <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or check back later!</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* --- PAGINATION UI --- */}
+                {totalPages > 1 && !loading && (
+                    <div className="mt-12">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious 
+                                        href="#" 
+                                        onClick={(e) => { e.preventDefault(); if (currentPage > 1) handlePageChange(currentPage - 1); }}
+                                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                                    />
+                                </PaginationItem>
+                                
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <PaginationItem key={i}>
+                                        <PaginationLink 
+                                            href="#" 
+                                            onClick={(e) => { e.preventDefault(); handlePageChange(i + 1); }}
+                                            isActive={currentPage === i + 1}
+                                        >
+                                            {i + 1}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                ))}
+
+                                <PaginationItem>
+                                    <PaginationNext 
+                                        href="#" 
+                                        onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) handlePageChange(currentPage + 1); }}
+                                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
                     </div>
                 )}
             </main>

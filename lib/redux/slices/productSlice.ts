@@ -115,7 +115,7 @@ const initialState: ProductState = {
   currentPage: 1,
   totalPages: 1,
   totalProducts: 0,
-  loading: false,
+  loading: true,
   error: null,
   selectedProduct: null,
   productDetailsLoading: false,

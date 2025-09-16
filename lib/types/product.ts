@@ -25,6 +25,7 @@ export interface Product {
   images: string[];
   video?: string;
   category: 'Clothing' | 'Decorative' | string;
+  sub_category: string;
   brand: string;
   gender?: 'Men' | 'Women' | 'Unisex';
   tags?: string[];

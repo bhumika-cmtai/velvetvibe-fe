@@ -131,7 +131,7 @@ export function ContactForm() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                     <div className="absolute bottom-0 left-0 p-8 text-white">
-                        <div className="flex items-center gap-3 mb-4"><Mail size={20} /><span>hi.florawear@example.com</span></div>
+                        <div className="flex items-center gap-3 mb-4"><Mail size={20} /><span>hi.Velvetvibe@example.com</span></div>
                         <div className="flex items-center gap-3 mb-4"><Phone size={20} /><span>1-333-345-6868</span></div>
                         <div className="flex items-center gap-3"><MapPin size={20} /><span>abcd street, Noida, India</span></div>
                     </div>

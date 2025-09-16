@@ -82,6 +82,7 @@ export function ViewProductModal({ isOpen, onClose, product, status }: ViewProdu
         {!isVariable && <DetailRow label="Stock" value={product.stock_quantity} />}
         
         <DetailRow label="Category" value={<Badge variant="outline" className="capitalize">{product.category}</Badge>} />
+        <DetailRow label="SubCategory" value={<Badge variant="outline" className="capitalize">{product.sub_category? product.sub_category: "-"}</Badge>} />
         <DetailRow label="Brand" value={product.brand} />
         
         {product.category === 'Clothing' && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,6 +12,7 @@ import { Loader2, Trash2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
+// --- Interfaces aur Constants ---
 interface VariantState {
   size: string;
   color: string;
@@ -29,7 +30,21 @@ interface AddProductModalProps {
 
 const MAX_IMAGES = 5;
 
+// --- Sub-Category ka Data ---
+const clothingSubCategories = [
+  "Tops & T-shirts", "Dresses", "Co-ords", "Jumpsuits", "Jeans & Trousers",
+  "Skirts", "Shorts", "Outwear", "Jackets", "Activewear", "Kurta", "Kurti",
+  "Suit", "Tunic", "Saree", "Lehenga Choli", "Leggings", "Salwars", "Plazzos"
+];
+
+const decorativeSubCategories = [
+  "Flower Pots", "Vases", "Wall Paintings", "Figurines", "Sculptures",
+  "Lamps & Lighting", "Rugs & Carpets"
+];
+
+
 export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProps) {
+  // --- States ---
   const [activeCategory, setActiveCategory] = useState<'Clothing' | 'Decorative'>('Clothing');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -42,6 +57,16 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
 
+  // Naya state sub-category ke liye
+  const [subCategory, setSubCategory] = useState('');
+
+  // Jab main category change ho, to sub-category ko reset kar do
+  useEffect(() => {
+    setSubCategory('');
+  }, [activeCategory]);
+  
+
+  // --- Handlers ---
   const handleVariantChange = (index: number, field: keyof VariantState, value: string | number) => {
     const newVariants = [...variants];
     (newVariants[index] as any)[field] = value;
@@ -109,6 +134,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
   const resetForm = () => {
       setActiveCategory('Clothing');
+      setSubCategory(''); // Sub-category state ko bhi reset karein
       setVariants([{ size: '', color: '', price: 0, sale_price: 0, stock_quantity: 0, sku_variant: '' }]);
       imagePreviews.forEach(url => { if (url) URL.revokeObjectURL(url); });
       setImageFiles(new Array(MAX_IMAGES).fill(null));
@@ -131,9 +157,14 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     const data = new FormData(form);
 
     data.append('category', activeCategory);
+    
+    // Form data mein sub-category ko bhi add karein
+    // if (subCategory) {
+    //   data.append('sub_category', subCategory);
+    // }
 
     if (activeCategory === 'Clothing') {
-      data.delete('stock_quantity'); // Remove simple stock field for clothing
+      data.delete('stock_quantity'); 
       for (const variant of variants) {
           if (!variant.size || !variant.color || !variant.sku_variant || variant.stock_quantity < 0 || variant.price <= 0) {
               toast.error("For variants: Size, Color, SKU, Price (>0), and Stock (>=0) are required.");
@@ -143,7 +174,6 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       }
       data.append('variants', JSON.stringify(variants));
     } else {
-      // For decorative items, remove clothing-specific fields
       data.delete('gender');
       data.delete('fit');
       data.delete('sleeveLength');
@@ -153,9 +183,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     }
 
     imageFiles.forEach(file => {
-      if (file) {
-        data.append('images', file);
-      }
+      if (file) data.append('images', file);
     });
     if (videoFile) data.append('video', videoFile);
     
@@ -167,6 +195,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     }
   };
 
+  // --- JSX (RENDER) ---
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm(); onClose(); } }}>
       <DialogContent className="sm:max-w-[800px]">
@@ -186,8 +215,26 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
               
               <div className="space-y-2"><Label>Product Name *</Label><Input name="name" required /></div>
               <div className="space-y-2"><Label>Description *</Label><Textarea name="description" required /></div>
-              <div className="space-y-2"><Label>Brand *</Label><Input name="brand" required /></div>
-              <div className="space-y-2"><Label>Tags (comma-separated)</Label><Input name="tags" placeholder="e.g., casual, wedding" /></div>
+              
+              {/* --- BRAND AUR SUB-CATEGORY KA SECTION --- */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2"><Label>Brand *</Label><Input name="brand" required /></div>
+                <div className="space-y-2">
+                    <Label>Sub-Category</Label>
+                    <Select name="sub_category" value={subCategory} onValueChange={setSubCategory}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a sub-category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {(activeCategory === 'Clothing' ? clothingSubCategories : decorativeSubCategories).map(sub => (
+                                <SelectItem key={sub} value={sub}>{sub}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2"><Label>Tags (comma-separated)</Label><Input name="tags" placeholder="e.g., Ethnic, Sale, Hot" /></div>
 
               <div className="grid grid-cols-2 gap-4 border-t pt-4">
                 <div><Label>Price (MRP) *</Label><Input name="price" type="number" step="0.01" required /></div>
@@ -205,13 +252,13 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                 </div>
                 
                 <div className="space-y-2 pt-4 border-t">
-                  <Label>Variants *</Label>
+                  <Label>Variants * (For Clothing)</Label>
                   <div className="space-y-3">
                     {variants.map((variant, index) => (
                       <div key={index} className="grid grid-cols-12 gap-2 p-2 border rounded-md">
                         <div className="col-span-6 md:col-span-3"><Label className="text-xs">Size*</Label><Input value={variant.size} onChange={e => handleVariantChange(index, 'size', e.target.value)} required /></div>
                         <div className="col-span-6 md:col-span-3"><Label className="text-xs">Color*</Label><Input value={variant.color} onChange={e => handleVariantChange(index, 'color', e.target.value)} required /></div>
-                        <div className="col-span-6 md:col-span-3"><Label className="text-xs">Variant Price (MRP)*</Label><Input type="number" value={variant.price || ''} onChange={e => handleVariantChange(index, 'price', parseFloat(e.target.value) || 0)} required /></div>
+                        <div className="col-span-6 md:col-span-3"><Label className="text-xs">Variant Price*</Label><Input type="number" value={variant.price || ''} onChange={e => handleVariantChange(index, 'price', parseFloat(e.target.value) || 0)} required /></div>
                         <div className="col-span-6 md:col-span-3"><Label className="text-xs">Variant Sale Price</Label><Input type="number" value={variant.sale_price || ''} onChange={e => handleVariantChange(index, 'sale_price', parseFloat(e.target.value) || 0)} /></div>
                         <div className="col-span-6 md:col-span-4"><Label className="text-xs">Stock*</Label><Input type="number" value={variant.stock_quantity} onChange={e => handleVariantChange(index, 'stock_quantity', parseInt(e.target.value) || 0)} required /></div>
                         <div className="col-span-6 md:col-span-7"><Label className="text-xs">SKU*</Label><Input value={variant.sku_variant} onChange={e => handleVariantChange(index, 'sku_variant', e.target.value)} required /></div>

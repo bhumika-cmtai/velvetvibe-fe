@@ -6,7 +6,10 @@ import Image from "next/image"
 import { motion } from "framer-motion"
 import { Frown } from "lucide-react"
 
-// --- Redux Imports (Naye imports) ---
+// --- Next.js Navigation Hooks ---
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+
+// --- Redux Imports ---
 import { useDispatch, useSelector } from "react-redux"
 import { AppDispatch, RootState } from "@/lib/redux/store"
 import { fetchProducts } from "@/lib/redux/slices/productSlice"
@@ -16,9 +19,10 @@ import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import ProductCard from "@/components/ProductCard"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import ProductGridSkeleton from "@/components/skeleton/ProductGridSkeleton" // Skeleton component
+import ProductGridSkeleton from "@/components/skeleton/ProductGridSkeleton"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
-// --- Countdown Timer Component (Isme koi change nahi) ---
+// --- Countdown Timer Component (Responsive) ---
 const CountdownTimer = () => {
     const calculateTimeLeft = () => {
         const difference = +new Date("2025-12-31T23:59:59") - +new Date();
@@ -50,7 +54,7 @@ const CountdownTimer = () => {
     );
 };
 
-// --- Sale Header Component (Isme koi change nahi) ---
+// --- Sale Header Component ---
 const SaleHeader = () => (
     <div className="relative w-full bg-black">
         <div className="absolute inset-0 opacity-20"><Image src="https://images.unsplash.com/photo-1508056830983- unvexb21d582?q=80&w=2070" alt="Abstract background" fill className="object-cover" /></div>
@@ -63,45 +67,62 @@ const SaleHeader = () => (
     </div>
 );
 
-// --- Main Page Component (Isme major changes hain) ---
+
+// --- Main Page Component ---
 export default function SalePage() {
     const dispatch = useDispatch<AppDispatch>();
+    const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
-    // --- Redux se state la rahe hain ---
-    const { items: saleProducts, loading, error } = useSelector((state: RootState) => state.product);
+    // --- Redux se state aur pagination info la rahe hain ---
+    const { 
+        items: saleProducts, 
+        loading, 
+        error, 
+        currentPage, 
+        totalPages 
+    } = useSelector((state: RootState) => state.product);
 
     // --- Local state UI control ke liye ---
     const [sortOption, setSortOption] = useState('featured');
     const [categoryFilter, setCategoryFilter] = useState('all');
 
     // --- Data Fetching Effect ---
-    // Yeh effect tab chalega jab component load hoga ya category filter change hoga
     useEffect(() => {
-        const queryParams: { tags: string, type?: string } = {
-            tags: 'Sale' // Hamesha sale wale products fetch karo
+        const page = searchParams.get('page') || '1';
+        const queryParams: { onSale: string, page: string, category?: string } = {
+            onSale: 'true', // <-- YEH SABSE IMPORTANT CHANGE HAI
+            page: page,
         };
 
         if (categoryFilter !== 'all') {
-            queryParams.type = categoryFilter; // Backend `type` ko as a category use karta hai
+            queryParams.category = categoryFilter;
         }
 
         dispatch(fetchProducts(queryParams));
-    }, [dispatch, categoryFilter]);
+    }, [dispatch, categoryFilter, searchParams]);
 
-
-    // --- Client-side sorting ke liye useMemo ---
+    // --- Client-side sorting ---
     const sortedProducts = useMemo(() => {
-        const sorted = [...saleProducts]; // Redux se aaye products ki copy banayein
+        const sorted = [...saleProducts];
         switch (sortOption) {
-            case 'price-asc': sorted.sort((a, b) => (a.sale_price ?? a.price) - (b.sale_price ?? b.price)); break;
-            case 'price-desc': sorted.sort((a, b) => (b.sale_price ?? b.price) - (a.sale_price ?? a.price)); break;
-            case 'newest': sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
-            default: break; // 'featured' ke liye default order hi rakhein
+            case 'price-asc':
+                sorted.sort((a, b) => (a.sale_price ?? a.price) - (b.sale_price ?? b.price));
+                break;
+            case 'price-desc':
+                sorted.sort((a, b) => (b.sale_price ?? b.price) - (a.sale_price ?? a.price));
+                break;
+            case 'newest':
+                sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                break;
+            default: // 'featured'
+                break;
         }
         return sorted;
     }, [sortOption, saleProducts]);
 
-    // ProductCard ke liye data map karein
+    // ProductCard ke liye data map karein (yeh discount bhi calculate karega)
     const mappedProducts = useMemo(() => sortedProducts.map(p => ({
         _id: p._id,
         name: p.name,
@@ -113,6 +134,12 @@ export default function SalePage() {
         originalProduct: p,
     })), [sortedProducts]);
 
+    const handlePageChange = (page: number) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('page', page.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    }
+
     return (
         <div className="bg-white">
             <Navbar />
@@ -121,7 +148,7 @@ export default function SalePage() {
             <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* --- Filter & Toolbar --- */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 pb-4 border-b">
-                    <div className="flex items-center gap-2 flex-wrap">
+                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold">Filter:</span>
                         <div className="flex gap-1 bg-gray-100 p-1 rounded-full">
                             <button onClick={() => setCategoryFilter('all')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'all' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>All</button>
@@ -129,6 +156,7 @@ export default function SalePage() {
                             <button onClick={() => setCategoryFilter('Decorative')} className={`px-4 py-1.5 text-sm rounded-full transition-colors ${categoryFilter === 'Decorative' ? 'bg-white shadow-sm text-black font-semibold' : 'text-gray-600'}`}>Decorative</button>
                         </div>
                     </div>
+
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold">Sort By:</span>
                         <Select value={sortOption} onValueChange={setSortOption}>
@@ -146,24 +174,34 @@ export default function SalePage() {
                 </div>
 
                 {/* --- Product Grid with Loading/Error/Empty States --- */}
-                {loading ? (
-                    <ProductGridSkeleton count={8} />
-                ) : error ? (
-                    <div className="text-center py-20 text-red-500">Failed to load products.</div>
-                ) : mappedProducts.length > 0 ? (
-                    <motion.div
-                        layout
-                        className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8"
-                    >
-                        {mappedProducts.map((product) => (
-                            <ProductCard key={product._id} product={product} />
-                        ))}
-                    </motion.div>
-                ) : (
-                    <div className="text-center py-20 border-2 border-dashed rounded-2xl">
-                        <Frown className="mx-auto h-12 w-12 text-gray-400" />
-                        <h3 className="mt-2 text-lg font-semibold">No Sale Products Found</h3>
-                        <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or check back later!</p>
+                <div className="product-grid-container">
+                    {loading ? (
+                        <ProductGridSkeleton count={8} />
+                    ) : error ? (
+                        <div className="text-center py-20 text-red-500">Failed to load sale products.</div>
+                    ) : mappedProducts.length > 0 ? (
+                        <motion.div layout className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
+                            {mappedProducts.map((product) => (
+                                <ProductCard key={product._id} product={product} />
+                            ))}
+                        </motion.div>
+                    ) : (
+                        <div className="text-center py-20 border-2 border-dashed rounded-2xl">
+                            <Frown className="mx-auto h-12 w-12 text-gray-400" />
+                            <h3 className="mt-2 text-lg font-semibold">No Products on Sale</h3>
+                            <p className="mt-1 text-sm text-gray-500">Check back later for exciting deals!</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* --- Pagination UI --- */}
+                {totalPages > 1 && !loading && (
+                    <div className="mt-12">
+                        <Pagination>
+                            <PaginationContent>
+                                {/* Pagination Items */}
+                            </PaginationContent>
+                        </Pagination>
                     </div>
                 )}
             </main>

@@ -2,13 +2,20 @@
 "use client"
 
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { products } from '@/lib/data';
-import { Product } from '@/lib/types/product';
-import { DecorFiltersSidebar } from '@/components/DecorFiltersSidebar'; // Using the specific sidebar
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+
+// --- Redux Imports ---
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/lib/redux/store';
+import { fetchProducts } from '@/lib/redux/slices/productSlice';
+
+// --- Component Imports ---
 import ProductCard from '@/components/ProductCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { DecorFiltersSidebar } from '@/components/DecorFiltersSidebar'; // Assuming this is your sidebar
+import ProductGridSkeleton from '@/components/skeleton/ProductGridSkeleton';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 // Define the structure for filter groups
 const decorFilterGroups = [
@@ -17,10 +24,10 @@ const decorFilterGroups = [
         label: 'Category',
         options: [
             { id: 'Vases', label: 'Vases' },
-            { id: 'Wall Art', label: 'Wall Art' },
-            { id: 'Lamps', label: 'Lamps' },
+            { id: 'Wall Paintings', label: 'Wall Paintings' },
+            { id: 'Lamps & Lighting', label: 'Lamps & Lighting' },
             { id: 'Sculptures', label: 'Sculptures' },
-            { id: 'Mirrors', label: 'Mirrors' },
+            { id: 'Rugs & Carpets', label: 'Rugs & Carpets' },
         ],
     },
     {
@@ -30,7 +37,6 @@ const decorFilterGroups = [
             { id: 'Artisan Home', label: 'Artisan Home' },
             { id: 'Modern Canvas', label: 'Modern Canvas' },
             { id: 'Lumina', label: 'Lumina' },
-            { id: 'Reflections Co.', label: 'Reflections Co.' },
         ],
     },
     {
@@ -38,71 +44,58 @@ const decorFilterGroups = [
         label: 'Tags',
         options: [
             { id: 'New', label: 'New' },
-            { id: 'Best Seller', label: 'Best Seller' },
             { id: 'Sale', label: 'Sale' },
         ],
     },
 ];
 
 export default function DecorativePageClient() {
+    const dispatch = useDispatch<AppDispatch>();
+    const router = useRouter();
+    const pathname = usePathname();
     const searchParams = useSearchParams();
-    const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+
+    // --- Redux State ---
+    const { 
+        items: products, 
+        loading, 
+        error,
+        currentPage,
+        totalPages,
+        totalProducts
+    } = useSelector((state: RootState) => state.product);
+
+    // --- Local State for UI Control ---
     const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({});
     const [sortOption, setSortOption] = useState('newest');
 
-    // Filter only decorative products from the main data source
-    const decorativeProducts = useMemo(() => products.filter(p => p.category === 'Decor'), []);
+    // --- useEffect Hooks for Data Fetching and URL Sync (Infinite Loop Fix) ---
 
+    // HOOK 1: Fetches data whenever the URL (searchParams) changes.
     useEffect(() => {
-        // Initialize filters from URL search params
-        const initialFilters: Record<string, string[]> = {};
-        const category = searchParams.get('category');
-        if (category) {
-            initialFilters['sub_category'] = [category];
-        }
-        setSelectedFilters(initialFilters);
-    }, [searchParams]);
+        const params = new URLSearchParams(searchParams);
+        // Hamesha 'Decorative' category ke products fetch karo
+        params.set('category', 'Decorative'); 
+        
+        dispatch(fetchProducts(Object.fromEntries(params)));
+    }, [searchParams, dispatch]);
 
+    // HOOK 2: Updates the URL whenever the user changes filters or sorting.
     useEffect(() => {
-        let items = [...decorativeProducts];
+        const params = new URLSearchParams();
+        Object.entries(selectedFilters).forEach(([key, values]) => {
+            if (values.length > 0) {
+                params.set(key, values.join(','));
+            }
+        });
+        params.set('sort', sortOption);
+        params.set('page', '1'); // Filter ya sort change karne par page 1 par jao
+        
+        router.replace(`${pathname}?${params.toString()}`);
+    }, [selectedFilters, sortOption, pathname, router]);
 
-        // Apply filters
-        const activeFilterGroups = Object.keys(selectedFilters).filter(key => selectedFilters[key].length > 0);
 
-        if (activeFilterGroups.length > 0) {
-            items = items.filter(product => {
-                return activeFilterGroups.every(groupId => {
-                    const selectedValues = selectedFilters[groupId];
-                    const productValue = product[groupId as keyof Product];
-
-                    if (Array.isArray(productValue)) {
-                        // For array fields like 'tags'
-                        return selectedValues.some(v => productValue.includes(v));
-                    }
-                    // For string fields like 'sub_category' or 'brand'
-                    return selectedValues.includes(productValue as string);
-                });
-            });
-        }
-
-        // Apply sorting
-        switch (sortOption) {
-            case 'price-asc':
-                items.sort((a, b) => a.price - b.price);
-                break;
-            case 'price-desc':
-                items.sort((a, b) => b.price - a.price);
-                break;
-            case 'newest':
-                 // Assuming products are already somewhat sorted or don't have a date field
-                 // For a real app, you'd sort by a `createdAt` date
-                break;
-        }
-
-        setFilteredProducts(items);
-
-    }, [selectedFilters, sortOption, decorativeProducts]);
-
+    // --- Handlers ---
     const handleFilterChange = (groupId: string, optionId: string, checked: boolean) => {
         setSelectedFilters(prev => {
             const newGroup = prev[groupId] ? [...prev[groupId]] : [];
@@ -120,11 +113,29 @@ export default function DecorativePageClient() {
         setSelectedFilters({});
     };
 
+    const handlePageChange = (page: number) => {
+        const params = new URLSearchParams(searchParams);
+        params.set('page', page.toString());
+        router.push(`${pathname}?${params.toString()}`);
+    }
+
+    // Map data for ProductCard
+    const mappedProducts = useMemo(() => products.map(p => ({
+        _id: p._id,
+        name: p.name,
+        slug: p.slug,
+        images: p.images,
+        tags: p.tags,
+        price: p.sale_price ?? p.price,
+        base_price: p.sale_price ? p.price : undefined,
+        originalProduct: p,
+    })), [products]);
+
     return (
         <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
             {/* Page Header */}
-            <div className="bg-[var(--base-50)] rounded-2xl p-8 text-center mb-12">
-                <h1 className="text-4xl md:text-5xl font-serif text-[var(--primary-text-theme)]">
+            <div className="bg-gray-50 rounded-2xl p-8 text-center mb-12">
+                <h1 className="text-4xl md:text-5xl font-serif text-gray-800">
                     Home Decor Collection
                 </h1>
                 <p className="mt-3 text-lg text-gray-600 max-w-2xl mx-auto">
@@ -142,7 +153,7 @@ export default function DecorativePageClient() {
                 <div className="flex-1">
                     <div className="flex justify-between items-center mb-6">
                         <p className="text-sm text-gray-600">
-                            Showing <span className="font-semibold">{filteredProducts.length}</span> results
+                            Showing <span className="font-semibold">{products.length}</span> of <span className="font-semibold">{totalProducts}</span> results
                         </p>
                         <Select value={sortOption} onValueChange={setSortOption}>
                             <SelectTrigger className="w-[180px]">
@@ -156,9 +167,14 @@ export default function DecorativePageClient() {
                         </Select>
                     </div>
 
-                    {filteredProducts.length > 0 ? (
+                    {/* --- Product Grid with Loading/Error/Empty States --- */}
+                    {loading && products.length === 0 ? (
+                        <ProductGridSkeleton count={6} />
+                    ) : error ? (
+                        <div className="text-center py-20 text-red-500">Failed to load products. Please try again.</div>
+                    ) : mappedProducts.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8">
-                            {filteredProducts.map((product) => (
+                            {mappedProducts.map((product) => (
                                 <ProductCard key={product._id} product={product} />
                             ))}
                         </div>
@@ -167,6 +183,27 @@ export default function DecorativePageClient() {
                             <h3 className="text-xl font-semibold text-gray-700">No products found</h3>
                             <p className="mt-2 text-gray-500">Try adjusting your filters to find what you're looking for.</p>
                             <Button onClick={handleClearFilters} className="mt-4">Clear Filters</Button>
+                        </div>
+                    )}
+
+                    {/* --- Pagination --- */}
+                    {totalPages > 1 && !loading && (
+                        <div className="mt-12">
+                            <Pagination>
+                                <PaginationContent>
+                                    <PaginationItem>
+                                        <PaginationPrevious href="#" onClick={(e) => { e.preventDefault(); if (currentPage > 1) handlePageChange(currentPage - 1); }} className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''} />
+                                    </PaginationItem>
+                                    {[...Array(totalPages)].map((_, i) => (
+                                        <PaginationItem key={i}>
+                                            <PaginationLink href="#" onClick={(e) => { e.preventDefault(); handlePageChange(i + 1); }} isActive={currentPage === i + 1}>{i + 1}</PaginationLink>
+                                        </PaginationItem>
+                                    ))}
+                                    <PaginationItem>
+                                        <PaginationNext href="#" onClick={(e) => { e.preventDefault(); if (currentPage < totalPages) handlePageChange(currentPage + 1); }} className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''} />
+                                    </PaginationItem>
+                                </PaginationContent>
+                            </Pagination>
                         </div>
                     )}
                 </div>

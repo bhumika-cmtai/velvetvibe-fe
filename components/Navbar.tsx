@@ -26,41 +26,40 @@ const navLinks = [
     { name: "Decorative Items", href: "/decoratives" }, // Added new nav item
   ];
 
-const megaMenuData = {
+  const megaMenuData = {
     westernWear: {
         title: "Western Wear",
         items: [
-            { name: "Dresses", href: "/shop?category=Dresses" },
-            { name: "Tops & T-Shirts", href: "/shop?category=Tops" },
-            { name: "Co-ords", href: "/shop?category=Co-ords" },
-            { name: "Jumpsuits", href: "/shop?category=Jumpsuits" },
-            { name: "Jeans & Trousers", href: "/shop?category=Jeans" },
-            { name: "Skirts & Shorts", href: "/shop?category=Skirts" },
-            { name: "Outerwear & Jackets", href: "/shop?category=Outerwear" },
-            { name: "Activewear", href: "/shop?category=Activewear" },
+            // Example: ?category=Dresses ko ?sub_category=Dresses se badla gaya
+            { name: "Dresses", href: "/shop?sub_category=Dresses" },
+            { name: "Tops & T-Shirts", href: "/shop?sub_category=Tops%20%26%20T-shirts" }, // Backend se match karein
+            { name: "Co-ords", href: "/shop?sub_category=Co-ords" },
+            { name: "Jumpsuits", href: "/shop?sub_category=Jumpsuits" },
+            { name: "Jeans & Trousers", href: "/shop?sub_category=Jeans%20%26%20Trousers" },
+            { name: "Skirts & Shorts", href: "/shop?sub_category=Skirts" }, // Aap combine kar sakte hain
+            { name: "Outerwear & Jackets", href: "/shop?sub_category=Outerwear" },
+            { name: "Activewear", href: "/shop?sub_category=Activewear" },
         ],
     },
     indianWear: {
         title: "Indian Wear",
         items: [
-            { name: "Kurtas & Suits", href: "/shop?category=Kurtas & Suits" },
-            { name: "Kurtis, Tunics & Tops", href: "/shop?category=Kurtis" },
-            { name: "Sarees", href: "/shop?category=Sarees" },
-            { name: "Lehenga Cholis", href: "/shop?category=Lehenga Cholis" },
-            { name: "Ethnic Wear Sets", href: "/shop?category=Ethnic Wear" },
-            { name: "Leggings, Salwars & Plazzos", href: "/shop?category=Leggings & Salwars" },
+            { name: "Kurtas & Suits", href: "/shop?sub_category=Kurta,Suit" }, // Multiple values
+            { name: "Kurtis, Tunics & Tops", href: "/shop?sub_category=Kurti,Tunic" },
+            { name: "Sarees", href: "/shop?sub_category=Saree" },
+            { name: "Lehenga Cholis", href: "/shop?sub_category=Lehenga Choli" },
+            { name: "Ethnic Wear Sets", href: "/shop?tags=Ethnic" }, // Yeh tag se filter karega
+            { name: "Leggings, Salwars & Plazzos", href: "/shop?sub_category=Leggings,Salwars,Plazzos" },
         ],
     },
-    // "Shop by Occasion" section replaced with "Decoratives"
     decoratives: {
         title: "Decoratives",
         items: [
-            { name: "Flower Pots & Vases", href: "/shop?category=Flower+Pots" },
-            { name: "Wall Paintings", href: "/shop?category=Paintings" },
-            { name: "Interior Decorative Items", href: "/shop?category=Interior+Decor" },
-            { name: "Figurines & Sculptures", href: "/shop?category=Sculptures" },
-            { name: "Lamps & Lighting", href: "/shop?category=Lamps" },
-            { name: "Rugs & Carpets", href: "/shop?category=Rugs" },
+            { name: "Flower Pots & Vases", href: "/decorative?sub_category=Vases" }, // Yeh /decorative page par jaayega
+            { name: "Wall Paintings", href: "/decorative?sub_category=Wall Paintings" },
+            { name: "Figurines & Sculptures", href: "/decorative?sub_category=Sculptures" },
+            { name: "Lamps & Lighting", href: "/decorative?sub_category=Lamps%20%26%20Lighting" },
+            { name: "Rugs & Carpets", href: "/decorative?sub_category=Rugs%20%26%20Carpets" },
         ],
     },
 };
