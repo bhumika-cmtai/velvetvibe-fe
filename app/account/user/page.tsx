@@ -38,27 +38,19 @@ export default function ProfilePage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
 
-  // --- CORRECTED: Select state from the appropriate slices ---
 
-  // Get ONLY the authentication status from authSlice.
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
   
-  // Get the profile data, loading status, and error from userSlice.
   const { user, status: userStatus, error } = useSelector((state: RootState) => state.user);
 
   useEffect(() => {
-    // The authSlice is loaded from localStorage, so its state is available immediately.
     if (isAuthenticated) {
-      // If the user is logged in, dispatch the action to fetch their detailed profile.
-      // This will update the userSlice.
       dispatch(fetchUserProfile());
     } else {
-      // If not authenticated at all, redirect to the login page.
       router.push('/login');
     }
   }, [isAuthenticated, dispatch, router]);
 
-  // Use the status from userSlice to show a loading screen while fetching data.
   if (userStatus === 'loading') {
     return (
       <div className="flex min-h-screen items-center justify-center">

@@ -9,16 +9,23 @@ import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from './ui/dropdown-menu';
-import { useCart } from '@/context/CartContext';
-import { useWishlist } from '@/context/WishlistContext';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState, AppDispatch } from '@/lib/redux/store';
-import { selectIsAuthenticated, selectCurrentUser, logout } from '@/lib/redux/slices/authSlice';
-import { fetchSearchResults, clearSearchResults } from '@/lib/redux/slices/productSlice';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 
+// --- CONTEXT IMPORTS (For Guest Users) ---
+import { useCart as useLocalCart } from '@/context/CartContext';
+import { useWishlist as useLocalWishlist } from '@/context/WishlistContext';
+
+// --- REDUX IMPORTS (For Logged-in Users) ---
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '@/lib/redux/store';
+import { selectIsAuthenticated, selectCurrentUser, logout } from '@/lib/redux/slices/authSlice';
+import { fetchSearchResults, clearSearchResults } from '@/lib/redux/slices/productSlice';
+import { fetchCart } from '@/lib/redux/slices/cartSlice';
+import { fetchWishlist, selectTotalWishlistItems } from '@/lib/redux/slices/wishlistSlice';
+
+// --- Static Data ---
 const navLinks = [
     { name: "New Arrivals", href: "/shop/new-arrivals" },
     { name: "Best Sellers", href: "/shop/best-sellers" },
@@ -34,21 +41,13 @@ const megaMenuData = {
             { name: "Dresses", href: "/shop?sub_category=Dresses" },
             { name: "Tops & T-Shirts", href: "/shop?sub_category=Tops%20%26%20T-shirts" },
             { name: "Co-ords", href: "/shop?sub_category=Co-ords" },
-            { name: "Jumpsuits", href: "/shop?sub_category=Jumpsuits" },
-            { name: "Jeans & Trousers", href: "/shop?sub_category=Jeans%20%26%20Trousers" },
-            { name: "Skirts & Shorts", href: "/shop?sub_category=Skirts,Shorts" },
-            { name: "Outerwear & Jackets", href: "/shop?sub_category=Outerwear,Jackets" },
-            { name: "Activewear", href: "/shop?sub_category=Activewear" },
         ],
     },
     indianWear: {
         title: "Indian Wear",
         items: [
             { name: "Kurtas & Suits", href: "/shop?sub_category=Kurta,Suit" },
-            { name: "Kurtis, Tunics & Tops", href: "/shop?sub_category=Kurti,Tunic,Tops" },
             { name: "Sarees", href: "/shop?sub_category=Saree" },
-            { name: "Lehenga Cholis", href: "/shop?sub_category=Lehenga Choli" },
-            { name: "Leggings, Salwars & Plazzos", href: "/shop?sub_category=Leggings,Salwars,Plazzos" },
         ],
     },
     decoratives: {
@@ -56,9 +55,6 @@ const megaMenuData = {
         items: [
             { name: "Flower Pots & Vases", href: "/decorative?sub_category=Flower%20Pots,Vases" },
             { name: "Wall Paintings", href: "/decorative?sub_category=Wall Paintings" },
-            { name: "Figurines & Sculptures", href: "/decorative?sub_category=Figurines,Sculptures" },
-            { name: "Lamps & Lighting", href: "/decorative?sub_category=Lamps%20%26%20Lighting" },
-            { name: "Rugs & Carpets", href: "/decorative?sub_category=Rugs%20%26%20Carpets" },
         ],
     },
 };
@@ -68,11 +64,18 @@ const Navbar = () => {
     const router = useRouter();
     const searchRef = useRef<HTMLDivElement>(null);
 
-
+    // --- Redux State for Authenticated User ---
     const isAuthenticated = useSelector(selectIsAuthenticated);
     const currentUser = useSelector(selectCurrentUser);
     const { searchResults, searchLoading } = useSelector((state: RootState) => state.product);
+    const dbTotalCartItems = useSelector((state: RootState) => state.cart.totalItems);
+    const dbTotalWishlistItems = useSelector(selectTotalWishlistItems);
 
+    // --- Context State for Guest User ---
+    const { totalItems: localTotalCartItems } = useLocalCart();
+    const { totalItems: localTotalWishlistItems } = useLocalWishlist();
+
+    // --- Local Component State ---
     const [searchQuery, setSearchQuery] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
@@ -80,19 +83,34 @@ const Navbar = () => {
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
 
-    const { totalItems: totalWishlistItems } = useWishlist();
-    const { totalItems } = useCart();
+    // --- Dynamically select item counts based on auth state ---
+    const totalItems = isAuthenticated ? dbTotalCartItems : localTotalCartItems;
+    const totalWishlistItems = isAuthenticated ? dbTotalWishlistItems : localTotalWishlistItems;
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
-
     useOnClickOutside(searchRef, () => setIsDropdownOpen(false));
 
+    // =================================================================
+    // --- CENTRALIZED DATA FETCHING LOGIC ---
+    // =================================================================
+    useEffect(() => {
+        // This effect runs whenever the authentication status changes.
+        if (isAuthenticated) {
+            // If the user is logged in, fetch their cart and wishlist from the database.
+            console.log("Navbar: User is authenticated. Fetching global data...");
+            dispatch(fetchCart());
+            dispatch(fetchWishlist());
+        }
+    }, [isAuthenticated, dispatch]);
+
+    // Effect for handling scroll behavior
     useEffect(() => {
         const handleScroll = () => setIsScrolled(window.scrollY > 10);
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Effect for handling debounced search
     useEffect(() => {
         if (debouncedSearchQuery.length > 2) {
             dispatch(fetchSearchResults({ search: debouncedSearchQuery, limit: 5 }));
@@ -269,7 +287,7 @@ const Navbar = () => {
                                                 <div key={section.title}>
                                                     <h3 className="font-semibold text-gray-800 mb-4">{section.title}</h3>
                                                     <ul className="space-y-2">
-                                                        {section.items.map(item => <li key={item.name}><Link href={item.href} className="text-gray-600 hover:text-black">{item.name}</Link></li>)}
+                                                        {section.items.map(item => <li key={item.name}><Link key={item.name} href={item.href} className="text-gray-600 hover:text-black">{item.name}</Link></li>)}
                                                     </ul>
                                                 </div>
                                             ))}

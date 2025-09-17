@@ -1,5 +1,7 @@
-// admin.ts
-import apiClient from './adminClient'; // Ensure this is your centralized, interceptor-based client
+// lib/api/admin.ts (Corrected Version)
+
+// IMPORTANT: We are now importing the main, correctly configured apiClient from 'auth.ts'
+import apiClient from './auth'; 
 import type { Product } from '@/lib/types/product';
 
 // Define the types needed for the API responses
@@ -34,6 +36,7 @@ export interface Coupon {
 
 // ==========================================================
 // --- PRODUCT API FUNCTIONS ---
+// (No changes needed in the functions themselves)
 // ==========================================================
 export const getAllProductsApi = async (params: { page?: number; limit?: number }) => {
   return apiClient.get('/admin/products', { params });
@@ -77,10 +80,6 @@ export const getAllInquiriesApi = async (status?: string) => {
 export const updateInquiryApi = async (inquiryId: string, updates: Partial<Inquiry>) => {
   return apiClient.put(`/contact/admin/${inquiryId}`, updates);
 };
-
-
-
-
 export const deleteInquiryApi = async (inquiryId: string) => {
   return apiClient.delete(`/contact/admin/${inquiryId}`);
 };
@@ -88,33 +87,19 @@ export const deleteInquiryApi = async (inquiryId: string) => {
 // ==========================================================
 // --- COUPON API FUNCTIONS ---
 // ==========================================================
-
 export const createCouponApi = (couponData: { code: string; discountPercentage: number; status?: 'active' | 'inactive' }) => {
-  // apiClient already handles authorization headers via interceptors, so no need to pass token explicitly here.
   return apiClient.post('/coupon', couponData);
 };
-
 export const getAllCouponsApi = (status?: 'active' | 'inactive') => {
-  // apiClient already handles authorization headers via interceptors, so no need to pass token explicitly here.
   const params = status ? { status } : {};
   return apiClient.get('/coupon', { params });
 };
-
 export const updateCouponApi = (couponId: string, couponData: Partial<{ code: string; discountPercentage: number; status: 'active' | 'inactive' }>) => {
-  // apiClient already handles authorization headers via interceptors, so no need to pass token explicitly here.
   return apiClient.patch(`/coupon/${couponId}`, couponData);
 };
-
-/**
- * Deletes a coupon. (Admin)
- * @param couponId The ID of the coupon to delete.
- */
 export const deleteCouponApi = (couponId: string) => {
-  // apiClient already handles authorization headers via interceptors, so no need to pass token explicitly here.
   return apiClient.delete(`/coupon/${couponId}`);
 };
-
 export const getCouponByNameApi = (couponCode: string) => {
-  // This function hits the `GET /coupon/code/:code` endpoint
   return apiClient.get(`/coupon/code/${couponCode}`);
 };

@@ -1,8 +1,10 @@
-// lib/api/auth.ts
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
+// IMPORTANT: Hum yahan se sirf 'TYPES' import kar rahe hain, store ki actual file nahi.
+import type { AppStore, RootState } from '@/lib/redux/store';
+import { logout } from '@/lib/redux/slices/authSlice';
 
 export interface Address {
-  _id: string; // MongoDB adds an _id to subdocuments
+  _id: string;
   fullName: string;
   phone: string;
   type: 'Home' | 'Work';
@@ -14,7 +16,6 @@ export interface Address {
   isDefault: boolean;
 }
 
-
 export interface User {
   _id: string;
   fullName: string;
@@ -23,40 +24,85 @@ export interface User {
   role: 'user' | 'admin';
   isVerified: boolean;
   addresses: Address[];
-  wishlist: string[]; // Array of Product ObjectIds
-  // The cart is often managed by a separate context/slice due to its frequent updates,
-  // but it can be included here if needed.
-  createdAt: string; // Timestamps from Mongoose
+  wishlist: string[];
+  createdAt: string;
   updatedAt: string;
 }
-// Define the expected shape of your user and API responses based on your backend
 
 interface AuthResponseData {
   user: User;
   accessToken: string;
 }
 
-// This type matches the `ApiResponse` class on your backend
 interface BackendResponse<T> {
   statusCode: number;
   data: T;
   message: string;
 }
 
-// Configure your API base URL. Use environment variables for this.
+// =================================================================
+// --- AXIOS INSTANCE SETUP ---
+// (This remains the same)
+// =================================================================
+
 const apiClient = axios.create({
-  baseURL:  `${process.env.NEXT_PUBLIC_API_URL}/api/v1` || 'http://localhost:8000/api/v1', // Default for local dev
-  withCredentials: true, // Important for sending cookies
+  baseURL: process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1` : 'http://localhost:8000/api/v1',
+  withCredentials: true,
 });
 
 // =================================================================
-// API FUNCTIONS
+// --- INTERCEPTORS SETUP FUNCTION (THE FIX) ---
+// Yeh naya function hai jo store ko bahar se lega.
+// This new function will take the store from outside.
 // =================================================================
 
-/**
- * Registers a new user.
- * Corresponds to the `registerUser` controller.
- */
+export const setupInterceptors = (store: AppStore) => {
+  /**
+   * Request Interceptor
+   * Har request se pehle yeh chalega.
+   */
+  apiClient.interceptors.request.use(
+    (config) => {
+      // Store ko parameter se access kar rahe hain.
+      // Accessing the store from the parameter.
+      const state: RootState = store.getState();
+      const accessToken = state.auth.accessToken;
+
+      if (accessToken) {
+        config.headers['Authorization'] = `Bearer ${accessToken}`;
+      }
+      
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
+  /**
+   * Response Interceptor
+   * Server se response aane ke baad yeh chalega.
+   */
+  apiClient.interceptors.response.use(
+    (response) => response,
+    async (error: AxiosError) => {
+      if (error.response && error.response.status === 401) {
+        console.error("Authentication Error (401): Token expired or invalid. Logging out.");
+        
+        // Store ko parameter se use karke action dispatch kar rahe hain.
+        // Using the store from the parameter to dispatch an action.
+        store.dispatch(logout());
+      }
+      return Promise.reject(error);
+    }
+  );
+};
+
+// =================================================================
+// --- API FUNCTIONS ---
+// (Aapki saari API functions jaisi thi waisi hi rahengi. No changes needed here)
+// =================================================================
+
 export const registerUserApi = async (userData: { name: string; email: string; password: string, role:string }) => {
   try {
     const response = await apiClient.post<BackendResponse<{ email: string }>>(
@@ -65,38 +111,29 @@ export const registerUserApi = async (userData: { name: string; email: string; p
     );
     return response.data;
   } catch (error: any) {
-    // Throw an error with the message from the backend's ApiResponse
     throw new Error(error.response?.data?.message || 'An unexpected error occurred during registration.');
   }
 };
 
-/**
- * Verifies the user's OTP.
- * Corresponds to the `verifyOtp` controller.
- */
 export const verifyOtpApi = async (otpData: { email: string; otp: string }) => {
   try {
     const response = await apiClient.post<BackendResponse<AuthResponseData>>(
       '/auth/verify-otp', 
       otpData
     );
-    return response.data; // This will contain { user, accessToken }
+    return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Failed to verify OTP.');
   }
 };
 
-/**
- * Logs in an existing user.
- * Corresponds to the `loginUser` controller.
- */
 export const loginUserApi = async (credentials: { email: string; password: string }) => {
   try {
     const response = await apiClient.post<BackendResponse<AuthResponseData>>(
       '/auth/login', 
       credentials
     );
-    return response.data; // This will contain { user, accessToken }
+    return response.data;
   } catch (error: any) {
     throw new Error(error.response?.data?.message || 'Invalid credentials or server error.');
   }
@@ -104,19 +141,16 @@ export const loginUserApi = async (credentials: { email: string; password: strin
 
 export const logoutUserApi = async () => {
   try {
-    // The interceptor will automatically attach the auth token to this request.
     const response = await apiClient.post<BackendResponse<{}>>(
       '/auth/logout'
     );
-    // console.log("logout---")
-    // console.log(response.data)
     return response.data;
   } catch (error: any) {
-    // Even if the server fails to log out (e.g., network error),
-    // we should proceed with the client-side logout.
-    // So, we can just log the error or handle it silently.
     console.error("Logout API call failed:", error.response?.data?.message || error.message);
-    // Optionally re-throw if you want the calling component to handle it
-    throw new Error(error.response?.data?.message || 'Logout failed.');
+    throw new Error(error.response?.data?.message || 'Logout failed on the server.');
   }
 };
+
+
+// Export the configured apiClient
+export default apiClient;

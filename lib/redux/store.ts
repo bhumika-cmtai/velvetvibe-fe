@@ -11,6 +11,7 @@ import wishlistReducer from './slices/wishlistSlice'
 import bulkOrderReducer from './slices/bulkOrderSlice';
 import orderReducer from './slices/orderSlice'
 import dashboardReducer from './slices/dashboardSlice'
+import { setupInterceptors } from '@/lib/api/auth'
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -27,6 +28,9 @@ export const store = configureStore({
   },
 });
 
+setupInterceptors(store);
+
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
+export type AppStore = typeof store; 

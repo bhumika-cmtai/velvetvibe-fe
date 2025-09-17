@@ -1,35 +1,27 @@
-// cartSlicet.ts
+// cartSlice.ts
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { AxiosError } from 'axios'; // Import AxiosError for better type checking
+import apiClient from '@/lib/api/auth'; 
 import { Coupon } from './couponSlice'; 
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
-  ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1`
-  : 'http://localhost:8000/api/v1';
-
-axios.defaults.withCredentials = true;
-
-// =================================================================
-// --- TYPE DEFINITIONS ---
-// =================================================================
-
-// This interface is for items coming from the local cart
 interface LocalCartItem {
   _id: string;
   quantity: number;
 }
+
 export interface CartItem {
-  _id: string;
+  _id: string; // Cart item ki apni unique ID
   product: {
     _id: string;
     name: string;
-    price: number;
-    mainImage: string;
-    images: string[];
-    stock: number;
+    slug: string;
   };
+  sku_variant: string;
   quantity: number;
+  price: number; // Item ka price ab yahan se aayega
+  image?: string; // Variant-specific image
+  attributes?: Record<string, string>; 
 }
 
 interface CartState {
@@ -58,104 +50,88 @@ const initialState: CartState = {
 
 interface ApiResponse {
   data: CartItem[];
+  message?: string;
 }
 
-// =================================================================
-// --- ASYNC THUNKS (API Calls) ---
-// =================================================================
+interface ApiError {
+  message: string;
+}
 
-export const fetchCart = createAsyncThunk<ApiResponse, void, { rejectValue: string }>(
+
+
+export const fetchCart = createAsyncThunk<CartItem[], void, { rejectValue: string }>(
   'cart/fetchCart',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/users/cart`);
-      return { data: response.data.data };
-    } catch (error: any) {
-      return rejectWithValue(
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : 'Failed to fetch cart'
-      );
+      const response = await apiClient.get('/users/cart');
+      // Assuming API returns the cart array directly in response.data.data
+      return response.data.data;
+    } catch (error) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || 'Failed to fetch cart');
     }
   }
 );
 
-export const addToCart = createAsyncThunk<ApiResponse, { productId: string; quantity?: number }, { rejectValue: string }>(
+export const addToCart = createAsyncThunk<CartItem[], { productId: string; sku_variant: string; quantity: number }, { rejectValue: string }>(
   'cart/addToCart',
   async (params, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/users/cart`, params);
-      return response.data; 
-    } catch (error: any) {
-      return rejectWithValue(
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : 'Failed to add to cart'
-      );
+      const response = await apiClient.post('/users/cart', params);
+      return response.data.data;
+    } catch (error) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || 'Failed to add to cart');
     }
   }
 );
 
-export const removeFromCart = createAsyncThunk<ApiResponse, string, { rejectValue: string }>(
+export const removeFromCart = createAsyncThunk<CartItem[], string, { rejectValue: string }>(
   'cart/removeFromCart',
   async (cartItemId, { rejectWithValue }) => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/users/cart/item/${cartItemId}`);
-      return response.data; 
-    } catch (error: any) {
-      return rejectWithValue(
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : 'Failed to remove from cart'
-      );
+      const response = await apiClient.delete(`/users/cart/item/${cartItemId}`);
+      return response.data.data;
+    } catch (error) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || 'Failed to remove from cart');
     }
   }
 );
 
-export const updateCartQuantity = createAsyncThunk<ApiResponse, { productId: string; quantity: number }, { rejectValue: string }>(
+export const updateCartQuantity = createAsyncThunk<CartItem[], { cartItemId: string; quantity: number }, { rejectValue: string }>(
   'cart/updateQuantity',
-  async (params, { rejectWithValue }) => {
+  async ({ cartItemId, quantity }, { rejectWithValue }) => {
     try {
-      const response = await axios.patch(`${API_BASE_URL}/users/cart/item/quantity/${params.productId}`, { quantity: params.quantity });
-      return response.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : 'Failed to update cart quantity'
-      );
+      // Endpoint ko bhi cartItemId ke hisaab se update karein
+      const response = await apiClient.patch(`/users/cart/item/quantity/${cartItemId}`, { quantity });
+      return response.data.data;
+    } catch (error) {
+      const err = error as AxiosError<{ message: string }>;
+      return rejectWithValue(err.response?.data?.message || 'Failed to update cart quantity');
     }
   }
 );
 
-// --- NEW ASYNC THUNK FOR MERGING CART ---
-export const mergeCarts = createAsyncThunk<ApiResponse, { localCartItems: LocalCartItem[] }, { rejectValue: string }>(
+export const mergeCarts = createAsyncThunk<CartItem[], { productId: string, sku_variant: string, quantity: number }[], { rejectValue: string }>(
     'cart/mergeCarts',
-    async ({ localCartItems }, { rejectWithValue }) => {
+    async (localCartItems, { rejectWithValue }) => {
         try {
-            // This endpoint should be created in your backend to handle the merge logic
-            const response = await axios.post(`${API_BASE_URL}/users/cart/merge`, { items: localCartItems });
-            return response.data;
-        } catch (error: any) {
-            return rejectWithValue(
-                axios.isAxiosError(error) && error.response?.data?.message
-                    ? error.response.data.message
-                    : 'Failed to merge carts'
-            );
+            const response = await apiClient.post('/users/cart/merge', { items: localCartItems });
+            return response.data.data;
+        } catch (error) {
+            const err = error as AxiosError<{ message: string }>;
+            return rejectWithValue(err.response?.data?.message || 'Failed to merge carts');
         }
     }
 );
 
 
-// =================================================================
-// --- SLICE DEFINITION ---
-// =================================================================
 
 const cartSlice = createSlice({
   name: 'cart',
   initialState,
   reducers: {
-    // This is a local clear, for when a user logs out
     clearLocalCartState: (state) => {
         state.items = [];
         state.appliedCoupon = null;
@@ -170,7 +146,8 @@ const cartSlice = createSlice({
       cartSlice.caseReducers.calculateTotals(state);
     },
     calculateTotals: (state) => {
-      const subTotal = state.items.reduce((total, item) => total + item.product.price * item.quantity, 0);
+      // CHANGE: Price ab item se direct aayega
+      const subTotal = state.items.reduce((total, item) => total + item.price * item.quantity, 0);
       const totalItems = state.items.reduce((total, item) => total + item.quantity, 0);
       let discountAmount = 0;
       if (state.appliedCoupon) {
@@ -178,6 +155,7 @@ const cartSlice = createSlice({
       }
       const shippingCost = subTotal > 2000 ? 0 : 99;
       const finalTotal = subTotal - discountAmount + shippingCost;
+      
       state.subTotal = subTotal;
       state.totalItems = totalItems;
       state.discountAmount = discountAmount;
