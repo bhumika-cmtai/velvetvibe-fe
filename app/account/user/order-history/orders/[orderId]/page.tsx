@@ -15,7 +15,7 @@ import { fetchSingleOrder, Order } from '@/lib/redux/slices/orderSlice';
 
 // ===================================================================================
 // 1. DEDICATED PRINT STYLESHEET COMPONENT
-// This CSS hides everything on the page EXCEPT for the invoice when printing.
+// This CSS hides everything on the page EXCEPT for the invoice when= printing.
 // ===================================================================================
 const PrintStyles = () => (
   <style jsx global>{`
@@ -38,13 +38,13 @@ const PrintStyles = () => (
 // ===================================================================================
 const InvoiceTemplate = ({ order }: { order: Order }) => {
   const companyDetails = {
-    name: 'Gullnaaz',
+    name: 'Velvetvibe',
     address: 'Shop No. 12, MC NO.181/225, Shri Ram Market, Gali Kunj, Dariba Kalan, Chandni Chowk, Delhi - 110006',
     gstin: '07BATPS3910H1ZC',
     contact: '+91 70117 06767',
-    email: 'gullnaaz2025@.com',
-    website: 'www.gullnaaz.com',
-    logo: '/GULLNAAZ-BLACK-LOGO-PNG.png'
+    email: 'Velvetvibe@.com',
+    website: 'www.velvetvibe.org',
+    logo: '/Velvetvibe-PNG.png'
   };
 
   return (
@@ -52,7 +52,7 @@ const InvoiceTemplate = ({ order }: { order: Order }) => {
         <div className="w-[800px] bg-white p-4 font-sans mx-auto">
             <div className="flex items-center justify-between bg-black text-white p-6">
                 <div className="w-40">
-                    <Image src={companyDetails.logo} alt="Gullnaaz Logo" width={150} height={42} className="brightness-0 invert"/>
+                    <Image src={companyDetails.logo} alt="Velvetvibe Logo" width={150} height={42} className="brightness-0 invert"/>
                 </div>
                 <h1 className="text-4xl font-bold tracking-wider">INVOICE</h1>
             </div>

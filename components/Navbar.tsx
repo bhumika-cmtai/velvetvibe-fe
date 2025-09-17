@@ -83,16 +83,12 @@ const Navbar = () => {
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
 
-    // --- Dynamically select item counts based on auth state ---
     const totalItems = isAuthenticated ? dbTotalCartItems : localTotalCartItems;
     const totalWishlistItems = isAuthenticated ? dbTotalWishlistItems : localTotalWishlistItems;
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     useOnClickOutside(searchRef, () => setIsDropdownOpen(false));
 
-    // =================================================================
-    // --- CENTRALIZED DATA FETCHING LOGIC ---
-    // =================================================================
     useEffect(() => {
         // This effect runs whenever the authentication status changes.
         if (isAuthenticated) {
@@ -148,8 +144,8 @@ const Navbar = () => {
                             <p className="text-xs font-normal text-gray-500">{currentUser.email}</p>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild><Link href="/account/profile">My Profile</Link></DropdownMenuItem>
-                        <DropdownMenuItem asChild><Link href="/account/orders">My Orders</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account/user">My Profile</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account/order-history">My Orders</Link></DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Sign Out</DropdownMenuItem>
                     </>
@@ -207,15 +203,20 @@ const Navbar = () => {
                                     {!searchLoading && searchResults.length > 0 && (
                                         <ul>
                                             {searchResults.map((product: any) => (
-                                                <li key={product._id}>
-                                                    <Link href={`/product/${product.slug}`} onClick={() => setIsDropdownOpen(false)} className="flex items-center p-3 hover:bg-gray-100 transition-colors">
-                                                        <Image src={product.images[0]} alt={product.name} width={40} height={40} className="object-cover rounded-md" />
-                                                        <div className='ml-3'>
-                                                            <p className="font-semibold text-sm">{product.name}</p>
-                                                            <p className="text-sm font-bold">₹{(product.sale_price ?? product.price).toLocaleString()}</p>
-                                                        </div>
-                                                    </Link>
-                                                </li>
+                                                        <li key={product._id}>
+                                                        {/* --- YEH LINE AAPKA KAAM KAR RAHI HAI --- */}
+                                                        <Link 
+                                                        href={`/product/${product.slug}`} 
+                                                        onClick={() => setIsDropdownOpen(false)} 
+                                                        className="flex items-center p-3 hover:bg-gray-100 transition-colors"
+                                                        >
+                                                            <Image src={product.images[0]} alt={product.name} width={40} height={40} className="object-cover rounded-md" />
+                                                            <div className='ml-3'>
+                                                                <p className="font-semibold text-sm">{product.name}</p>
+                                                                <p className="text-sm font-bold">₹{(product.sale_price ?? product.price).toLocaleString()}</p>
+                                                            </div>
+                                                        </Link>
+                                                    </li>
                                             ))}
                                             <li className="border-t">
                                                  <Link href={`/shop?search=${encodeURIComponent(searchQuery.trim())}`} onClick={() => setIsDropdownOpen(false)} className="block w-full text-center p-3 font-semibold text-sm text-black hover:bg-gray-100">View all results</Link>

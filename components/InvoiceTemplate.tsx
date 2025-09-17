@@ -12,13 +12,13 @@ interface InvoiceTemplateProps {
 export const InvoiceTemplate = ({ order, forwardedRef }: InvoiceTemplateProps) => {
   // Your company details
   const companyDetails = {
-    name: 'Gullnaaz',
+    name: 'Velvetvibe',
     address: '123 Jewellery Lane, Mumbai, Maharashtra',
     gstin: '27ABCDE1234F1Z5',
     contact: '+91 98765 43210',
-    email: 'support@gullnaaz.com',
-    website: 'www.gullnaaz.com',
-    logo: '/GULLNAAZ-BLACK-LOGO-PNG.png' // Make sure this logo exists in your /public folder
+    email: 'support@Velvetvibe.com',
+    website: 'www.Velvetvibe.org',
+    logo: '/Velvetvibe' // Make sure this logo exists in your /public folder
   };
 
   return (
@@ -27,7 +27,7 @@ export const InvoiceTemplate = ({ order, forwardedRef }: InvoiceTemplateProps) =
         {/* Header */}
         <div className="flex items-center justify-between bg-purple-800 text-white p-8">
             <div className="w-48">
-                <Image src={companyDetails.logo} alt="Gullnaaz Logo" width={160} height={45} className="brightness-0 invert"/>
+                <Image src={companyDetails.logo} alt="Velvetvibe Logo" width={160} height={45} className="brightness-0 invert"/>
             </div>
             <h1 className="text-5xl font-bold tracking-wider">INVOICE</h1>
         </div>
