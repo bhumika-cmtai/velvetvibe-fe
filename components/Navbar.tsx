@@ -93,7 +93,7 @@ const Navbar = () => {
         // This effect runs whenever the authentication status changes.
         if (isAuthenticated) {
             // If the user is logged in, fetch their cart and wishlist from the database.
-            console.log("Navbar: User is authenticated. Fetching global data...");
+             ("Navbar: User is authenticated. Fetching global data...");
             dispatch(fetchCart());
             dispatch(fetchWishlist());
         }

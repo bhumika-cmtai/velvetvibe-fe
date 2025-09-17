@@ -9,23 +9,24 @@ interface CartItem extends Product {
 
 export interface LocalCartItem {
   productId: string;
-  sku_variant: string; 
+  sku_variant?: string; // Optional for simple products without variants
   quantity: number;
   name: string;
   slug: string;
   image: string;
   price: number;
-  attributes: Record<string, string>; 
+  attributes?: Record<string, string>; // Optional for simple products
+  selectedVariant?: Variant; // Store the full variant object for reference
 }
 
 
 
 interface CartContextType {
   items: LocalCartItem[];
-  // CHANGE: `addToCart` ab product ke saath variant bhi lega
-  addToCart: (product: Product, variant: Variant, quantity?: number) => void;
-  removeFromCart: (sku_variant: string) => void;
-  updateQuantity: (sku_variant: string, quantity: number) => void;
+  // Support both simple products and products with variants
+  addToCart: (product: Product, variant?: Variant, quantity?: number) => void;
+  removeFromCart: (productId: string, sku_variant?: string) => void;
+  updateQuantity: (productId: string, sku_variant: string | undefined, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
@@ -45,42 +46,60 @@ export function CartProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("velvetvibe-cart", JSON.stringify(items));
   }, [items]);
 
-  const addToCart = (product: Product, variant: Variant, quantity = 1) => {
+  const addToCart = (product: Product, variant?: Variant, quantity = 1) => {
     setItems((prev) => {
-      // Check for item using sku_variant
-      const existingItem = prev.find((item) => item.sku_variant === variant.sku_variant);
+      // For products with variants, use sku_variant as unique identifier
+      // For simple products, use productId as unique identifier
+      const uniqueKey = variant ? variant.sku_variant : product._id;
+      const existingItem = prev.find((item) => 
+        variant ? item.sku_variant === variant.sku_variant : item.productId === product._id && !item.sku_variant
+      );
+      
       if (existingItem) {
-        return prev.map((item) => (item.sku_variant === variant.sku_variant ? { ...item, quantity: item.quantity + quantity } : item));
+        return prev.map((item) => 
+          variant 
+            ? (item.sku_variant === variant.sku_variant ? { ...item, quantity: item.quantity + quantity } : item)
+            : (item.productId === product._id && !item.sku_variant ? { ...item, quantity: item.quantity + quantity } : item)
+        );
       }
       
       // Create a new local cart item
       const newItem: LocalCartItem = {
         productId: product._id,
-        sku_variant: variant.sku_variant,
+        sku_variant: variant?.sku_variant,
         quantity,
         name: product.name,
         slug: product.slug,
-        image: variant.images?.[0] || product.images[0],
-        price: variant.sale_price || variant.price,
-        attributes: {
+        image: variant?.images?.[0] || product.images[0],
+        price: variant ? (variant.sale_price || variant.price) : (product.sale_price || product.price),
+        attributes: variant ? {
           size: variant.size,
           color: variant.color,
-        },
+        } : undefined,
+        selectedVariant: variant,
       };
       return [...prev, newItem];
     });
   };
 
-  const removeFromCart = (sku_variant: string) => {
-    setItems((prev) => prev.filter((item) => item.sku_variant !== sku_variant));
+  const removeFromCart = (productId: string, sku_variant?: string) => {
+    setItems((prev) => prev.filter((item) => 
+      sku_variant 
+        ? item.sku_variant !== sku_variant 
+        : item.productId !== productId || item.sku_variant !== undefined
+    ));
   };
 
-  const updateQuantity = (sku_variant: string, quantity: number) => {
+  const updateQuantity = (productId: string, sku_variant: string | undefined, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(sku_variant);
+      removeFromCart(productId, sku_variant);
       return;
     }
-    setItems((prev) => prev.map((item) => (item.sku_variant === sku_variant ? { ...item, quantity } : item)));
+    setItems((prev) => prev.map((item) => 
+      sku_variant 
+        ? (item.sku_variant === sku_variant ? { ...item, quantity } : item)
+        : (item.productId === productId && !item.sku_variant ? { ...item, quantity } : item)
+    ));
   };
 
   const clearCart = () => setItems([]);

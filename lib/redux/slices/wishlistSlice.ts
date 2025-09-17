@@ -2,14 +2,39 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../store'; 
 // import { Product } from '@/lib/data'; 
-import api from '@/lib/api/user'; 
+import apiClient from '@/lib/api/auth'; 
 
 interface WishlistItemBackend {
   _id: string; 
   name: string;
+  slug: string;
   price: number;
+  sale_price?: number;
+  base_price?: number;
   images: string[];
-  stock: number;
+  stock_quantity: number;
+  variants?: Array<{
+    size: string;
+    color: string;
+    price: number;
+    sale_price?: number;
+    stock_quantity: number;
+    sku_variant: string;
+    images?: string[];
+    _id: string;
+  }>;
+  category?: string;
+  brand?: string;
+  gender?: string;
+  tags?: string[];
+  fit?: string;
+  careInstructions?: string;
+  sleeveLength?: string;
+  neckType?: string;
+  pattern?: string;
+  isActive?: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface WishlistState {
@@ -30,7 +55,7 @@ export const fetchWishlist = createAsyncThunk<WishlistItemBackend[], void, { sta
   'wishlist/fetchWishlist',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get('/wishlist'); 
+      const response = await apiClient.get('/users/wishlist'); 
       return response.data.data; 
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -42,8 +67,8 @@ export const addToWishlist = createAsyncThunk<WishlistItemBackend[], string, { s
   'wishlist/addToWishlist',
   async (productId, { rejectWithValue }) => {
     try {
-      const response = await api.post('/wishlist', { productId }); 
-      console.log(response.data.data)
+      const response = await apiClient.post('/users/wishlist', { productId }); 
+       (response.data.data)
       return response.data.data; 
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -55,7 +80,7 @@ export const removeFromWishlist = createAsyncThunk<WishlistItemBackend[], string
   'wishlist/removeFromWishlist',
   async (productId, { rejectWithValue }) => {
     try {
-      const response = await api.delete(`/wishlist/${productId}`); 
+      const response = await apiClient.delete(`/users/wishlist/${productId}`); 
       return response.data.data; 
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || error.message);
@@ -68,7 +93,7 @@ export const mergeWishlist = createAsyncThunk<WishlistItemBackend[], string[], {
   async (productIds, { rejectWithValue }) => {
     try {
       // Backend mein naye merge endpoint ko call karein
-      const response = await api.post('/wishlist/merge', { productIds }); 
+      const response = await apiClient.post('/users/wishlist/merge', { productIds }); 
       return response.data.data; 
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to merge wishlist');
@@ -105,6 +130,7 @@ const wishlistSlice = createSlice({
       .addCase(fetchWishlist.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.items = action.payload;
+        state.totalItems = action.payload.length;
       })
       .addCase(fetchWishlist.rejected, (state, action) => {
         state.status = 'failed';
@@ -115,7 +141,8 @@ const wishlistSlice = createSlice({
       })
       .addCase(addToWishlist.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.items = action.payload; 
+        state.items = action.payload;
+        state.totalItems = action.payload.length;
       })
       .addCase(addToWishlist.rejected, (state, action) => {
         state.status = 'failed';
@@ -126,7 +153,8 @@ const wishlistSlice = createSlice({
       })
       .addCase(removeFromWishlist.fulfilled, (state, action) => {
         state.status = 'succeeded';
-        state.items = action.payload; 
+        state.items = action.payload;
+        state.totalItems = action.payload.length;
       })
       .addCase(removeFromWishlist.rejected, (state, action) => {
         state.status = 'failed';
@@ -135,6 +163,7 @@ const wishlistSlice = createSlice({
       .addCase(mergeWishlist.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.items = action.payload; // Update the state with the merged list
+        state.totalItems = action.payload.length;
       })
       .addCase(mergeWishlist.rejected, (state, action) => {
         state.status = 'failed';

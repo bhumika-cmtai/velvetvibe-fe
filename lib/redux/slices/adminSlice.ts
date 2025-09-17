@@ -79,7 +79,7 @@ export const createProduct = createAsyncThunk('admin/createProduct', async (form
     const response = await createProductApi(formData);
     return response.data.data;
   } catch (error: any) {
-    console.log(error)
+     (error)
     return rejectWithValue(error.response?.data?.message || error.message);
   }
 });
@@ -89,7 +89,7 @@ export const updateProduct = createAsyncThunk('admin/updateProduct', async ({ pr
     const response = await updateProductApi(productId, formData);
     return response.data.data;
   } catch (error: any) {
-    console.log(error)
+     (error)
     return rejectWithValue(error.response?.data?.message || error.message);
   }
 });

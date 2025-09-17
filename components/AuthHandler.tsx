@@ -8,8 +8,15 @@ import { addToCart, fetchCart } from '@/lib/redux/slices/cartSlice';
 import { addToWishlist, fetchWishlist } from '@/lib/redux/slices/wishlistSlice';
 
 interface LocalCartItem {
-  _id: string;
+  productId: string;
+  sku_variant?: string;
   quantity: number;
+  name: string;
+  slug: string;
+  image: string;
+  price: number;
+  attributes?: Record<string, string>;
+  selectedVariant?: any;
 }
 
 interface LocalWishlistItem {
@@ -26,40 +33,46 @@ export const AuthHandler = () => {
     if (isAuthenticated && !hasMerged.current) {
       
       const mergeData = async () => {
-        console.log("User logged in. Starting local data merge...");
+         ("User logged in. Starting local data merge...");
 
-        const localCart = localStorage.getItem("luv-kush-cart");
-        if (localCart) {
-          const cartItems: LocalCartItem[] = JSON.parse(localCart);
-          if (cartItems.length > 0) {
-            console.log(`Merging ${cartItems.length} items to database cart...`);
-            await Promise.all(
-              cartItems.map(item => 
-                dispatch(addToCart({ productId: item._id, quantity: item.quantity }))
-              )
-            );
-            localStorage.removeItem("luv-kush-cart");
-            console.log("Local cart cleared.");
-          }
-        }
+        // Cart sync is now handled in the login page to prevent conflicts
+        // const localCart = localStorage.getItem("velvetvibe-cart");
+        // if (localCart) {
+        //   const cartItems: LocalCartItem[] = JSON.parse(localCart);
+        //   if (cartItems.length > 0) {
+        //      (`Merging ${cartItems.length} items to database cart...`);
+        //     await Promise.all(
+        //       cartItems.map(item => 
+        //         dispatch(addToCart({ 
+        //           productId: item.productId, 
+        //           sku_variant: item.sku_variant || 'default',
+        //           quantity: item.quantity 
+        //         }))
+        //       )
+        //     );
+        //     localStorage.removeItem("velvetvibe-cart");
+        //      ("Local cart cleared.");
+        //   }
+        // }
 
-        const localWishlist = localStorage.getItem("luv-kush-wishlist");
-        if (localWishlist) {
-          const wishlistItems: LocalWishlistItem[] = JSON.parse(localWishlist);
-          if (wishlistItems.length > 0) {
-            console.log(`Merging ${wishlistItems.length} items to database wishlist...`);
-            await Promise.all(
-              wishlistItems.map(item => 
-                dispatch(addToWishlist(item._id))
-              )
-            );
-            localStorage.removeItem("luv-kush-wishlist");
-            console.log("Local wishlist cleared.");
-          }
-        }
+        // Wishlist sync is now handled in the login page to prevent conflicts
+        // const localWishlist = localStorage.getItem("velvetvibe-wishlist");
+        // if (localWishlist) {
+        //   const wishlistItems: LocalWishlistItem[] = JSON.parse(localWishlist);
+        //   if (wishlistItems.length > 0) {
+        //      (`Merging ${wishlistItems.length} items to database wishlist...`);
+        //     await Promise.all(
+        //       wishlistItems.map(item => 
+        //         dispatch(addToWishlist(item._id))
+        //       )
+        //     );
+        //     localStorage.removeItem("velvetvibe-wishlist");
+        //      ("Local wishlist cleared.");
+        //   }
+        // }
         
-        console.log("Re-fetching cart and wishlist from server...");
-        dispatch(fetchCart());
+         ("Re-fetching wishlist from server...");
+        // Wishlist is fetched in login page after merge
         dispatch(fetchWishlist());
         
         hasMerged.current = true;
