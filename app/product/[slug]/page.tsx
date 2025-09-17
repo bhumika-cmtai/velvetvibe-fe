@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Minus, Plus } from "lucide-react";
+import { Heart, Minus, Plus, Check } from "lucide-react";
 import { motion } from "framer-motion";
 
 // --- UI Components ---
@@ -62,6 +62,8 @@ const ProductDetailsPage = () => {
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [isAddedToCart, setIsAddedToCart] = useState(false);
+  const [isWishlistSuccess, setIsWishlistSuccess] = useState(false);
 
   // --- BAAKI KA SAARA CODE SAME RAHEGA (REST OF THE CODE REMAINS THE SAME) ---
 
@@ -133,37 +135,98 @@ const ProductDetailsPage = () => {
     }
 
     if (isAuthenticated) {
-      dispatch(addCartToDb({ productId: product._id, quantity }));
+      if (product.variants && product.variants.length > 0 && selectedVariant) {
+        dispatch(addCartToDb({ 
+          productId: product._id, 
+          sku_variant: selectedVariant.sku_variant, 
+          quantity 
+        }));
+      } else {
+        dispatch(addCartToDb({ 
+          productId: product._id, 
+          sku_variant: 'default', 
+          quantity 
+        }));
+      }
     } else {
-      addCartToLocal(product, quantity);
+      if (product.variants && product.variants.length > 0 && selectedVariant) {
+        addCartToLocal(product, selectedVariant, quantity);
+      } else {
+        addCartToLocal(product, undefined, quantity);
+      }
     }
 
-    toast({ title: "Added to Bag", description: `${quantity} x ${product.name}` });
+    setIsAddedToCart(true);
+    setTimeout(() => setIsAddedToCart(false), 2000);
+    
+    const variantInfo = selectedVariant ? ` (${selectedVariant.size})` : '';
+    toast({ 
+      title: "✅ Added to Cart!", 
+      description: `${quantity} x ${product.name}${variantInfo} has been added to your cart.`,
+      duration: 3000,
+      className: "bg-green-50 border-green-200 text-green-800"
+    });
   };
 
   const handleToggleWishlist = () => {
     if (!product) return;
 
     const productId = product._id;
-    const isCurrentlyWishlisted = isAddedToWishlist(productId);
+    
+    // Handle variants for wishlist
+    if (product.variants && product.variants.length > 0) {
+      // For wishlist, we can add even out-of-stock items (users might want to save for later)
+      // Use the selected variant or first variant
+      const variantToUse = selectedVariant || product.variants[0];
+      
+      const skuVariant = variantToUse.sku_variant;
+      const isCurrentlyWishlisted = isAddedToWishlist(productId, skuVariant);
 
-    if (isAuthenticated) {
-      if (isCurrentlyWishlisted) {
-        dispatch(removeWishlistFromDb(productId));
+      if (isAuthenticated) {
+        if (isCurrentlyWishlisted) {
+          dispatch(removeWishlistFromDb(productId));
+        } else {
+          dispatch(addWishlistToDb(productId));
+        }
       } else {
-        dispatch(addWishlistToDb(productId));
+        if (isCurrentlyWishlisted) {
+          removeWishlistFromLocal(productId, skuVariant);
+        } else {
+          addWishlistToLocal(product, variantToUse);
+        }
       }
     } else {
-      if (isCurrentlyWishlisted) {
-        removeWishlistFromLocal(productId); // Ab yeh kaam karega (This will work now)
+      // Simple product without variants
+      const isCurrentlyWishlisted = isAddedToWishlist(productId);
+
+      if (isAuthenticated) {
+        if (isCurrentlyWishlisted) {
+          dispatch(removeWishlistFromDb(productId));
+        } else {
+          dispatch(addWishlistToDb(productId));
+        }
       } else {
-        addWishlistToLocal(product); // Ab yeh bhi kaam karega (This will also work now)
+        if (isCurrentlyWishlisted) {
+          removeWishlistFromLocal(productId);
+        } else {
+          addWishlistToLocal(product);
+        }
       }
     }
     
+    setIsWishlistSuccess(true);
+    setTimeout(() => setIsWishlistSuccess(false), 2000);
+    
+    // Get the current wishlist status for toast message
+    const isCurrentlyWishlisted = product.variants && product.variants.length > 0 
+      ? isAddedToWishlist(productId, selectedVariant?.sku_variant || product.variants[0]?.sku_variant)
+      : isAddedToWishlist(productId);
+    
     toast({
-        title: isCurrentlyWishlisted ? "Removed from Wishlist" : "Added to Wishlist",
+        title: isCurrentlyWishlisted ? "❤️ Removed from Wishlist" : "❤️ Added to Wishlist",
         description: `${product.name} has been ${isCurrentlyWishlisted ? 'removed from' : 'added to'} your wishlist.`,
+        duration: 3000,
+        className: isCurrentlyWishlisted ? "bg-red-50 border-red-200 text-red-800" : "bg-pink-50 border-pink-200 text-pink-800"
     });
   };
   
@@ -275,8 +338,42 @@ const ProductDetailsPage = () => {
                 <span className="w-10 text-center">{quantity}</span>
                 <Button variant="ghost" size="icon" onClick={incrementQuantity} className="h-11 w-11 rounded-full"><Plus size={16} /></Button>
               </div>
-              <Button onClick={handleAddToCart} className="flex-1 h-12 rounded-full text-base font-bold bg-black text-white hover:bg-gray-800">Add to Bag</Button>
-              <Button variant="outline" size="icon" onClick={handleToggleWishlist} className="h-12 w-12 rounded-full flex-shrink-0"><Heart className={`transition-colors ${isWishlisted ? 'fill-red-500 text-red-500' : ''}`} /></Button>
+              <Button 
+                onClick={handleAddToCart} 
+                className={`flex-1 h-12 rounded-full text-base font-bold transition-all duration-300 ${
+                  isAddedToCart 
+                    ? 'bg-green-500 text-white hover:bg-green-600' 
+                    : 'bg-black text-white hover:bg-gray-800'
+                }`}
+              >
+                {isAddedToCart ? (
+                  <>
+                    <Check size={18} className="mr-2"/> Added!
+                  </>
+                ) : (
+                  'Add to Bag'
+                )}
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={handleToggleWishlist} 
+                className={`h-12 w-12 rounded-full flex-shrink-0 transition-all duration-300 ${
+                  isWishlistSuccess 
+                    ? 'bg-pink-500 border-pink-500 hover:bg-pink-600' 
+                    : 'hover:bg-gray-100'
+                }`}
+              >
+                <Heart 
+                  className={`transition-colors ${
+                    isWishlistSuccess 
+                      ? 'fill-white text-white' 
+                      : isWishlisted 
+                        ? 'fill-red-500 text-red-500' 
+                        : ''
+                  }`} 
+                />
+              </Button>
             </div>
             
             <div className="h-6 mb-4">

@@ -77,26 +77,26 @@ export default function AdminOrderDetailsPage() {
   const { currentOrder: order, loading, error } = useSelector((state: RootState) => state.order);
   const { user: adminUser } = useSelector((state: RootState) => state.auth); // Assuming admin user is in auth slice
 
-  console.log("AdminOrderDetailsPage rendering...");
-  console.log("Current adminUser from Redux:", adminUser);
-  console.log("orderId from params:", orderId);
-  console.log("Loading state:", loading);
-  console.log("Current order state:", order);
+   ("AdminOrderDetailsPage rendering...");
+   ("Current adminUser from Redux:", adminUser);
+   ("orderId from params:", orderId);
+   ("Loading state:", loading);
+   ("Current order state:", order);
 
   useEffect(() => {
     // Basic auth check for admin role
-    console.log("useEffect is running. Checking conditions...");
-    console.log("Is adminUser an admin?", adminUser?.role === 'admin');
-    console.log("Is orderId available?", !!orderId);
+     ("useEffect is running. Checking conditions...");
+     ("Is adminUser an admin?", adminUser?.role === 'admin');
+     ("Is orderId available?", !!orderId);
 
     if (adminUser && adminUser.role !== 'admin') {
-      console.log("Redirecting: User is not an admin.");
+       ("Redirecting: User is not an admin.");
       router.push('/login');
     } else if (adminUser && orderId) {
-      console.log(`Dispatching fetchSingleOrderAsAdmin with orderId: ₹{orderId}`);
+       (`Dispatching fetchSingleOrderAsAdmin with orderId: ₹{orderId}`);
       dispatch(fetchSingleOrderAsAdmin(orderId));
     } else {
-      console.log("Did not dispatch: either adminUser or orderId is missing.");
+       ("Did not dispatch: either adminUser or orderId is missing.");
     }
   }, [adminUser, router, orderId, dispatch]);
 

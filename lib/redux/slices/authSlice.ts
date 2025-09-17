@@ -45,8 +45,8 @@ interface AuthState {
 const loadState = (): AuthState => {
   try {
     const serializedState = typeof window !== 'undefined' ? localStorage.getItem('authState') : null;
-    // console.log("--serializedState--")
-    // console.log(serializedState)
+    //  ("--serializedState--")
+    //  (serializedState)
     if (serializedState === null) {
       return { isAuthenticated: false, user: null, accessToken: null };
     }

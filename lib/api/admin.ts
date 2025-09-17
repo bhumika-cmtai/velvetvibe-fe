@@ -2,7 +2,6 @@
 
 // IMPORTANT: We are now importing the main, correctly configured apiClient from 'auth.ts'
 import apiClient from './auth'; 
-import type { Product } from '@/lib/types/product';
 
 // Define the types needed for the API responses
 export interface AdminUser {

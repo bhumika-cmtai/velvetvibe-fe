@@ -91,7 +91,7 @@ export default function BulkOrderPage() {
     }
 
     try {
-      // console.log(inquiryPayload)
+      //  (inquiryPayload)
       // Dispatch the action and wait for it to complete
       await dispatch(createBulkOrderInquiry(inquiryPayload)).unwrap();
       

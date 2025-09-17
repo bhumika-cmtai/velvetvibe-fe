@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import axios from 'axios';
-import api from '@/lib/api/user'; // Axios instance for USER routes
-import apiClient from '@/lib/api/adminClient'; // Axios instance for ADMIN routes
+import apiClient from '@/lib/api/auth'; // Axios instance for USER routes with auth
+import adminApiClient from '@/lib/api/adminClient'; // Axios instance for ADMIN routes
 
 // =================================================================
 // --- TYPE DEFINITIONS ---
@@ -86,7 +86,7 @@ export const fetchMyOrders = createAsyncThunk<
   async (params = {}, { rejectWithValue }) => {
     try {
       // Pass the page and limit as query parameters
-      const response = await api.get('/orders', { params });
+      const response = await apiClient.get('/orders', { params });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch your orders');
@@ -111,9 +111,9 @@ export const fetchSingleOrder = createAsyncThunk<Order, string, { rejectValue: s
   async (orderId, { rejectWithValue }) => {
     try {
       // This can be used by both user and admin, so we use the user route by default
-      const response = await api.get(`/orders/${orderId}`);
-      console.log("response data data")
-      console.log(response.data.data)
+      const response = await apiClient.get(`/orders/${orderId}`);
+       ("response data data")
+       (response.data.data)
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch order details');
@@ -129,7 +129,7 @@ export const placeCodOrder = createAsyncThunk<
   'orders/placeCodOrder',
   async ({ addressId,couponCode  }, { rejectWithValue }) => {
     try {
-      const response = await api.post('/order/cod', { addressId, couponCode  });
+      const response = await apiClient.post('/order/cod', { addressId, couponCode  });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to place COD order');

@@ -13,12 +13,12 @@ import { toast } from 'sonner';
 
 import { loginUserApi } from '@/lib/api/auth'; // Ensure this path is correct
 import { loginSuccess } from '@/lib/redux/slices/authSlice';
-import { mergeCarts } from '@/lib/redux/slices/cartSlice';
+import { mergeCarts, fetchCart } from '@/lib/redux/slices/cartSlice';
 import { AppDispatch } from '@/lib/redux/store';
 
 import { useCart } from "@/context/CartContext";
 import { useWishlist as useLocalWishlist } from "@/context/WishlistContext";
-import { mergeWishlist } from "@/lib/redux/slices/wishlistSlice";
+import { mergeWishlist, fetchWishlist } from "@/lib/redux/slices/wishlistSlice";
 
 
 export default function LoginPage() {
@@ -48,20 +48,23 @@ export default function LoginPage() {
       
       if (localCartItems && localCartItems.length > 0) {
         toast.info("Syncing your cart...");
-        console.log(`Found ${localCartItems.length} items to merge.`);
         const itemsToMerge = localCartItems.map(item => ({ 
-          _id: item._id, // This should be the product ID
+          productId: item.productId, // Use productId instead of _id
+          sku_variant: item.sku_variant || 'default', // Include sku_variant
           quantity: item.quantity 
         }));
         
-        await dispatch(mergeCarts({ localCartItems: itemsToMerge }));
+        await dispatch(mergeCarts(itemsToMerge));
+
+        // Refresh cart from server to ensure it's up to date
+        await dispatch(fetchCart());
 
         clearLocalCart();
-        console.log("Local cart cleared after successful merge.");
+         ("Local cart cleared after successful merge.");
         toast.success("Cart synced successfully!");
       }
       else{
-        console.log("No local cart items found. Skipping merge.");
+         ("No local cart items found. Skipping merge.");
       }
 
       if (localWishlistItems && localWishlistItems.length > 0) {
@@ -70,9 +73,12 @@ export default function LoginPage() {
         
         await dispatch(mergeWishlist(productIdsToMerge));
 
+        // Refresh wishlist from server to ensure it's up to date
+        await dispatch(fetchWishlist());
+
         clearLocalWishlist();
-        toast.success("Wishlist synced!");
-    }
+        toast.success("Wishlist synced successfully!");
+      }
 
       if (user.role === 'admin') {
         router.push('/account/admin'); 

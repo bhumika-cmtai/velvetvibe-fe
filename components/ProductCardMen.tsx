@@ -5,7 +5,7 @@
 import type React from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { ShoppingBag, Heart } from "lucide-react"
+import { ShoppingBag, Heart, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCart } from "@/context/CartContext"
 import { useToast } from "@/hooks/use-toast"
@@ -42,6 +42,10 @@ export function ProductCardMen({ product, index = 0 }: ProductCardProps) {
   // --- This will now work correctly because of the new imports ---
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const isAddedToWishlist = useSelector(selectIsAddedToWishlist(product._id));
+  
+  // Success states
+  const [isAddedToCart, setIsAddedToCart] = React.useState(false);
+  const [isWishlistSuccess, setIsWishlistSuccess] = React.useState(false);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
@@ -69,9 +73,13 @@ export function ProductCardMen({ product, index = 0 }: ProductCardProps) {
     } else {
       // User is LOGGED OUT: Use local cart context
       addLocalItemToCart(product);
+      setIsAddedToCart(true);
+      setTimeout(() => setIsAddedToCart(false), 2000);
       toast({
-        title: "Added to cart",
+        title: "✅ Added to Cart!",
         description: `${product.name} has been added to your cart.`,
+        duration: 3000,
+        className: "bg-green-50 border-green-200 text-green-800"
       });
     }
   }
@@ -86,9 +94,13 @@ export function ProductCardMen({ product, index = 0 }: ProductCardProps) {
       dispatch(removeFromWishlist(product._id))
         .unwrap()
         .then(() => {
+          setIsWishlistSuccess(true);
+          setTimeout(() => setIsWishlistSuccess(false), 2000);
           toast({
-            title: "Removed from Wishlist",
+            title: "❤️ Removed from Wishlist",
             description: `${product.name} has been removed from your wishlist.`,
+            duration: 3000,
+            className: "bg-red-50 border-red-200 text-red-800"
           });
         })
         .catch((error) => {
@@ -109,9 +121,13 @@ export function ProductCardMen({ product, index = 0 }: ProductCardProps) {
       dispatch(addToWishlist(product._id))
         .unwrap()
         .then(() => {
+          setIsWishlistSuccess(true);
+          setTimeout(() => setIsWishlistSuccess(false), 2000);
           toast({
-            title: "Added to Wishlist",
+            title: "❤️ Added to Wishlist",
             description: `${product.name} has been added to your wishlist.`,
+            duration: 3000,
+            className: "bg-pink-50 border-pink-200 text-pink-800"
           });
         })
         .catch((error) => {
@@ -160,13 +176,18 @@ export function ProductCardMen({ product, index = 0 }: ProductCardProps) {
           <Button
             size="icon"
             variant="ghost"
-            className={`h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm shadow-md hover:bg-white
-              ${isAddedToWishlist ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-red-500'}
+            className={`h-9 w-9 rounded-full bg-white/70 backdrop-blur-sm shadow-md hover:bg-white transition-all duration-300
+              ${isWishlistSuccess 
+                ? 'bg-pink-500 hover:bg-pink-600 text-white' 
+                : isAddedToWishlist 
+                  ? 'text-red-500 hover:text-red-600' 
+                  : 'text-gray-400 hover:text-red-500'
+              }
             `}
             onClick={handleToggleWishlist}
             aria-label={isAddedToWishlist ? "Remove from wishlist" : "Add to wishlist"}
           >
-            <Heart className="h-5 w-5 fill-current" />
+            <Heart className={`h-5 w-5 ${isWishlistSuccess ? 'fill-white' : 'fill-current'}`} />
           </Button>
         </motion.div>
 
@@ -198,12 +219,17 @@ export function ProductCardMen({ product, index = 0 }: ProductCardProps) {
             <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
               <Button
                 size="icon"
-                className="h-10 w-10 rounded-full flex-shrink-0 hover:cursor-pointer"
-                // --- COLOR CHANGE HERE --- Using a darker, earthy tone that complements the new palette
-                style={{ backgroundColor: '#A0937D' }}
+                className={`h-10 w-10 rounded-full flex-shrink-0 hover:cursor-pointer transition-all duration-300 ${
+                  isAddedToCart ? 'bg-green-500 hover:bg-green-600' : ''
+                }`}
+                style={{ backgroundColor: isAddedToCart ? undefined : '#A0937D' }}
                 onClick={handleAddToCart}
               >
-                <ShoppingBag className="h-5 w-5 text-white" />
+                {isAddedToCart ? (
+                  <Check className="h-5 w-5 text-white" />
+                ) : (
+                  <ShoppingBag className="h-5 w-5 text-white" />
+                )}
               </Button>
             </motion.div>
           </div>

@@ -1,6 +1,6 @@
 // wishlistPage.tsx
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Trash2, Heart, ArrowLeft } from "lucide-react";
@@ -16,35 +16,135 @@ import { AppDispatch, RootState } from "@/lib/redux/store";
 import { selectIsAuthenticated } from "@/lib/redux/slices/authSlice";
 import { fetchWishlist, removeFromWishlist as removeWishlistFromDb } from "@/lib/redux/slices/wishlistSlice";
 import { addToCart as addCartToDb } from "@/lib/redux/slices/cartSlice";
+import { fetchProductById } from "@/lib/redux/slices/productSlice";
 import { useWishlist as useLocalWishlist } from "@/context/WishlistContext";
 import { useCart as useLocalCart } from "@/context/CartContext";
 
-// --- WishlistItemCard Component (Isme koi change nahi hai) ---
+// --- Custom hook to fetch live product data ---
+const useLiveProductData = (productId: string) => {
+  const dispatch = useDispatch<AppDispatch>();
+  const [liveProduct, setLiveProduct] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchLiveData = async () => {
+      setIsLoading(true);
+      try {
+        const result = await dispatch(fetchProductById(productId));
+        if (fetchProductById.fulfilled.match(result)) {
+          setLiveProduct(result.payload);
+        }
+      } catch (error) {
+        console.error('Failed to fetch live product data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (productId) {
+      fetchLiveData();
+    }
+  }, [dispatch, productId]);
+
+  return { liveProduct, isLoading };
+};
+
+// --- WishlistItemCard Component (Updated for new data structure) ---
 const WishlistItemCard = ({ item, onRemove, onAddToCart }: { item: any, onRemove: Function, onAddToCart: Function }) => {
-  const discount = item.base_price && item.base_price > item.price
-    ? Math.round(((item.base_price - item.price) / item.base_price) * 100)
+  // Handle both database (WishlistItemBackend) and local (WishlistItem) data structures
+  const isLocalWishlistItem = item.product !== undefined; // Local items have item.product
+  const product = isLocalWishlistItem ? item.product : item; // Database items are products directly
+  const selectedVariant = isLocalWishlistItem ? item.selectedVariant : null; // Only local items have variants
+  const skuVariant = isLocalWishlistItem ? item.sku_variant : 'default'; // Database items use default
+  
+  // Fetch live product data for real-time stock checking
+  const { liveProduct, isLoading: isLiveDataLoading } = useLiveProductData(product._id);
+  
+  // Handle missing fields gracefully
+  const discount = product.base_price && product.base_price > product.price
+    ? Math.round(((product.base_price - product.price) / product.base_price) * 100)
     : 0;
+  
+  // Ensure we have required fields with fallbacks
+  const productSlug = product.slug || product._id; // Fallback to _id if slug is missing
+  const productImages = product.images || ["/placeholder.svg"];
+  const productPrice = selectedVariant ? (selectedVariant.sale_price || selectedVariant.price) : (product.price || 0);
+  
+  // Fix stock quantity calculation - use LIVE product data for real-time stock checking
+  let stockQuantity = 0;
+  
+  // Use live product data if available, otherwise fall back to saved data
+  const currentProduct = liveProduct || product;
+  
+  if (isLocalWishlistItem && selectedVariant) {
+    // Local wishlist item with selected variant - use live variant stock if available
+    if (liveProduct && liveProduct.variants) {
+      const liveVariant = liveProduct.variants.find((v: any) => v.sku_variant === selectedVariant.sku_variant);
+      stockQuantity = liveVariant?.stock_quantity || selectedVariant.stock_quantity || 0;
+    } else {
+      stockQuantity = selectedVariant.stock_quantity || 0;
+    }
+  } else if (isLocalWishlistItem) {
+    // Local wishlist item without variant - use live product stock
+    stockQuantity = currentProduct.stock_quantity || product.stock_quantity || product.stock || 0;
+  } else {
+    // Database wishlist item - use live product data
+    if (currentProduct.variants && currentProduct.variants.length > 0) {
+      // For database items with variants, use the first variant's stock or product stock
+      const firstVariant = currentProduct.variants[0];
+      stockQuantity = firstVariant.stock_quantity || currentProduct.stock_quantity || 0;
+    } else {
+      // Database item without variants - use product stock directly
+      stockQuantity = currentProduct.stock_quantity || 0;
+    }
+  }
+  
+  // Debug logging to see live stock calculation
+   ('Wishlist stock calculation (LIVE):', {
+    productName: product.name,
+    isLocalWishlistItem,
+    selectedVariant: selectedVariant,
+    hasLiveData: !!liveProduct,
+    isLiveDataLoading,
+    savedProductStock: product.stock_quantity,
+    liveProductStock: liveProduct?.stock_quantity,
+    savedVariantStock: selectedVariant?.stock_quantity,
+    liveVariantStock: liveProduct?.variants?.[0]?.stock_quantity,
+    currentProductStock: currentProduct.stock_quantity,
+    finalStockQuantity: stockQuantity
+  });
+
+  
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="bg-white rounded-md shadow-sm overflow-hidden group flex flex-col">
       <div className="relative w-full aspect-[3/4] bg-gray-50">
-        <Link href={`/product/${item.slug}`}>
-          <Image src={item.images[0] || "/placeholder.svg"} alt={item.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
+        <Link href={`/product/${productSlug}`}>
+          <Image src={productImages[0]} alt={product.name} fill className="object-cover transition-transform duration-300 group-hover:scale-105"/>
         </Link>
         {discount > 0 && <span className="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">-{discount}%</span>}
-        <button onClick={() => onRemove(item._id, item.name)} className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove from wishlist">
+        <button onClick={() => onRemove(product._id, product.name, skuVariant)} className="absolute top-3 right-3 bg-white p-2 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Remove from wishlist">
           <Trash2 size={16} className="text-red-500" />
         </button>
       </div>
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex-grow">
-          <Link href={`/product/${item.slug}`} className="text-sm font-semibold text-gray-800 line-clamp-2 hover:text-[var(--theme-accent)] transition-colors">{item.name}</Link>
+          <Link href={`/product/${productSlug}`} className="text-sm font-semibold text-gray-800 line-clamp-2 hover:text-[var(--theme-accent)] transition-colors">{product.name}</Link>
+          {selectedVariant && (
+            <div className="text-xs text-gray-600 mt-1">
+              Size: {selectedVariant.size} | Color: {selectedVariant.color}
+            </div>
+          )}
           <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-lg font-bold text-gray-900">₹{(item.price).toLocaleString()}</span>
-            {item.base_price && <span className="text-sm text-gray-500 line-through">₹{(item.base_price).toLocaleString()}</span>}
+            <span className="text-lg font-bold text-gray-900">₹{productPrice.toLocaleString()}</span>
+            {product.base_price && <span className="text-sm text-gray-500 line-through">₹{(product.base_price).toLocaleString()}</span>}
           </div>
         </div>
-        <Button onClick={() => onAddToCart(item)} className="w-full mt-4 bg-black text-white hover:bg-gray-800 rounded-md h-11 font-semibold" disabled={item.stock_quantity === 0}>
-          {item.stock_quantity === 0 ? "Out of Stock" : "Move to Bag"}
+        <Button 
+          onClick={() => onAddToCart(item)} 
+          className="w-full mt-4 bg-black text-white hover:bg-gray-800 rounded-md h-11 font-semibold" 
+          disabled={stockQuantity === 0 || isLiveDataLoading}
+        >
+          {isLiveDataLoading ? "Checking Stock..." : (stockQuantity === 0 ? "Out of Stock" : "Move to Bag")}
         </Button>
       </div>
     </motion.div>
@@ -62,7 +162,7 @@ export default function WishlistPage() {
   const { addToCart: addCartToLocal } = useLocalCart();
 
   // Data Source #2: DB Wishlist (Logged-in User) from Redux Store
-  const dbWishlistItems = useSelector((state: RootState) => state.wishlist.items);
+  const { items: dbWishlistItems, status: wishlistStatus, error: wishlistError } = useSelector((state: RootState) => state.wishlist);
 
   // Agar user logged in hai, to database se wishlist fetch karo
   useEffect(() => {
@@ -72,37 +172,97 @@ export default function WishlistPage() {
   }, [isAuthenticated, dispatch]);
 
   // --- UNIFIED HANDLERS (Jo dono cases mein kaam karenge) ---
-  const handleRemoveFromWishlist = (itemId: string, itemName: string) => {
+  const handleRemoveFromWishlist = (itemId: string, itemName: string, skuVariant?: string) => {
     if (isAuthenticated) {
       dispatch(removeWishlistFromDb(itemId));
     } else {
-      removeWishlistFromLocal(itemId);
+      removeWishlistFromLocal(itemId, skuVariant);
     }
     toast({
-      title: "Removed from Wishlist",
+      title: "❤️ Removed from Wishlist",
       description: `${itemName} has been removed from your wishlist.`,
+      duration: 3000,
+      className: "bg-red-50 border-red-200 text-red-800"
     });
   };
 
   const handleMoveToCart = (item: any) => {
+    // Handle both database and local data structures
+    const isLocalWishlistItem = item.product !== undefined;
+    const product = isLocalWishlistItem ? item.product : item;
+    const selectedVariant = isLocalWishlistItem ? item.selectedVariant : null;
+    
+    // For database items with variants, use the first variant's sku_variant
+    let skuVariant = 'default';
+    if (isLocalWishlistItem) {
+      skuVariant = item.sku_variant;
+    } else if (product.variants && product.variants.length > 0) {
+      skuVariant = product.variants[0].sku_variant;
+    }
+    
     if (isAuthenticated) {
-      dispatch(addCartToDb({ productId: item._id, quantity: 1 }));
-      dispatch(removeWishlistFromDb(item._id)); // DB wishlist se remove karo
+      dispatch(addCartToDb({ 
+        productId: product._id, 
+        sku_variant: skuVariant, 
+        quantity: 1 
+      }));
+      dispatch(removeWishlistFromDb(product._id)); // DB wishlist se remove karo
     } else {
-      addCartToLocal(item);
-      removeWishlistFromLocal(item._id); // Local wishlist se remove karo
+      addCartToLocal(product, selectedVariant, 1);
+      removeWishlistFromLocal(product._id, skuVariant); // Local wishlist se remove karo
     }
     toast({
-      title: "Moved to Bag",
-      description: `${item.name} has been moved to your bag.`,
+      title: "✅ Moved to Bag",
+      description: `${product.name} has been moved to your bag.`,
+      duration: 3000,
+      className: "bg-green-50 border-green-200 text-green-800"
     });
   };
 
   // --- DATA SELECTION LOGIC (Sabse important hissa) ---
   // Agar user logged in hai to `dbWishlistItems` use karo, warna `localWishlistItems`
   const wishlistItems = isAuthenticated ? dbWishlistItems : localWishlistItems;
+  
 
   // --- RENDER LOGIC (Ab yeh 'wishlistItems' variable use karega) ---
+  
+  // Show loading state for authenticated users
+  if (isAuthenticated && wishlistStatus === 'loading') {
+    return (
+      <div className="min-h-screen bg-[var(--theme-background)]">
+        <Navbar />
+        <main className="container mx-auto px-4 py-24 text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Heart className="h-20 w-20 mx-auto mb-6 text-gray-300 animate-pulse" />
+            <h1 className="text-3xl font-serif font-bold text-gray-800 mb-2">Loading your wishlist...</h1>
+            <p className="text-gray-500 mb-8 max-w-sm mx-auto">Please wait while we fetch your saved items.</p>
+          </motion.div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show error state for authenticated users
+  if (isAuthenticated && wishlistStatus === 'failed') {
+    return (
+      <div className="min-h-screen bg-[var(--theme-background)]">
+        <Navbar />
+        <main className="container mx-auto px-4 py-24 text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Heart className="h-20 w-20 mx-auto mb-6 text-red-300" />
+            <h1 className="text-3xl font-serif font-bold text-gray-800 mb-2">Failed to load wishlist</h1>
+            <p className="text-gray-500 mb-8 max-w-sm mx-auto">{wishlistError || 'Something went wrong. Please try again.'}</p>
+            <Button onClick={() => dispatch(fetchWishlist())} className="bg-black text-white hover:bg-gray-800 px-8 py-6 rounded-full font-semibold text-lg shadow-lg transition-all duration-300 hover:scale-105">
+              Try Again
+            </Button>
+          </motion.div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (!wishlistItems || wishlistItems.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--theme-background)]">
@@ -112,7 +272,11 @@ export default function WishlistPage() {
             <Heart className="h-20 w-20 mx-auto mb-6 text-gray-300" />
             <h1 className="text-3xl font-serif font-bold text-gray-800 mb-2">Your Wishlist is Empty</h1>
             <p className="text-gray-500 mb-8 max-w-sm mx-auto">Looks like you haven’t saved anything yet. Tap the heart on products you love!</p>
-            <Link href="/"><Button className="bg-[var(--accent-primary)] text-white hover:bg-opacity-90 px-8 py-6 rounded-full font-semibold">Discover Products</Button></Link>
+            <Link href="/">
+              <Button className="bg-black text-white hover:bg-gray-800 px-8 py-6 rounded-full font-semibold text-lg shadow-lg transition-all duration-300 hover:scale-105">
+                Discover Products
+              </Button>
+            </Link>
           </motion.div>
         </main>
         <Footer />
@@ -133,9 +297,13 @@ export default function WishlistPage() {
         </motion.div>
         <div className="mt-10 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
           <AnimatePresence>
-            {wishlistItems.map((item) => (
-              <WishlistItemCard key={item._id} item={item} onRemove={handleRemoveFromWishlist} onAddToCart={handleMoveToCart} />
-            ))}
+            {wishlistItems.map((item) => {
+              // Handle both new (WishlistItem) and old (WishlistItemBackend) data structures
+              const itemId = (item as any).product?._id || (item as any)._id;
+              return (
+                <WishlistItemCard key={itemId} item={item} onRemove={handleRemoveFromWishlist} onAddToCart={handleMoveToCart} />
+              );
+            })}
           </AnimatePresence>
         </div>
       </main>

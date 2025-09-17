@@ -39,7 +39,7 @@ export function SmallCard({ product, index = 0 }: ProductCardProps) {
     e.preventDefault()
     e.stopPropagation()
     addToCart(product)
-    console.log(`${product.name} added to cart`)
+     (`${product.name} added to cart`)
     toast({
       title: "Added to cart",
       description: `${product.name} has been added to your cart.`,

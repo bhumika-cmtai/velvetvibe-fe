@@ -28,13 +28,13 @@ const CartItemCard = ({ item, onUpdate, onRemove, isGuestCart }: { item: any, on
     const productDetails = isGuestCart ? item : item.product;
     const productName = productDetails.name;
     const productSlug = productDetails.slug;
-    const productImage = isGuestCart ? (item.images?.[0] || "/placeholder.svg") : (productDetails.images?.[0] || "/placeholder.svg");
-    const productPrice = productDetails.price;
+    const productImage = isGuestCart ? item.image : (productDetails.images?.[0] || "/placeholder.svg");
+    const productPrice = isGuestCart ? item.price : productDetails.price;
 
-    // The ID for updating quantity is always the product's ID
-    const updateId = isGuestCart ? item._id : item.product._id;
-    // The ID for removing the item is the item's own _id (cartItem._id for DB, product._id for local)
-    const removeId = item._id;
+    // For guest cart, we need to handle both simple products and variants
+    const updateId = isGuestCart ? item.productId : item.product._id;
+    const removeId = isGuestCart ? item.productId : item._id;
+    const skuVariant = isGuestCart ? item.sku_variant : item.sku_variant;
 
     return (
         <motion.div
@@ -58,9 +58,22 @@ const CartItemCard = ({ item, onUpdate, onRemove, isGuestCart }: { item: any, on
                     </div>
                 </Link>
                 <div>
-                    <Link href={`/products/${productSlug}`} className="font-semibold text-gray-800 hover:text-[var(--theme-accent)] transition-colors">{productName}</Link>
+                    <Link href={`/product/${productSlug}`} className="font-semibold text-gray-800 hover:text-[var(--theme-accent)] transition-colors">{productName}</Link>
+                    {/* Display variant information if available */}
+                    {isGuestCart && item.attributes && (
+                        <div className="text-sm text-gray-600 mt-1">
+                            {item.attributes.size && <span>Size: {item.attributes.size}</span>}
+                            {item.attributes.color && <span className="ml-2">Color: {item.attributes.color}</span>}
+                        </div>
+                    )}
+                    {!isGuestCart && item.attributes && (
+                        <div className="text-sm text-gray-600 mt-1">
+                            {item.attributes.size && <span>Size: {item.attributes.size}</span>}
+                            {item.attributes.color && <span className="ml-2">Color: {item.attributes.color}</span>}
+                        </div>
+                    )}
                     <button 
-                        onClick={() => onRemove(removeId, productName)} 
+                        onClick={() => onRemove(removeId, productName, skuVariant)} 
                         className="text-xs text-red-500 hover:underline mt-2 flex items-center gap-1"
                     >
                         <Trash2 size={12} /> Remove
@@ -71,9 +84,9 @@ const CartItemCard = ({ item, onUpdate, onRemove, isGuestCart }: { item: any, on
             {/* Quantity Selector */}
             <div className="col-span-6 md:col-span-3 flex justify-center">
                 <div className="flex items-center border rounded-full">
-                    <Button variant="ghost" size="icon" onClick={() => onUpdate(updateId, item.quantity - 1)} className="h-8 w-8 rounded-full"><Minus className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => onUpdate(updateId, skuVariant, item.quantity - 1)} className="h-8 w-8 rounded-full"><Minus className="h-4 w-4" /></Button>
                     <span className="px-4 font-medium text-sm w-12 text-center">{item.quantity}</span>
-                    <Button variant="ghost" size="icon" onClick={() => onUpdate(updateId, item.quantity + 1)} className="h-8 w-8 rounded-full"><Plus className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => onUpdate(updateId, skuVariant, item.quantity + 1)} className="h-8 w-8 rounded-full"><Plus className="h-4 w-4" /></Button>
                 </div>
             </div>
             
@@ -123,27 +136,35 @@ export default function CartPage() {
 
     // --- UNIFIED EVENT HANDLERS ---
     // These adapt based on whether the user is logged in or not.
-    const handleUpdateQuantity = (productId: string, newQuantity: number) => {
+    const handleUpdateQuantity = (productId: string, skuVariant: string | undefined, newQuantity: number) => {
         if (isAuthenticated) {
             if (newQuantity > 0) {
-                dispatch(updateCartQuantity({ productId, quantity: newQuantity }));
+                // For Redux, we need the cartItem._id to update quantity
+                const cartItem = dbCartItems.find(item => 
+                    skuVariant ? item.sku_variant === skuVariant : item.product._id === productId
+                );
+                if (cartItem) {
+                    dispatch(updateCartQuantity({ cartItemId: cartItem._id, quantity: newQuantity }));
+                }
             } else {
                 // For Redux, we need the cartItem._id to remove it.
-                const cartItem = dbCartItems.find(item => item.product._id === productId);
+                const cartItem = dbCartItems.find(item => 
+                    skuVariant ? item.sku_variant === skuVariant : item.product._id === productId
+                );
                 if (cartItem) {
                     dispatch(removeFromCart(cartItem._id));
                 }
             }
         } else {
-            updateLocalQuantity(productId, newQuantity);
+            updateLocalQuantity(productId, skuVariant, newQuantity);
         }
     };
 
-    const handleRemoveFromCart = (id: string, productName: string) => {
+    const handleRemoveFromCart = (id: string, productName: string, skuVariant?: string) => {
         if (isAuthenticated) {
             dispatch(removeFromCart(id)); // `id` is cartItem._id
         } else {
-            removeFromLocalCart(id); // `id` is product._id
+            removeFromLocalCart(id, skuVariant); // `id` is productId, skuVariant is optional
         }
         toast({
             title: "Item Removed",
@@ -171,7 +192,9 @@ export default function CartPage() {
                         <h1 className="text-3xl font-serif font-bold text-gray-800 mb-2">Your Bag is Empty</h1>
                         <p className="text-gray-500 mb-8 max-w-sm mx-auto">Once you add something to your bag, it will appear here. Ready to find something you'll love?</p>
                         <Link href="/">
-                            <Button className="bg-[var(--theme-accent)] text-white hover:bg-opacity-90 px-8 py-6 rounded-full font-semibold">Start Shopping</Button>
+                            <Button className="bg-black text-white hover:bg-gray-800 px-8 py-6 rounded-full font-semibold text-lg shadow-lg transition-all duration-300 hover:scale-105">
+                                Start Shopping
+                            </Button>
                         </Link>
                     </motion.div>
                 </main>
@@ -202,7 +225,7 @@ export default function CartPage() {
                         </div>
                         <AnimatePresence>
                             {cartItems.map((item: any, index) => (
-                                <div key={item._id} className={index !== cartItems.length - 1 ? 'border-b' : ''}>
+                                <div key={isAuthenticated ? item._id : (item.sku_variant || item.productId)} className={index !== cartItems.length - 1 ? 'border-b' : ''}>
                                     <CartItemCard 
                                         item={item} 
                                         onUpdate={handleUpdateQuantity} 

@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import api from '@/lib/api/user'; // The configured Axios instance
+import apiClient from '@/lib/api/auth'; // The configured Axios instance with auth
 
 // Define types for your state
 export interface Address {
@@ -55,8 +55,8 @@ const initialState: UserState = {
 // Fetches the entire user profile, including addresses
 export const fetchUserProfile = createAsyncThunk('user/fetchProfile', async (_, { rejectWithValue }) => {
   try {
-    const response = await api.get('/profile');
-    console.log(response.data.data)
+    const response = await apiClient.get('/profile');
+     (response.data.data)
     return response.data.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
@@ -66,7 +66,7 @@ export const fetchUserProfile = createAsyncThunk('user/fetchProfile', async (_, 
 // Updates the user's full name
 export const updateUserProfile = createAsyncThunk('user/updateProfile', async (profileData: { fullName?: string, phone?: string }, { rejectWithValue }) => {
   try {
-    const response = await api.patch('/profile', profileData);
+    const response = await apiClient.patch('/profile', profileData);
     return response.data.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to update profile');
@@ -78,7 +78,7 @@ export const setDefaultUserAddress = createAsyncThunk(
   'user/setDefaultAddress',
   async (addressId: string, { rejectWithValue }) => {
     try {
-      const response = await api.patch(`/address/default/${addressId}`);
+      const response = await apiClient.patch(`/address/default/${addressId}`);
       // The API returns the full, updated list of addresses
       return response.data.data; 
     } catch (error: any) {
@@ -92,7 +92,7 @@ export const updateUserAvatar = createAsyncThunk('user/updateAvatar', async (ava
   const formData = new FormData();
   formData.append('avatar', avatarFile);
   try {
-    const response = await api.patch('/profile/avatar', formData, {
+    const response = await apiClient.patch('/profile/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return response.data.data;
@@ -106,7 +106,7 @@ export const addUserAddress = createAsyncThunk(
   'user/addAddress',
   async (addressData: NewAddressPayload, { rejectWithValue }) => {
     try {
-      const response = await api.post('/address', addressData);
+      const response = await apiClient.post('/address', addressData);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add address');
@@ -117,7 +117,7 @@ export const addUserAddress = createAsyncThunk(
 // Updates an existing address
 export const updateUserAddress = createAsyncThunk('user/updateAddress', async ({ addressId, addressData }: { addressId: string, addressData: Partial<Address> }, { rejectWithValue }) => {
     try {
-        const response = await api.patch(`/address/${addressId}`, addressData);
+        const response = await apiClient.patch(`/address/${addressId}`, addressData);
         return response.data.data;
     } catch (error: any) {
         return rejectWithValue(error.response?.data?.message || 'Failed to update address');
@@ -127,7 +127,7 @@ export const updateUserAddress = createAsyncThunk('user/updateAddress', async ({
 // Deletes an address
 export const deleteUserAddress = createAsyncThunk('user/deleteAddress', async (addressId: string, { rejectWithValue }) => {
     try {
-        const response = await api.delete(`/address/${addressId}`);
+        const response = await apiClient.delete(`/address/${addressId}`);
         return response.data.data; // The API should return the updated list of addresses
     } catch (error: any) {
         return rejectWithValue(error.response?.data?.message || 'Failed to delete address');

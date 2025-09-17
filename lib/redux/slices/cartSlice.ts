@@ -181,9 +181,14 @@ const cartSlice = createSlice({
       )
       .addMatcher(
         (action) => action.type.startsWith('cart/') && action.type.endsWith('/fulfilled'),
-        (state, action: PayloadAction<ApiResponse>) => {
+        (state, action: PayloadAction<CartItem[] | ApiResponse>) => {
           state.loading = false;
-          state.items = action.payload.data || []; 
+          // Handle both direct CartItem[] and wrapped ApiResponse
+          if (Array.isArray(action.payload)) {
+            state.items = action.payload;
+          } else {
+            state.items = action.payload.data || [];
+          }
           cartSlice.caseReducers.calculateTotals(state);
         }
       );
