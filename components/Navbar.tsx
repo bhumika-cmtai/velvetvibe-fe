@@ -1,79 +1,80 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { User, Heart, ShoppingCart, ChevronDown, Menu } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Heart, ShoppingCart, ChevronDown, Menu, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence, Variants } from 'framer-motion';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuItem } from './ui/dropdown-menu';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
-import Image from 'next/image';
-
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
 import { selectIsAuthenticated, selectCurrentUser, logout } from '@/lib/redux/slices/authSlice';
-import { DropdownMenu, DropdownMenuTrigger,DropdownMenuContent,DropdownMenuLabel,DropdownMenuSeparator,DropdownMenuItem } from './ui/dropdown-menu';
+import { fetchSearchResults, clearSearchResults } from '@/lib/redux/slices/productSlice';
 import { toast } from 'sonner';
-
-// --- UPDATED DATA AS PER YOUR REQUEST ---
+import { useDebounce } from '@/hooks/useDebounce';
+import { useOnClickOutside } from '@/hooks/useOnClickOutside';
 
 const navLinks = [
     { name: "New Arrivals", href: "/shop/new-arrivals" },
     { name: "Best Sellers", href: "/shop/best-sellers" },
     { name: "Sale", href: "/shop/sale" },
-    { name: "Clothing", href: "/shop" }, // Renamed "Shop" to "Clothing"
-    { name: "Decorative Items", href: "/decoratives" }, // Added new nav item
-  ];
+    { name: "Clothing", href: "/shop" },
+    { name: "Decorative Items", href: "/decoratives" },
+];
 
-  const megaMenuData = {
+const megaMenuData = {
     westernWear: {
         title: "Western Wear",
         items: [
-            // Example: ?category=Dresses ko ?sub_category=Dresses se badla gaya
             { name: "Dresses", href: "/shop?sub_category=Dresses" },
-            { name: "Tops & T-Shirts", href: "/shop?sub_category=Tops%20%26%20T-shirts" }, // Backend se match karein
+            { name: "Tops & T-Shirts", href: "/shop?sub_category=Tops%20%26%20T-shirts" },
             { name: "Co-ords", href: "/shop?sub_category=Co-ords" },
             { name: "Jumpsuits", href: "/shop?sub_category=Jumpsuits" },
             { name: "Jeans & Trousers", href: "/shop?sub_category=Jeans%20%26%20Trousers" },
-            { name: "Skirts & Shorts", href: "/shop?sub_category=Skirts" }, // Aap combine kar sakte hain
-            { name: "Outerwear & Jackets", href: "/shop?sub_category=Outerwear" },
+            { name: "Skirts & Shorts", href: "/shop?sub_category=Skirts,Shorts" },
+            { name: "Outerwear & Jackets", href: "/shop?sub_category=Outerwear,Jackets" },
             { name: "Activewear", href: "/shop?sub_category=Activewear" },
         ],
     },
     indianWear: {
         title: "Indian Wear",
         items: [
-            { name: "Kurtas & Suits", href: "/shop?sub_category=Kurta,Suit" }, // Multiple values
-            { name: "Kurtis, Tunics & Tops", href: "/shop?sub_category=Kurti,Tunic" },
+            { name: "Kurtas & Suits", href: "/shop?sub_category=Kurta,Suit" },
+            { name: "Kurtis, Tunics & Tops", href: "/shop?sub_category=Kurti,Tunic,Tops" },
             { name: "Sarees", href: "/shop?sub_category=Saree" },
             { name: "Lehenga Cholis", href: "/shop?sub_category=Lehenga Choli" },
-            { name: "Ethnic Wear Sets", href: "/shop?tags=Ethnic" }, // Yeh tag se filter karega
             { name: "Leggings, Salwars & Plazzos", href: "/shop?sub_category=Leggings,Salwars,Plazzos" },
         ],
     },
     decoratives: {
         title: "Decoratives",
         items: [
-            { name: "Flower Pots & Vases", href: "/decorative?sub_category=Vases" }, // Yeh /decorative page par jaayega
+            { name: "Flower Pots & Vases", href: "/decorative?sub_category=Flower%20Pots,Vases" },
             { name: "Wall Paintings", href: "/decorative?sub_category=Wall Paintings" },
-            { name: "Figurines & Sculptures", href: "/decorative?sub_category=Sculptures" },
+            { name: "Figurines & Sculptures", href: "/decorative?sub_category=Figurines,Sculptures" },
             { name: "Lamps & Lighting", href: "/decorative?sub_category=Lamps%20%26%20Lighting" },
             { name: "Rugs & Carpets", href: "/decorative?sub_category=Rugs%20%26%20Carpets" },
         ],
     },
 };
 
-
-
 const Navbar = () => {
     const dispatch = useDispatch<AppDispatch>();
+    const router = useRouter();
+    const searchRef = useRef<HTMLDivElement>(null);
+
+
     const isAuthenticated = useSelector(selectIsAuthenticated);
     const currentUser = useSelector(selectCurrentUser);
+    const { searchResults, searchLoading } = useSelector((state: RootState) => state.product);
 
-
-   
-
+    const [searchQuery, setSearchQuery] = useState('');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
@@ -82,33 +83,43 @@ const Navbar = () => {
     const { totalItems: totalWishlistItems } = useWishlist();
     const { totalItems } = useCart();
 
+    const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+    useOnClickOutside(searchRef, () => setIsDropdownOpen(false));
+
     useEffect(() => {
-        const handleScroll = () => {
-            if (window.scrollY > 10) setIsScrolled(true);
-            else setIsScrolled(false);
-        };
+        const handleScroll = () => setIsScrolled(window.scrollY > 10);
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    const megaMenuVariants: Variants = {
-        hidden: { opacity: 0, y: -10 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-        exit: { opacity: 0, y: -10, transition: { duration: 0.2 } }
-    };
+    useEffect(() => {
+        if (debouncedSearchQuery.length > 2) {
+            dispatch(fetchSearchResults({ search: debouncedSearchQuery, limit: 5 }));
+            setIsDropdownOpen(true);
+        } else {
+            dispatch(clearSearchResults());
+            setIsDropdownOpen(false);
+        }
+    }, [debouncedSearchQuery, dispatch]);
 
     const handleLogout = () => {
         dispatch(logout());
-        // Optional: You can add a toast notification here
         toast.success("You have been logged out.");
     };
 
-
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!searchQuery.trim()) return;
+        setIsDropdownOpen(false);
+        router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+    };
+    
     const UserNav = () => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-gray-700 hover:text-black " aria-label="Account">
-                <User size={24} />
+                <Button variant="ghost" size="icon" className="text-gray-700 hover:text-black" aria-label="Account">
+                    <User size={24} />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end">
@@ -119,103 +130,109 @@ const Navbar = () => {
                             <p className="text-xs font-normal text-gray-500">{currentUser.email}</p>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                            <Link href="/account/profile">My Profile</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/account/orders">My Orders</Link>
-                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account/profile">My Profile</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account/orders">My Orders</Link></DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">
-                            Sign Out
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Sign Out</DropdownMenuItem>
                     </>
                 ) : (
                     <>
                         <DropdownMenuLabel>Welcome!</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                            <Link href="/login">Login</Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                            <Link href="/signup">Sign Up</Link>
-                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/login">Login</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/signup">Sign Up</Link></DropdownMenuItem>
                     </>
                 )}
             </DropdownMenuContent>
         </DropdownMenu>
     );
 
+    const megaMenuVariants: Variants = {
+        hidden: { opacity: 0, y: -10 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
+        exit: { opacity: 0, y: -10, transition: { duration: 0.2 } }
+    };
 
     return (
-        <nav
-            className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-[var(--base-10)] shadow-md' : 'bg-[var(--base-10)] shadow-none'}`}
-        >
+        <nav className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white shadow-md' : 'bg-white'}`}>
             <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Top part of Navbar */}
                 <div className="flex justify-between items-center py-4">
-                    <Link href="/" className="text-3xl md:text-4xl font-serif font-bold text-gray-800">
-                    <Image
-                        src="/LOGO-JPG1.png"
-                        width={200}
-                        height={200}
-                        alt='logo'
-                        className='w-28'
-                    />
-                        </Link>
+                    <Link href="/" className="text-3xl font-serif font-bold text-gray-800">
+                        <Image src="/LOGO-JPG1.png" width={112} height={50} alt='logo' className='w-28' />
+                    </Link>
 
-                    <div className="flex-1 max-w-xl mx-8 hidden lg:flex">
-                        <div className="flex w-full border border-gray-300 rounded-md"><input type="text" placeholder="Search for kurtas, dresses, sarees..." className="w-full p-2 focus:outline-none rounded-l-md" /><button className="bg-black text-white px-8 py-2 rounded-r-md hover:bg-gray-800 transition-colors">SEARCH</button></div>
+                    <div ref={searchRef} className="relative flex-1 max-w-xl mx-8 hidden lg:block">
+                        <form onSubmit={handleSearchSubmit}>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <input 
+                                    type="text" 
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    onFocus={() => { if (searchQuery.length > 2) setIsDropdownOpen(true); }}
+                                    placeholder="Search for products..." 
+                                    className="w-full p-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black" 
+                                />
+                                <Button type="submit" className="absolute right-1 top-1 h-8 px-6 bg-black text-white rounded hover:bg-gray-800">Search</Button>
+                            </div>
+                        </form>
+                        
+                        <AnimatePresence>
+                            {isDropdownOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+                                    className="absolute top-full mt-2 w-full bg-white border rounded-md shadow-lg z-50 overflow-hidden"
+                                >
+                                    {searchLoading && (
+                                        <div className="flex items-center justify-center p-4 text-gray-500"><Loader2 className="h-5 w-5 animate-spin mr-2" /> Searching...</div>
+                                    )}
+                                    {!searchLoading && searchResults.length > 0 && (
+                                        <ul>
+                                            {searchResults.map((product: any) => (
+                                                <li key={product._id}>
+                                                    <Link href={`/product/${product.slug}`} onClick={() => setIsDropdownOpen(false)} className="flex items-center p-3 hover:bg-gray-100 transition-colors">
+                                                        <Image src={product.images[0]} alt={product.name} width={40} height={40} className="object-cover rounded-md" />
+                                                        <div className='ml-3'>
+                                                            <p className="font-semibold text-sm">{product.name}</p>
+                                                            <p className="text-sm font-bold">₹{(product.sale_price ?? product.price).toLocaleString()}</p>
+                                                        </div>
+                                                    </Link>
+                                                </li>
+                                            ))}
+                                            <li className="border-t">
+                                                 <Link href={`/shop?search=${encodeURIComponent(searchQuery.trim())}`} onClick={() => setIsDropdownOpen(false)} className="block w-full text-center p-3 font-semibold text-sm text-black hover:bg-gray-100">View all results</Link>
+                                            </li>
+                                        </ul>
+                                    )}
+                                    {!searchLoading && searchResults.length === 0 && debouncedSearchQuery.length > 2 && (
+                                         <div className="p-4 text-center text-gray-500 text-sm">No products found for "{debouncedSearchQuery}".</div>
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
 
                     <div className="flex items-center space-x-3 sm:space-x-5">
-                        {/* <a href="/account/user" className="text-gray-700 hover:text-black hidden sm:block" aria-label="Account"><User size={24} />
-                        </a> */}
-                        <div className="hidden sm:block">
-                            <UserNav />
-                        </div>
+                        <div className="hidden sm:block"><UserNav /></div>
                         <div className="relative">
-                            <Link href="/wishlist" className="text-gray-700 hover:text-black" aria-label="Wishlist">
-                                <Heart size={24} />
-                            </Link>
+                            <Link href="/wishlist" className="text-gray-700 hover:text-black" aria-label="Wishlist"><Heart size={24} /></Link>
                             <AnimatePresence>
                                 {totalWishlistItems > 0 && (
-                                    <motion.span
-                                        initial={{ scale: 0, y: -10 }}
-                                        animate={{ scale: 1, y: 0 }}
-                                        exit={{ scale: 0 }}
-                                        transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                                        className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
-                                    >
-                                        {totalWishlistItems}
-                                    </motion.span>
+                                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{totalWishlistItems}</motion.span>
                                 )}
                             </AnimatePresence>
                         </div>
-
                         <div className="relative">
-                            <Link href="/cart" className="text-gray-700 hover:text-black" aria-label="Shopping Cart">
-                                <ShoppingCart size={24} />
-                            </Link>
+                            <Link href="/cart" className="text-gray-700 hover:text-black" aria-label="Shopping Cart"><ShoppingCart size={24} /></Link>
                             <AnimatePresence>
                                 {totalItems > 0 && (
-                                    <motion.span
-                                        initial={{ scale: 0, y: -10 }}
-                                        animate={{ scale: 1, y: 0 }}
-                                        exit={{ scale: 0 }}
-                                        transition={{ type: "spring", stiffness: 500, damping: 20 }}
-                                        className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
-                                    >
-                                        {totalItems}
-                                    </motion.span>
+                                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{totalItems}</motion.span>
                                 )}
                             </AnimatePresence>
                         </div>
-
-                        {/* Hamburger Menu */}
                         <div className="lg:hidden">
                             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                                <SheetTrigger asChild><Button variant="ghost" size="icon"><Menu size={26} /><span className="sr-only">Open menu</span></Button></SheetTrigger>
+                                <SheetTrigger asChild><Button variant="ghost" size="icon"><Menu size={26} /></Button></SheetTrigger>
                                 <SheetContent side="right" className="w-full max-w-sm px-6">
                                     <SheetTitle className="text-2xl font-serif mb-8">Menu</SheetTitle>
                                     <div className="flex flex-col space-y-2">
@@ -240,37 +257,33 @@ const Navbar = () => {
                     </div>
                 </div>
 
-                {/* Bottom part of Navbar - Hidden on mobile */}
-                <div className={`hidden lg:flex justify-between items-center text-sm font-medium  border-t border-gray-300 transition-all duration-300 overflow-hidden ${isScrolled ? 'h-0 py-0 opacity-0 border-transparent' : 'h-auto py-3 opacity-100'}`}>
-                    <div className="flex items-center space-x-8 bg-[var(--base-50)]">
-                        {/* Mega Menu Button */}
+                <div className={`hidden lg:flex justify-between items-center text-sm font-medium border-t border-gray-200 transition-all duration-300 overflow-hidden ${isScrolled ? 'h-0 py-0 opacity-0' : 'h-auto py-3'}`}>
+                    <div className="flex items-center space-x-8">
                         <div onMouseEnter={() => setIsMegaMenuOpen(true)} onMouseLeave={() => setIsMegaMenuOpen(false)}>
-                            <button className="bg-black text-white px-5 py-2 hover:bg-gray-800 transition-colors">
-                                <span className='flex items-center gap-1'>SHOP BY CATEGORY <ChevronDown /></span>
-                            </button>
+                            <button className="bg-black text-white px-5 py-2 hover:bg-gray-800 transition-colors flex items-center gap-1">SHOP BY CATEGORY <ChevronDown /></button>
                             <AnimatePresence>
                                 {isMegaMenuOpen && (
                                     <motion.div variants={megaMenuVariants} initial="hidden" animate="visible" exit="exit" className="absolute top-full left-0 mt-[-1px] w-full bg-white shadow-lg border-t z-50">
-                                        <div className="container mx-auto px-8 py-6 grid grid-cols-4 gap-8 bg-[var(--base-10)]">
+                                        <div className="container mx-auto px-8 py-6 grid grid-cols-4 gap-8">
                                             {Object.values(megaMenuData).map(section => (
                                                 <div key={section.title}>
                                                     <h3 className="font-semibold text-gray-800 mb-4">{section.title}</h3>
                                                     <ul className="space-y-2">
-                                                        {section.items.map(item => <li key={item.name}><a href={item.href} className="text-gray-600 hover:text-black">{item.name}</a></li>)}
+                                                        {section.items.map(item => <li key={item.name}><Link href={item.href} className="text-gray-600 hover:text-black">{item.name}</Link></li>)}
                                                     </ul>
                                                 </div>
                                             ))}
                                             <div className="bg-gray-50 rounded-lg p-6 flex flex-col justify-center bg-[url('https://i.pinimg.com/736x/4b/b9/0b/4bb90b8d41a2c50ddebf86425e5c8072.jpg')] bg-cover bg-center">
                                                 <h3 className="font-semibold text-lg text-white">The Wedding Edit</h3>
                                                 <p className="text-sm text-white mt-1">Stunning outfits for the wedding season.</p>
-                                                <a href="/shop?tag=Wedding" className="text-sm font-bold text-black mt-3 hover:underline">Shop Now &rarr;</a>
+                                                <Link href="/shop?tags=Wedding" className="text-sm font-bold text-black mt-3 hover:underline">Shop Now &rarr;</Link>
                                             </div>
                                         </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
-                        {navLinks.map(link => (<a key={link.name} href={link.href} className="text-gray-600 hover:text-black">{link.name}</a>))}
+                        {navLinks.map(link => (<Link key={link.name} href={link.href} className="text-gray-600 hover:text-black">{link.name}</Link>))}
                     </div>
                     <div><span className="text-gray-600">Free Shipping on Orders Over ₹499</span></div>
                 </div>

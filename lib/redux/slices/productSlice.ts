@@ -30,7 +30,13 @@ export const fetchProducts = createAsyncThunk(
   'products/fetchProducts',
   async (queryParams: ProductQueryParams = {}, { rejectWithValue }) => {
     try {
-      const queryString = new URLSearchParams(queryParams as Record<string, string>).toString();
+      const params = new URLSearchParams();
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, String(value));
+        }
+      });
+      const queryString = params.toString();
       const response = await axios.get(`${API_BASE_URL}/products?${queryString}`);
       return response.data.data;
     } catch (error: any) {
@@ -42,6 +48,28 @@ export const fetchProducts = createAsyncThunk(
     }
   }
 );
+
+export const fetchSearchResults = createAsyncThunk(
+  'products/fetchSearchResults',
+  async (queryParams: { search: string; limit?: number }, { rejectWithValue }) => {
+    try {
+      const params = new URLSearchParams();
+      Object.entries(queryParams).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, String(value));
+        }
+      });
+      const queryString = params.toString();
+      const response = await axios.get(`${API_BASE_URL}/products?${queryString}`);
+      // Yahan hum poora pagination object nahi, sirf products ka array return karenge
+      return response.data.data.products; 
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Search failed');
+    }
+  }
+);
+
+
 
 export const fetchProductBySlug = createAsyncThunk(
   "products/fetchProductBySlug",
@@ -108,6 +136,8 @@ interface ProductState {
   productDetailsLoading: boolean;
   productDetailsError: string | null;
   videoProducts: any[]; // New state for products with videos
+  searchResults: any[]; 
+  searchLoading: boolean; 
 }
 
 const initialState: ProductState = {
@@ -121,6 +151,8 @@ const initialState: ProductState = {
   productDetailsLoading: false,
   productDetailsError: null,
   videoProducts: [],
+  searchResults: [],
+  searchLoading: false,
 };
 
 const productSlice = createSlice({
@@ -131,6 +163,9 @@ const productSlice = createSlice({
       state.selectedProduct = null;
       state.productDetailsError = null;
     },
+    clearSearchResults: (state) => {
+      state.searchResults = [];
+  },
   },
   extraReducers: (builder) => {
     builder
@@ -199,9 +234,20 @@ const productSlice = createSlice({
         state.loading = false;
         state.error = (action.payload as string) || 'Failed to fetch video products';
         state.videoProducts = [];
+      })
+      .addCase(fetchSearchResults.pending, (state) => {
+        state.searchLoading = true;
+      })
+      .addCase(fetchSearchResults.fulfilled, (state, action) => {
+        state.searchLoading = false;
+        state.searchResults = action.payload;
+      })
+      .addCase(fetchSearchResults.rejected, (state) => {
+        state.searchLoading = false;
+        state.searchResults = []; // Error aane par clear kar dein
       });
   },
 });
 
-export const { clearSelectedProduct } = productSlice.actions;
+export const { clearSelectedProduct, clearSearchResults } = productSlice.actions;
 export default productSlice.reducer;
