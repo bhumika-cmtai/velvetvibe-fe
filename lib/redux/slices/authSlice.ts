@@ -32,6 +32,7 @@ interface User {
   isVerified: boolean;
   addresses: Address[];
   wishlist: string[];
+  wallet?: number; // Points available for redemption
   createdAt: string;
   updatedAt: string;
 }

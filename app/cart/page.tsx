@@ -244,7 +244,6 @@ export default function CartPage() {
                             <div className="space-y-3 mb-6 text-gray-700">
                                 <div className="flex justify-between items-center"><span className="text-gray-500">Subtotal</span><span className="font-semibold">₹{subTotal.toLocaleString()}</span></div>
                                 <div className="flex justify-between items-center"><span className="text-gray-500">Shipping</span><span className="font-semibold text-green-600">FREE</span></div>
-                                {/* You can add logic here to display discount if a coupon is applied */}
                             </div>
                             <div className="border-t pt-4 mb-6">
                                 <div className="flex justify-between items-center text-lg font-bold text-gray-800">

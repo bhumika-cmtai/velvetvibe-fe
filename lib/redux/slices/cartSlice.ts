@@ -3,7 +3,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AxiosError } from 'axios'; // Import AxiosError for better type checking
 import apiClient from '@/lib/api/auth'; 
-import { Coupon } from './couponSlice'; 
+// Removed coupon import - using points system instead 
 
 interface LocalCartItem {
   _id: string;
@@ -28,7 +28,7 @@ interface CartState {
   items: CartItem[];
   loading: boolean;
   error: string | null;
-  appliedCoupon: Coupon | null;
+  appliedPoints: number; // Points applied for discount
   totalItems: number;
   subTotal: number;
   shippingCost: number;
@@ -40,7 +40,7 @@ const initialState: CartState = {
   items: [],
   loading: false,
   error: null,
-  appliedCoupon: null,
+  appliedPoints: 0,
   totalItems: 0,
   subTotal: 0,
   shippingCost: 0,
@@ -104,8 +104,8 @@ export const updateCartQuantity = createAsyncThunk<CartItem[], { cartItemId: str
   async ({ cartItemId, quantity }, { rejectWithValue }) => {
     try {
       // Endpoint ko bhi cartItemId ke hisaab se update karein
-        ("---cartItemId---")
-        (cartItemId)
+        console.log("---cartItemId---")
+        console.log(cartItemId)
       const response = await apiClient.patch(`/users/cart/item/quantity/${cartItemId}`, { quantity });
       return response.data.data;
     } catch (error) {
@@ -136,27 +136,27 @@ const cartSlice = createSlice({
   reducers: {
     clearLocalCartState: (state) => {
         state.items = [];
-        state.appliedCoupon = null;
+        state.appliedPoints = 0;
         cartSlice.caseReducers.calculateTotals(state);
     },
-    applyCoupon: (state, action: PayloadAction<Coupon>) => {
-      state.appliedCoupon = action.payload;
+    applyPoints: (state, action: PayloadAction<number>) => {
+      state.appliedPoints = action.payload;
       cartSlice.caseReducers.calculateTotals(state);
     },
-    removeCoupon: (state) => {
-      state.appliedCoupon = null;
+    removePoints: (state) => {
+      state.appliedPoints = 0;
       cartSlice.caseReducers.calculateTotals(state);
     },
     calculateTotals: (state) => {
-      // CHANGE: Price ab item se direct aayega
+      // Calculate subtotal from items
       const subTotal = state.items.reduce((total, item) => total + item.price * item.quantity, 0);
       const totalItems = state.items.reduce((total, item) => total + item.quantity, 0);
-      let discountAmount = 0;
-      if (state.appliedCoupon) {
-        discountAmount = subTotal * (state.appliedCoupon.discountPercentage / 100);
-      }
+      
+      // Points discount: 1 point = 1 rupee
+      const discountAmount = state.appliedPoints;
+      
       const shippingCost = subTotal > 2000 ? 0 : 99;
-      const finalTotal = subTotal - discountAmount + shippingCost;
+      const finalTotal = Math.max(0, subTotal - discountAmount + shippingCost);
       
       state.subTotal = subTotal;
       state.totalItems = totalItems;
@@ -197,5 +197,5 @@ const cartSlice = createSlice({
   },
 });
 
-export const { clearLocalCartState, applyCoupon, removeCoupon, calculateTotals } = cartSlice.actions;
+export const { clearLocalCartState, applyPoints, removePoints, calculateTotals } = cartSlice.actions;
 export default cartSlice.reducer;

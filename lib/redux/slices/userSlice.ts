@@ -33,6 +33,7 @@ interface User {
   avatar?: string;
   role: 'user' | 'admin';
   isVerified: boolean;
+  wallet?: number; // Points available for redemption
 }
 
 interface UserState {

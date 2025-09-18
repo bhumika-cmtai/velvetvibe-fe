@@ -103,6 +103,18 @@ export const fetchProductBySlug = createAsyncThunk(
   }
 );
 
+export const fetchProductById = createAsyncThunk(
+  "products/fetchProductById",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/products/${id}`);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || "Failed to fetch product");
+    }
+  }
+);
+
 // --- Async Thunks for Reviews ---
 
 export const createProductReview = createAsyncThunk(

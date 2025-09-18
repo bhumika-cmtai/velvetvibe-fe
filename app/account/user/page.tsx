@@ -13,7 +13,8 @@ import {
   Heart,
   ShoppingCart,
   MapPin,
-  ChevronRight
+  ChevronRight,
+  Gift
 } from 'lucide-react';
 import Navbar  from '@/components/Navbar';
 import Footer  from '@/components/Footer';
@@ -90,6 +91,16 @@ export default function ProfilePage() {
               {/* Display data from the userSlice */}
               <h1 className="text-3xl font-bold font-serif text-gray-900">{user.fullName}</h1>
               <p className="mt-1 text-gray-600">{user.email}</p>
+              
+              {/* Wallet Points Display */}
+              {user.wallet !== undefined && (
+                <div className="mt-3 flex items-center gap-2">
+                  <Gift size={20} className="text-[#D09D13]" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Redeem Points: <span className="text-[#D09D13] font-bold">{user.wallet.toLocaleString()}</span>
+                  </span>
+                </div>
+              )}
             </div>
             <div className="ml-6 flex flex-col items-center text-center">
               {user.avatar ? (
@@ -133,6 +144,14 @@ export default function ProfilePage() {
               title="My Cart"
               subtitle="View and manage items in your cart"
             />
+            {user.wallet !== undefined && (
+              <ProfileLink
+                href="/account/user/redeem-points"
+                icon={Gift}
+                title="Redeem Points"
+                subtitle={`${user.wallet.toLocaleString()} points available for redemption`}
+              />
+            )}
             <ProfileLink
               href="/account/user/addresses"
               icon={MapPin}

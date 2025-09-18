@@ -99,22 +99,6 @@ const WishlistItemCard = ({ item, onRemove, onAddToCart }: { item: any, onRemove
     }
   }
   
-  // Debug logging to see live stock calculation
-   ('Wishlist stock calculation (LIVE):', {
-    productName: product.name,
-    isLocalWishlistItem,
-    selectedVariant: selectedVariant,
-    hasLiveData: !!liveProduct,
-    isLiveDataLoading,
-    savedProductStock: product.stock_quantity,
-    liveProductStock: liveProduct?.stock_quantity,
-    savedVariantStock: selectedVariant?.stock_quantity,
-    liveVariantStock: liveProduct?.variants?.[0]?.stock_quantity,
-    currentProductStock: currentProduct.stock_quantity,
-    finalStockQuantity: stockQuantity
-  });
-
-  
   return (
     <motion.div layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ type: "spring", stiffness: 300, damping: 25 }} className="bg-white rounded-md shadow-sm overflow-hidden group flex flex-col">
       <div className="relative w-full aspect-[3/4] bg-gray-50">
