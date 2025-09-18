@@ -127,8 +127,7 @@ export const fetchSingleOrder = createAsyncThunk<Order, string, { rejectValue: s
     try {
       // This can be used by both user and admin, so we use the user route by default
       const response = await apiClient.get(`/users/orders/${orderId}`);
-       console.log("response data data")
-       console.log(response.data.data)
+         (response.data.data) 
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch order details');
@@ -175,10 +174,23 @@ export const verifyRazorpayPayment = createAsyncThunk<
   { rejectValue: string }
 >(
   'orders/verifyRazorpayPayment',
-  async (params, { rejectWithValue }) => {
+  async (params, { rejectWithValue, getState }) => {
     try {
-      console.log("yahi se verify razorpay call krvaya hai") 
-      const response = await apiClient.post(`/payment/verify`, params);
+        ("=== PAYMENT VERIFICATION DEBUG ===");
+        ("yahi se verify razorpay call krvaya hai") 
+      
+      // Debug: Check if token is available
+      const state = getState() as any;
+      const accessToken = state.auth?.accessToken;
+      
+      // Manually add token to headers as a fallback
+      const config = {
+        headers: accessToken ? {
+          'Authorization': `Bearer ${accessToken}`
+        } : {}
+      };
+      
+      const response = await apiClient.post(`/payment/verify`, params, config);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Payment verification failed');

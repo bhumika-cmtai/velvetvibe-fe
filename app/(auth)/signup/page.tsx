@@ -35,8 +35,8 @@ export default function SignUpPage() {
 
     } catch (err: any) {
       // Error ko toast mein dikhayein
-       console.log("err.message")
-       console.log(err.message)
+         ("err.message")
+         (err.message)
       toast.error(err.message || "An unknown error occurred.");
     } finally {
       setIsLoading(false);

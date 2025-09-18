@@ -194,7 +194,7 @@ export default function CheckoutPage() {
           order_id: razorpayOrder.orderId,
           handler: async function (response: any) {
             try {
-              console.log("---verify call krva rhe hai yahan----")
+                ("---verify call krva rhe hai yahan----")
               const result = await dispatch(verifyRazorpayPayment({
                 ...orderDetails,
                 razorpay_order_id: response.razorpay_order_id,

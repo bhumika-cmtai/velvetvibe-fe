@@ -56,7 +56,7 @@ const initialState: UserState = {
 export const fetchUserProfile = createAsyncThunk('user/fetchProfile', async (_, { rejectWithValue }) => {
   try {
     const response = await apiClient.get('/users/profile');
-    //  console.log(response.data.data)
+    //    (response.data.data)
     return response.data.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
