@@ -9,6 +9,18 @@ export interface Variant {
   images?: string[];
 }
 
+export interface Review {
+  _id: string;
+  user: string; // The user's ID
+  fullName: string;
+  avatar?: string;
+  rating: number;
+  comment: string;
+  images?: File[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Product {
   _id: string;
   name: string;
@@ -35,6 +47,11 @@ export interface Product {
   sleeveLength?: string;
   neckType?: string;
   pattern?: string;
+
+  reviews?: Review[];
+  averageRating?: number;
+  numReviews?: number;
+
   
   createdAt: string;
   updatedAt: string;

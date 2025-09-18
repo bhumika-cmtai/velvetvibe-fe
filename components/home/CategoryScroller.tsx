@@ -30,11 +30,22 @@ export function CategoryScroller() {
     };
 
     return (
-        <section className="my-12 md:my-16">
+        <section className="my-12 md:my-16 overflow-hidden">
+            {/* Custom CSS to hide scrollbar */}
+            <style jsx>{`
+                .hide-scrollbar {
+                    -ms-overflow-style: none;  /* IE and Edge */
+                    scrollbar-width: none;  /* Firefox */
+                }
+                .hide-scrollbar::-webkit-scrollbar {
+                    display: none;  /* Chrome, Safari, Opera */
+                }
+            `}</style>
+            
             <h2 className="text-3xl md:text-4xl font-serif text-[var(--primary-text-theme)] text-center mb-12">
                 Shop By Category
             </h2>
-            <div className="relative">
+            <div className="relative overflow-hidden ">
                 <Button
                     onClick={() => handleScroll("left")}
                     variant="outline"
@@ -46,6 +57,10 @@ export function CategoryScroller() {
                 <div
                     ref={scrollContainer}
                     className="flex items-center space-x-4 lg:space-x-8 overflow-x-auto pb-4 hide-scrollbar"
+                    style={{
+                        scrollbarWidth: 'none', // Firefox
+                        msOverflowStyle: 'none', // IE and Edge
+                    }}
                 >
                     {trendingCategories.map((category) => (
                         <Link key={category.name} href={`/shop?category=${category.name.toLowerCase()}`} className="flex-shrink-0 group">

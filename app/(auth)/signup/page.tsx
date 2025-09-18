@@ -35,8 +35,8 @@ export default function SignUpPage() {
 
     } catch (err: any) {
       // Error ko toast mein dikhayein
-       ("err.message")
-       (err.message)
+       console.log("err.message")
+       console.log(err.message)
       toast.error(err.message || "An unknown error occurred.");
     } finally {
       setIsLoading(false);
@@ -72,7 +72,7 @@ export default function SignUpPage() {
           {/* Error paragraph ko hata diya gaya hai */}
           
           <div>
-            <Button type="submit" className="w-full bg-primary hover:bg-primary-hover text-text-on-primary" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-[var(--primary-button-theme)] hover:bg-[var(--secondary-button-theme)] text-[var(--primary-button-text)] hover:text-[var(--secondary-button-text)]" disabled={isLoading}>
               {isLoading ? 'Creating Account...' : 'Sign Up'}
             </Button>
           </div>

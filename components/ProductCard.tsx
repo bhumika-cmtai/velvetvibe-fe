@@ -157,12 +157,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       const firstVariant = variants[0];
       
       // Debug logging to see what variant is being used
-       ('ProductCard adding to wishlist:', {
-        productName: name,
-        firstVariant: firstVariant,
-        variantStock: firstVariant?.stock_quantity,
-        productStock: originalProduct.stock_quantity || originalProduct.stock_quantity
-      });
+       
       
       if (isAuthenticated) {
         // For authenticated users, we still use the simple product ID approach
@@ -197,23 +192,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <>
       <Link href={`/product/${slug || '#'}`} className="group block">
         <div className="relative bg-gray-100 rounded-xl overflow-hidden aspect-[3/4]">
-          <div className="absolute inset-0 transition-transform duration-500 ease-in-out group-hover:scale-105">
+        <div className="absolute inset-0 transition-transform duration-500 ease-in-out group-hover:scale-105">
               <Image 
                 src={images[0] || '/placeholder.svg'} 
                 alt={name} 
                 fill 
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                className="object-cover w-full h-full transition-opacity duration-500 ease-in-out group-hover:opacity-0" 
+                // This image will fade out ONLY if a second image exists
+                className={`object-cover w-full h-full transition-opacity duration-500 ease-in-out ${images[1] ? 'group-hover:opacity-0' : ''}`}
               />
-              {images[1] && 
-                <Image 
-                  src={images[1]} 
-                  alt={`${name} hover view`} 
-                  fill 
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                  className="object-cover w-full h-full opacity-0 transition-opacity duration-500 ease-in-out group-hover:opacity-100" 
-                />
-              }
+              <Image 
+                // If a second image exists, use it. Otherwise, fallback to the first image.
+                src={images[1] || images[0] || '/placeholder.svg'} 
+                alt={`${name} hover view`} 
+                fill 
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                // This image will ONLY fade in if a second image exists
+                className={`object-cover w-full h-full transition-opacity duration-500 ease-in-out ${images[1] ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}`} 
+              />
           </div>
           <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
             {tags?.includes('Sale') && <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">SALE</span>}

@@ -55,8 +55,8 @@ const initialState: UserState = {
 // Fetches the entire user profile, including addresses
 export const fetchUserProfile = createAsyncThunk('user/fetchProfile', async (_, { rejectWithValue }) => {
   try {
-    const response = await apiClient.get('/profile');
-     (response.data.data)
+    const response = await apiClient.get('/users/profile');
+    //  console.log(response.data.data)
     return response.data.data;
   } catch (error: any) {
     return rejectWithValue(error.response?.data?.message || 'Failed to fetch profile');
@@ -106,7 +106,7 @@ export const addUserAddress = createAsyncThunk(
   'user/addAddress',
   async (addressData: NewAddressPayload, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post('/address', addressData);
+      const response = await apiClient.post('users/address', addressData);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to add address');

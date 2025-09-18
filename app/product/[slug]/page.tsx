@@ -23,6 +23,7 @@ import { selectIsAuthenticated } from "@/lib/redux/slices/authSlice";
 import { addToCart as addCartToDb } from "@/lib/redux/slices/cartSlice";
 import { useCart as useLocalCart } from "@/context/CartContext";
 import { Product, Variant } from "@/lib/types/product";
+import { ProductReviews } from "@/components/ProductReviews"; 
 
 // Wishlist imports (Redux and Context)
 import { useWishlist } from "@/context/WishlistContext";
@@ -30,6 +31,7 @@ import {
   addToWishlist as addWishlistToDb, 
   removeFromWishlist as removeWishlistFromDb 
 } from "@/lib/redux/slices/wishlistSlice";
+import { RecommendedProducts } from "@/components/RecommendProducts";
 
 const ProductDetailsPage = () => {
   const params = useParams();
@@ -421,6 +423,8 @@ const ProductDetailsPage = () => {
             </Accordion>
           </motion.div>
         </div>
+        <ProductReviews product={product} />
+        <RecommendedProducts currentProduct={product} />
       </main>
       <Footer />
     </div>

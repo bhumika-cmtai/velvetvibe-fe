@@ -61,6 +61,17 @@ export default function CheckoutPage() {
 
   const [newAddressFormData, setNewAddressFormData] = useState<NewAddressPayload>(initialAddressFormState);
 
+  const { shippingPrice, taxAmount, finalCheckoutTotal } = useMemo(() => {
+    const shippingPrice = 90; // Hardcoded 90, bilkul backend ki tarah
+    
+    const taxableAmount = subTotal - discountAmount;
+    const taxAmount = taxableAmount * 0.03; // 3% tax, bilkul backend ki tarah
+
+    const finalCheckoutTotal = taxableAmount + shippingPrice + taxAmount;
+
+    return { shippingPrice, taxAmount, finalCheckoutTotal };
+}, [subTotal, discountAmount]);
+
   // Initial data fetch
   useEffect(() => {
     if (isAuthenticated) {
@@ -94,6 +105,8 @@ export default function CheckoutPage() {
   const handleNewAddressInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setNewAddressFormData({ ...newAddressFormData, [e.target.name]: e.target.value });
   };
+
+  
   
   const handleAddNewAddress = async () => {
     const requiredFields: (keyof NewAddressPayload)[] = ['fullName', 'phone', 'street', 'city', 'state', 'postalCode'];
@@ -181,6 +194,7 @@ export default function CheckoutPage() {
           order_id: razorpayOrder.orderId,
           handler: async function (response: any) {
             try {
+              console.log("---verify call krva rhe hai yahan----")
               const result = await dispatch(verifyRazorpayPayment({
                 ...orderDetails,
                 razorpay_order_id: response.razorpay_order_id,
@@ -350,6 +364,7 @@ export default function CheckoutPage() {
                       <h4 className="font-medium truncate">{item.product.name}</h4>
                       <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                     </div>
+                   
                     <p className="font-medium">₹{(item.product.price * item.quantity).toLocaleString()}</p>
                   </div>
                 ))}
@@ -374,12 +389,20 @@ export default function CheckoutPage() {
               </div>
               
               <div className="space-y-3">
-                <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>₹{subTotal.toLocaleString()}</span></div>
-                {discountAmount > 0 && (<div className="flex justify-between text-green-600"><span>Discount</span><span>- ₹{discountAmount.toLocaleString()}</span></div>)}
-                <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className={shippingCost === 0 ? 'text-green-600' : ''}>{shippingCost === 0 ? "FREE" : `₹${shippingCost.toLocaleString()}`}</span></div>
-                <hr className="my-4" />
-                <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-black">₹{finalTotal.toLocaleString()}</span></div>
-              </div>
+                                <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>₹{subTotal.toLocaleString()}</span></div>
+                                
+                                {discountAmount > 0 && (<div className="flex justify-between text-green-600"><span>Discount</span><span>- ₹{discountAmount.toLocaleString()}</span></div>)}
+                                
+                                <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span>₹{shippingPrice.toLocaleString()}</span></div>
+                                
+                                {/* --- NAYI TAX LINE ADD KI GAYI HAI --- */}
+                                <div className="flex justify-between"><span className="text-gray-600">Taxes (3%)</span><span>₹{taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+
+                                <hr className="my-4" />
+                                
+                                {/* --- TOTAL PRICE AB NAYE CALCULATION SE AAYEGA --- */}
+                                <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-black">₹{finalCheckoutTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                            </div>
               
               <Button type="submit" disabled={isProcessing || !selectedAddressId} className="w-full py-3 h-12 mt-6 font-semibold text-base bg-black text-white hover:bg-gray-800">
                 {isProcessing ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>) : (`Place Order - ₹${finalTotal.toLocaleString()}`)}

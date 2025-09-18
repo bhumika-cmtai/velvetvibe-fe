@@ -39,9 +39,9 @@ const PrintStyles = () => (
 const InvoiceTemplate = ({ order }: { order: Order }) => {
   const companyDetails = {
     name: 'Velvetvibe',
-    address: 'Shop No. 12, MC NO.181/225, Shri Ram Market, Gali Kunj, Dariba Kalan, Chandni Chowk, Delhi - 110006',
+    address: 'abcd noida',
     gstin: '07BATPS3910H1ZC',
-    contact: '+91 70117 06767',
+    contact: '+91 99xxxxx',
     email: 'Velvetvibe@.com',
     website: 'www.velvetvibe.org',
     logo: '/Velvetvibe-PNG.png'
@@ -88,15 +88,18 @@ const InvoiceTemplate = ({ order }: { order: Order }) => {
                         </tr>
                     </thead>
                     <tbody>
-                        {order.orderItems.map((item, index) => (
-                            <tr key={index} className="border-b">
-                                <td className="p-2">{index + 1}</td>
-                                <td className="p-2">{item.name}</td>
-                                <td className="p-2 text-right">{item.quantity} x ₹{item.price.toLocaleString()}</td>
-                                <td className="p-2 text-right">₹{(item.quantity * item.price).toLocaleString()}</td>
-                            </tr>
-                        ))}
-                    </tbody>
+                      {order.orderItems.map((item, index) => (
+                          <tr key={index} className="border-b">
+                              <td className="p-2">{index + 1}</td>
+                              {/* FIX HERE */}
+                              <td className="p-2">{item.product_name ?? item.name}</td> 
+                              {/* FIX HERE */}
+                              <td className="p-2 text-right">{item.quantity} x ₹{(item.price_per_item ?? item.price).toLocaleString()}</td> 
+                              {/* FIX HERE */}
+                              <td className="p-2 text-right">₹{(item.quantity * (item.price_per_item ?? item.price)).toLocaleString()}</td> 
+                          </tr>
+                      ))}
+                  </tbody>
                 </table>
             </div>
             <div className="grid grid-cols-2 p-6 mt-4">
@@ -270,17 +273,18 @@ export default function UserOrderDetailsPage() {
                         <div key={index} className="flex items-center space-x-4 p-4 border-b last:border-b-0">
                             <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border">
                             <Image 
-                                src={item.product?.images?.[0] || '/placeholder.svg'} 
-                                alt={item.name} 
-                                fill 
-                                className="object-cover" 
-                            />
+                                          src={item.image || '/placeholder.svg'} 
+                                          alt={item.product_name? item.product_name: ""} 
+                                          fill 
+                                          sizes="80px"
+                                          className="object-cover" 
+                                      />
                             </div>
                             <div className="flex-grow">
-                            <p className="font-semibold text-gray-800">{item.name}</p>
+                            <p className="font-semibold text-gray-800">{item.product_name? item.product_name:item.name}</p>
                             <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                             </div>
-                            <p className="font-semibold text-gray-900">₹{item.price.toLocaleString()}</p>
+                            <p className="font-semibold text-gray-900">₹{(item.price_per_item ?? item.price).toLocaleString()}</p>
                         </div>
                         ))}
                     </div>

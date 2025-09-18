@@ -104,6 +104,8 @@ export const updateCartQuantity = createAsyncThunk<CartItem[], { cartItemId: str
   async ({ cartItemId, quantity }, { rejectWithValue }) => {
     try {
       // Endpoint ko bhi cartItemId ke hisaab se update karein
+      console.log("---cartItemId---")
+      console.log(cartItemId)
       const response = await apiClient.patch(`/users/cart/item/quantity/${cartItemId}`, { quantity });
       return response.data.data;
     } catch (error) {

@@ -145,7 +145,7 @@ const Navbar = () => {
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild><Link href="/account/user">My Profile</Link></DropdownMenuItem>
-                        <DropdownMenuItem asChild><Link href="/account/order-history">My Orders</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href="/account/user/order-history">My Orders</Link></DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Sign Out</DropdownMenuItem>
                     </>

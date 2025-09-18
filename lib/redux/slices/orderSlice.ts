@@ -9,12 +9,27 @@ import adminApiClient from '@/lib/api/adminClient'; // Axios instance for ADMIN 
 
 export interface OrderItem {
   name: string;
+  product_name?: string;
   quantity: number;
   price: number;
-  product: {
+  price_per_item?: number;
+  image: string;
+  product_id?: {
     _id: string;
+    name: string;
+    slug: string;
+    price: number;
     images: string[];
   };
+  product: {
+    _id: string;
+    slug: string;
+    images: string[];
+  };
+  sku_variant?: string;
+  size?: string;
+  color?: string;
+  _id: string;
 }
 
 export interface ShippingAddress {
@@ -86,7 +101,7 @@ export const fetchMyOrders = createAsyncThunk<
   async (params = {}, { rejectWithValue }) => {
     try {
       // Pass the page and limit as query parameters
-      const response = await apiClient.get('/orders', { params });
+      const response = await apiClient.get('/users/orders', { params });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch your orders');
@@ -111,9 +126,9 @@ export const fetchSingleOrder = createAsyncThunk<Order, string, { rejectValue: s
   async (orderId, { rejectWithValue }) => {
     try {
       // This can be used by both user and admin, so we use the user route by default
-      const response = await apiClient.get(`/orders/${orderId}`);
-       ("response data data")
-       (response.data.data)
+      const response = await apiClient.get(`/users/orders/${orderId}`);
+       console.log("response data data")
+       console.log(response.data.data)
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch order details');
@@ -129,7 +144,7 @@ export const placeCodOrder = createAsyncThunk<
   'orders/placeCodOrder',
   async ({ addressId,couponCode  }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post('/order/cod', { addressId, couponCode  });
+      const response = await apiClient.post('/users/order/cod', { addressId, couponCode  });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to place COD order');
@@ -146,7 +161,7 @@ export const createRazorpayOrder = createAsyncThunk<
   async (params, { rejectWithValue }) => {
     try {
       // Payment routes are separate, so we use a direct axios call
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/payment/create-order`, params);
+      const response = await apiClient.post(`/payment/create-order`, params);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to create Razorpay order');
@@ -162,7 +177,8 @@ export const verifyRazorpayPayment = createAsyncThunk<
   'orders/verifyRazorpayPayment',
   async (params, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/v1/payment/verify`, params);
+      console.log("yahi se verify razorpay call krvaya hai") 
+      const response = await apiClient.post(`/payment/verify`, params);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Payment verification failed');
