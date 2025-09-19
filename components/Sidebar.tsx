@@ -20,7 +20,7 @@ const navLinks = [
     { href: "/account/admin/users", label: "Users", icon: Users },
     { href: "/account/admin/products", label: "Products", icon: Gem },
     { href: "/account/admin/contacts", label: "Contacts", icon: MessageSquare },
-    { href: "/account/admin/coupons", label: "Manage Coupon", icon: TicketPercent },
+    { href: "/account/admin/coupon", label: "Manage Coupon", icon: TicketPercent },
     // {href: "/account/admin/bulk-orders", label: "Bulk Order", icon: Package2},
 ];
 
