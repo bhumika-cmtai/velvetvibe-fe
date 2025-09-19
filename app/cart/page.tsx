@@ -28,8 +28,10 @@ const CartItemCard = ({ item, onUpdate, onRemove, isGuestCart }: { item: any, on
     const productDetails = isGuestCart ? item : item.product;
     const productName = productDetails.name;
     const productSlug = productDetails.slug;
-    const productImage = isGuestCart ? item.image : (productDetails.images?.[0] || "/placeholder.svg");
-    const productPrice = isGuestCart ? item.price : productDetails.price;
+    const itemImage = item.image || productDetails.images?.[0] || "/placeholder.svg";
+    const itemPrice = item.price;
+    const productImage =item.image || productDetails.images?.[0] || "/placeholder.svg";
+    const productPrice = item.price;
 
     // For guest cart, we need to handle both simple products and variants
     const updateId = isGuestCart ? item.productId : item.product._id;
@@ -127,7 +129,7 @@ export default function CartPage() {
     } = useSelector((state: RootState) => state.cart);
 
     // --- EFFECTS ---
-    // If the user is authenticated, fetch their cart from the database.
+    // If the user is authenticated, fetch their cart from the database.F
     useEffect(() => {
         if (isAuthenticated) {
             dispatch(fetchCart());

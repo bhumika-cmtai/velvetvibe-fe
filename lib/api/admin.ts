@@ -33,6 +33,18 @@ export interface Coupon {
   updatedAt: string;
 }
 
+//coupon wallet 
+export interface RewardRule {
+  minSpend: number;
+  pointsAwarded: number;
+}
+
+export interface WalletConfig {
+  _id: string;
+  rewardRules: RewardRule[];
+  rupeesPerPoint: number;
+}
+
 // ==========================================================
 // --- PRODUCT API FUNCTIONS ---
 // (No changes needed in the functions themselves)
@@ -101,4 +113,25 @@ export const deleteCouponApi = (couponId: string) => {
 };
 export const getCouponByNameApi = (couponCode: string) => {
   return apiClient.get(`/coupon/code/${couponCode}`);
+};
+
+//wallet 
+export const getWalletConfigApi = async () => {
+  return apiClient.get('/wallet/config');
+};
+
+export const updatePointValueApi = async (rupeesPerPoint: number) => {
+  return apiClient.patch('/wallet/config/point-value', { rupeesPerPoint });
+};
+
+export const addRewardRuleApi = async (rule: RewardRule) => {
+  return apiClient.post('/wallet/config/rules', rule);
+};
+
+export const updateRewardRuleApi = async (targetMinSpend: number, updates: Partial<RewardRule>) => {
+  return apiClient.put(`/wallet/config/rules/${targetMinSpend}`, updates);
+};
+
+export const deleteRewardRuleApi = async (minSpend: number) => {
+  return apiClient.delete(`/wallet/config/rules/${minSpend}`);
 };

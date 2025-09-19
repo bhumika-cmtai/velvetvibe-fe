@@ -56,7 +56,6 @@ export default function LoginPage() {
         
         await dispatch(mergeCarts(itemsToMerge));
 
-        // Refresh cart from server to ensure it's up to date
         await dispatch(fetchCart());
 
         clearLocalCart();

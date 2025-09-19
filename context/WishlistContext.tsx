@@ -64,14 +64,14 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       } : undefined;
       
       // Debug logging to see what's being saved
-       ('Adding to wishlist:', {
-        productName: product.name,
-        selectedVariant: selectedVariant,
-        productStock: product.stock_quantity || product.stock,
-        variantStock: selectedVariant?.stock_quantity,
-        finalProductStock: productSnapshot.stock_quantity,
-        finalVariantStock: variantSnapshot?.stock_quantity
-      });
+      //  ('Adding to wishlist:', {
+      //   productName: product.name,
+      //   selectedVariant: selectedVariant,
+      //   productStock: product.stock_quantity || product.stock,
+      //   variantStock: selectedVariant?.stock_quantity,
+      //   finalProductStock: productSnapshot.stock_quantity,
+      //   finalVariantStock: variantSnapshot?.stock_quantity
+      // });
       
       return [...prev, {
         product: productSnapshot,

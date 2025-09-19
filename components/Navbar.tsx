@@ -53,8 +53,8 @@ const megaMenuData = {
     decoratives: {
         title: "Decoratives",
         items: [
-            { name: "Flower Pots & Vases", href: "/decorative?sub_category=Flower%20Pots,Vases" },
-            { name: "Wall Paintings", href: "/decorative?sub_category=Wall Paintings" },
+            { name: "Flower Pots & Vases", href: "/decoratives?sub_category=Flower%20Pots,Vases" },
+            { name: "Wall Paintings", href: "/decoratives?sub_category=Wall Paintings" },
         ],
     },
 };
