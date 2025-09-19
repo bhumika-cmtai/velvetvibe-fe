@@ -4,6 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import { fetchWalletConfig } from "@/lib/redux/slices/adminSlice"
 
 // --- UI Components & Hooks ---
 import { Button } from "@/components/ui/button"
@@ -12,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import Navbar from "@/components/Navbar"
 import Footer from "@/components/Footer"
 import { useToast } from "@/hooks/use-toast"
-import { ArrowLeft, CreditCard, Shield, MapPin, PlusCircle, CheckCircle, Loader2, XCircle, Home, Briefcase, Gift } from "lucide-react"
+import { ArrowLeft, CreditCard, Shield, MapPin, PlusCircle, CheckCircle, Loader2, Home, Briefcase, Gift } from "lucide-react"
 
 // --- Redux Imports ---
 import { useDispatch, useSelector } from "react-redux"
@@ -42,10 +43,22 @@ export default function CheckoutPage() {
   // --- Read all data directly from Redux slices ---
   const { items, subTotal, shippingCost, discountAmount, finalTotal, appliedPoints, loading: cartLoading } = useSelector((state: RootState) => state.cart);
   const { user, addresses, status: userStatus } = useSelector((state: RootState) => state.user);
+  const { walletConfig } = useSelector((state: RootState) => state.admin);
   const isAuthenticated = useSelector(selectIsAuthenticated);
 
-  // Get user wallet points
+  // Get user wallet points and wallet config
   const userWalletPoints = user?.wallet || 0;
+  
+  // Get wallet configuration from admin settings
+  const walletSettings = useMemo(() => {
+    if (!walletConfig) return null;
+    const firstRule = walletConfig.rewardRules?.[0];
+    return {
+      minSpend: firstRule?.minSpend || 1000,
+      pointsAwarded: firstRule?.pointsAwarded || 10,
+      rupeesPerPoint: walletConfig.rupeesPerPoint || 1
+    };
+  }, [walletConfig]);
 
   // --- Local UI State ---
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
@@ -79,6 +92,7 @@ export default function CheckoutPage() {
     if (isAuthenticated) {
       dispatch(fetchCart());
       dispatch(fetchUserProfile());
+      dispatch(fetchWalletConfig()); // Fetch wallet configuration
     }
   }, [dispatch, isAuthenticated]);
 
@@ -165,10 +179,14 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (pointsToApply > subTotal) {
+    // Calculate maximum points that can be applied based on wallet settings
+    const maxPointsValue = walletSettings ? subTotal : subTotal;
+    const maxPointsToApply = walletSettings ? Math.floor(maxPointsValue / walletSettings.rupeesPerPoint) : subTotal;
+    
+    if (pointsToApply > maxPointsToApply) {
       toast({
-        title: "Points Exceed Subtotal",
-        description: `You can only apply up to ₹${subTotal} worth of points.`,
+        title: "Points Exceed Limit",
+        description: `You can only apply up to ${maxPointsToApply} points (₹${maxPointsValue}).`,
         variant: "destructive"
       });
       return;
@@ -178,9 +196,13 @@ export default function CheckoutPage() {
     try {
       dispatch(applyPoints(pointsToApply));
       setPointsInput("");
+      
+      // Calculate discount amount based on wallet settings
+      const discountAmount = walletSettings ? pointsToApply * walletSettings.rupeesPerPoint : pointsToApply;
+      
       toast({
         title: "Points Applied",
-        description: `${pointsToApply} points (₹${pointsToApply}) applied to your order.`,
+        description: `${pointsToApply} points (₹${discountAmount}) applied to your order.`,
       });
     } finally {
       setIsApplyingPoints(false);
@@ -416,7 +438,12 @@ export default function CheckoutPage() {
                     <p className="text-sm text-gray-600 mb-3">
                       You have <span className="font-bold text-[#D09D13]">{userWalletPoints.toLocaleString()}</span> points available
                     </p>
-                    <p className="text-xs text-gray-500 mb-3">1 point = ₹1 discount</p>
+                    <p className="text-xs text-gray-500 mb-3">
+                      {walletSettings ? 
+                        `1 point = ₹${walletSettings.rupeesPerPoint} discount` : 
+                        '1 point = ₹1 discount'
+                      }
+                    </p>
 
                     {appliedPoints > 0 ? (
                       <div className="space-y-2">
@@ -444,7 +471,10 @@ export default function CheckoutPage() {
                             onChange={(e) => setPointsInput(e.target.value)}
                             disabled={isApplyingPoints}
                             min="1"
-                            max={Math.min(userWalletPoints, subTotal)}
+                            max={walletSettings ? 
+                              Math.min(userWalletPoints, Math.floor(subTotal / walletSettings.rupeesPerPoint)) : 
+                              Math.min(userWalletPoints, subTotal)
+                            }
                             className="flex-1"
                           />
                           <Button
@@ -466,7 +496,12 @@ export default function CheckoutPage() {
               <div className="space-y-3">
                 <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span>₹{subTotal.toLocaleString()}</span></div>
 
-                {appliedPoints > 0 && (<div className="flex justify-between text-[#D09D13]"><span>Points Discount</span><span>- ₹{appliedPoints.toLocaleString()}</span></div>)}
+                {appliedPoints > 0 && (
+                  <div className="flex justify-between text-[#D09D13]">
+                    <span>Points Discount</span>
+                    <span>- ₹{(walletSettings ? appliedPoints * walletSettings.rupeesPerPoint : appliedPoints).toLocaleString()}</span>
+                  </div>
+                )}
 
                 <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span>₹{shippingPrice.toLocaleString()}</span></div>
 
