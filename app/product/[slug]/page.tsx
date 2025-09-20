@@ -60,7 +60,11 @@ const ProductDetailsPage = () => {
   } = useWishlist();
 
   // --- Component State ---
-  const [quantity, setQuantity] = useState(1);
+  // --- NEW: Minimum quantity logic integrated ---
+  const minQuantity = useMemo(() => product?.minQuantity || 1, [product]);
+  const isBulkOrder = minQuantity > 5;
+
+  const [quantity, setQuantity] = useState(minQuantity); // Initial state is now dynamic
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
@@ -78,6 +82,25 @@ const ProductDetailsPage = () => {
       dispatch(clearSelectedProduct());
     };
   }, [slug, dispatch]);
+
+
+  useEffect(() => {
+    if (product) {
+        const initialQty = product.minQuantity || 1;
+        setQuantity(initialQty);
+
+        const variants = product.variants ?? [];
+        if (variants.length > 0) {
+            const firstVariant = variants[0];
+            setSelectedColor(firstVariant.color);
+            setSelectedSize(firstVariant.size);
+        } else {
+            setSelectedColor(null);
+            setSelectedSize(null);
+        }
+        setSelectedImage(0);
+    }
+  }, [product]);
 
   // Set default variant selections when product data loads
   useEffect(() => {
@@ -119,56 +142,54 @@ const ProductDetailsPage = () => {
   
   const handleAddToCart = () => {
     if (!product) return;
+
+    if (isBulkOrder) {
+      router.push(`/bulk-order/${product.slug}`);
+      return;
+    }
+
+    if (quantity < minQuantity) {
+      toast({ title: "Minimum Quantity", description: `You must add at least ${minQuantity} items to the cart.`, variant: "destructive" });
+      return;
+    }
     
     if (product.variants && product.variants.length > 0) {
       if (!selectedVariant) {
         toast({ title: "Selection needed", description: "Please select an available color and size.", variant: "destructive" });
         return;
       }
-      if (selectedVariant.stock_quantity < 1) {
-        toast({ title: "Out of Stock", description: "This variant is currently unavailable.", variant: "destructive" });
+      if (selectedVariant.stock_quantity < quantity) {
+        toast({ title: "Out of Stock", description: `Only ${selectedVariant.stock_quantity} available for this variant.`, variant: "destructive" });
         return;
       }
     } else {
-        if (!product.stock_quantity || product.stock_quantity < 1) {
-             toast({ title: "Out of Stock", description: "This product is currently unavailable.", variant: "destructive" });
+        if (!product.stock_quantity || product.stock_quantity < quantity) {
+             toast({ title: "Out of Stock", description: `Only ${product.stock_quantity} available.`, variant: "destructive" });
              return;
         }
     }
 
     if (isAuthenticated) {
-      if (product.variants && product.variants.length > 0 && selectedVariant) {
-        dispatch(addCartToDb({ 
-          productId: product._id, 
-          sku_variant: selectedVariant.sku_variant, 
-          quantity 
-        }));
-      } else {
-        dispatch(addCartToDb({ 
-          productId: product._id, 
-          sku_variant: 'default', 
-          quantity 
-        }));
-      }
+      dispatch(addCartToDb({ 
+        productId: product._id, 
+        sku_variant: selectedVariant?.sku_variant, 
+        quantity 
+      }));
     } else {
-      if (product.variants && product.variants.length > 0 && selectedVariant) {
-        addCartToLocal(product, selectedVariant, quantity);
-      } else {
-        addCartToLocal(product, undefined, quantity);
-      }
+      addCartToLocal(product, selectedVariant, quantity);
     }
 
     setIsAddedToCart(true);
     setTimeout(() => setIsAddedToCart(false), 2000);
     
-    const variantInfo = selectedVariant ? ` (${selectedVariant.size})` : '';
-    toast({ 
-      title: "✅ Added to Cart!", 
-      description: `${quantity} x ${product.name}${variantInfo} has been added to your cart.`,
-      duration: 3000,
-      className: "bg-green-50 border-green-200 text-green-800"
-    });
+    toast({ title: "✅ Added to Cart!", description: `${quantity} x ${product.name} has been added.` });
   };
+
+  
+  // const incrementQuantity = () => {
+  //   const maxStock = selectedVariant?.stock_quantity ?? product?.stock_quantity ?? quantity;
+  //   setQuantity(q => Math.min(q + 1, maxStock));
+  // };
 
   const handleToggleWishlist = () => {
     if (!product) return;
@@ -236,7 +257,9 @@ const ProductDetailsPage = () => {
     const maxStock = selectedVariant?.stock_quantity ?? product?.stock_quantity ?? 1;
     setQuantity(q => Math.min(q + 1, maxStock));
   };
-  const decrementQuantity = () => setQuantity(q => Math.max(1, q - 1));
+  const decrementQuantity = () => {
+    setQuantity(q => Math.max(minQuantity, q - 1));
+  };
 
   if (loading) {
     return (
@@ -335,27 +358,18 @@ const ProductDetailsPage = () => {
             )}
 
             <div className="flex items-center gap-4 mb-6">
-              <div className="flex items-center border rounded-full font-semibold">
-                <Button variant="ghost" size="icon" onClick={decrementQuantity} className="h-11 w-11 rounded-full"><Minus size={16} /></Button>
-                <span className="w-10 text-center">{quantity}</span>
-                <Button variant="ghost" size="icon" onClick={incrementQuantity} className="h-11 w-11 rounded-full"><Plus size={16} /></Button>
-              </div>
-              <Button 
-                onClick={handleAddToCart} 
-                className={`flex-1 h-12 rounded-full text-base font-bold transition-all duration-300 ${
-                  isAddedToCart 
-                    ? 'bg-green-500 text-white hover:bg-green-600' 
-                    : 'bg-black text-white hover:bg-gray-800'
-                }`}
-              >
-                {isAddedToCart ? (
-                  <>
-                    <Check size={18} className="mr-2"/> Added!
-                  </>
-                ) : (
-                  'Add to Bag'
-                )}
+            {!isBulkOrder && (
+                  <div className="flex items-center border rounded-full font-semibold">
+                    <Button variant="ghost" size="icon" onClick={decrementQuantity} className="h-11 w-11 rounded-full"><Minus size={16} /></Button>
+                    <span className="w-10 text-center">{quantity}</span>
+                    <Button variant="ghost" size="icon" onClick={incrementQuantity} className="h-11 w-11 rounded-full"><Plus size={16} /></Button>
+                  </div>
+              )}
+              <Button onClick={handleAddToCart} className="flex-1 h-12 rounded-full text-base font-bold ...">
+                {/* --- UPDATED: Button text changes for bulk items --- */}
+                {isBulkOrder ? 'Submit Bulk Inquiry' : (isAddedToCart ? <><Check size={18} className="mr-2"/> Added!</> : 'Add to Bag')}
               </Button>
+
               <Button 
                 variant="outline" 
                 size="icon" 
@@ -379,6 +393,14 @@ const ProductDetailsPage = () => {
             </div>
             
             <div className="h-6 mb-4">
+
+            {minQuantity > 1 && !isBulkOrder && (
+                  <p className="text-sm text-center text-gray-600">Minimum order quantity: <strong>{minQuantity}</strong></p>
+                )}
+                {isBulkOrder && (
+                  <p className="text-sm text-center text-gray-600">This item is available for bulk orders only.</p>
+                )}
+
                 {product.variants && product.variants.length > 0 && selectedVariant && (
                     selectedVariant.stock_quantity > 0 && selectedVariant.stock_quantity <= 5 
                     ? <p className="text-sm text-center text-red-600">Hurry! Only {selectedVariant.stock_quantity} left in stock.</p>

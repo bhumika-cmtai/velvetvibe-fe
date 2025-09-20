@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Trash2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/redux/store';
 
 // --- Interfaces aur Constants ---
 interface VariantState {
@@ -38,14 +40,17 @@ const clothingSubCategories = [
 ];
 
 const decorativeSubCategories = [
-  "Flower Pots", "Vases", "Wall Paintings", "Figurines", "Sculptures",
+  "Flower Pots","Wall Shelf","Wall Hangings","Baskets","Vases", "Wall Paintings", "Figurines", "Sculptures",
   "Lamps & Lighting", "Rugs & Carpets"
 ];
 
 
 export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProps) {
   // --- States ---
-  const [activeCategory, setActiveCategory] = useState<'Clothing' | 'Decorative'>('Clothing');
+  const { categories } = useSelector((state: RootState) => state.admin);
+
+  const [activeTab, setActiveTab] = useState('Clothing');
+  const [selectedDynamicCategory, setSelectedDynamicCategory] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [variants, setVariants] = useState<VariantState[]>([
@@ -57,13 +62,16 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
 
-  // Naya state sub-category ke liye
   const [subCategory, setSubCategory] = useState('');
 
-  // Jab main category change ho, to sub-category ko reset kar do
+  const dynamicCategories = useMemo(() => 
+    categories.filter(cat => cat.name !== 'Clothing' && cat.name !== 'Decorative'),
+  [categories]);
+
   useEffect(() => {
     setSubCategory('');
-  }, [activeCategory]);
+    setSelectedDynamicCategory('');
+  }, [activeTab]);
   
 
   // --- Handlers ---
@@ -73,9 +81,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     setVariants(newVariants);
   };
   
-  const addVariant = () => {
-    setVariants([...variants, { size: '', color: '', price: 0, sale_price: 0, stock_quantity: 0, sku_variant: '' }]);
-  };
+  const addVariant = () => setVariants([...variants, { size: '', color: '', price: 0, sale_price: 0, stock_quantity: 0, sku_variant: '' }]);
 
   const removeVariant = (index: number) => {
     if (variants.length > 1) {
@@ -87,61 +93,43 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
   const handleSingleImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    const newFiles = [...imageFiles];
-    const newPreviews = [...imagePreviews];
-
-    if (newPreviews[index]) {
-      URL.revokeObjectURL(newPreviews[index]!);
-    }
-
-    if (file) {
-      newFiles[index] = file;
-      newPreviews[index] = URL.createObjectURL(file);
-    } else {
-      newFiles[index] = null;
-      newPreviews[index] = null;
-    }
-    setImageFiles(newFiles);
-    setImagePreviews(newPreviews);
+    const newFiles = [...imageFiles]; const newPreviews = [...imagePreviews];
+    if (newPreviews[index]) URL.revokeObjectURL(newPreviews[index]!);
+    if (file) { newFiles[index] = file; newPreviews[index] = URL.createObjectURL(file); } 
+    else { newFiles[index] = null; newPreviews[index] = null; }
+    setImageFiles(newFiles); setImagePreviews(newPreviews);
   };
 
   const removeImage = (index: number) => {
-    const newFiles = [...imageFiles];
-    const newPreviews = [...imagePreviews];
-    if (newPreviews[index]) {
-      URL.revokeObjectURL(newPreviews[index]!);
-    }
-    newFiles[index] = null;
-    newPreviews[index] = null;
-    setImageFiles(newFiles);
-    setImagePreviews(newPreviews);
+    const newFiles = [...imageFiles]; const newPreviews = [...imagePreviews];
+    if (newPreviews[index]) URL.revokeObjectURL(newPreviews[index]!);
+    newFiles[index] = null; newPreviews[index] = null;
+    setImageFiles(newFiles); setImagePreviews(newPreviews);
   };
   
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
     if (file) {
       if (videoFile && videoPreview) URL.revokeObjectURL(videoPreview);
-      setVideoFile(file);
-      setVideoPreview(URL.createObjectURL(file));
+      setVideoFile(file); setVideoPreview(URL.createObjectURL(file));
     }
   };
   
   const removeVideo = () => {
-      setVideoFile(null);
-      if (videoPreview) URL.revokeObjectURL(videoPreview);
-      setVideoPreview(null);
+    setVideoFile(null);
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
+    setVideoPreview(null);
   };
 
   const resetForm = () => {
-      setActiveCategory('Clothing');
-      setSubCategory(''); // Sub-category state ko bhi reset karein
+      setActiveTab('Clothing');
+      setSubCategory('');
+      setSelectedDynamicCategory('');
       setVariants([{ size: '', color: '', price: 0, sale_price: 0, stock_quantity: 0, sku_variant: '' }]);
       imagePreviews.forEach(url => { if (url) URL.revokeObjectURL(url); });
-      setImageFiles(new Array(MAX_IMAGES).fill(null));
-      setImagePreviews(new Array(MAX_IMAGES).fill(null));
+      setImageFiles(new Array(MAX_IMAGES).fill(null)); setImagePreviews(new Array(MAX_IMAGES).fill(null));
       if (videoPreview) URL.revokeObjectURL(videoPreview);
-      setVideoFile(null);
-      setVideoPreview(null);
+      setVideoFile(null); setVideoPreview(null);
       setIsSubmitting(false);
   };
 
@@ -156,35 +144,38 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     const form = e.currentTarget as HTMLFormElement;
     const data = new FormData(form);
 
-    data.append('category', activeCategory);
-    
-    // Form data mein sub-category ko bhi add karein
-    // if (subCategory) {
-    //   data.append('sub_category', subCategory);
-    // }
+    let finalCategory = '';
+    if (activeTab === 'Clothing') {
+      finalCategory = 'Clothing';
+    } else if (activeTab === 'Decorative') {
+      finalCategory = 'Decorative';
+    } else if (activeTab === 'Other') {
+      if (!selectedDynamicCategory) {
+        toast.error("Please select a category from the dropdown.");
+        setIsSubmitting(false);
+        return;
+      }
+      finalCategory = selectedDynamicCategory;
+    }
 
-    if (activeCategory === 'Clothing') {
+    data.delete('category'); 
+    data.append('category', finalCategory);
+
+    if (activeTab === 'Clothing') {
       data.delete('stock_quantity'); 
       for (const variant of variants) {
           if (!variant.size || !variant.color || !variant.sku_variant || variant.stock_quantity < 0 || variant.price <= 0) {
               toast.error("For variants: Size, Color, SKU, Price (>0), and Stock (>=0) are required.");
-              setIsSubmitting(false);
-              return;
+              setIsSubmitting(false); return;
           }
       }
       data.append('variants', JSON.stringify(variants));
-    } else {
-      data.delete('gender');
-      data.delete('fit');
-      data.delete('sleeveLength');
-      data.delete('neckType');
-      data.delete('pattern');
-      data.delete('careInstructions');
+    } else { 
+      data.delete('gender'); data.delete('fit'); data.delete('sleeveLength');
+      data.delete('neckType'); data.delete('pattern'); data.delete('careInstructions');
     }
 
-    imageFiles.forEach(file => {
-      if (file) data.append('images', file);
-    });
+    imageFiles.forEach(file => { if (file) data.append('images', file); });
     if (videoFile) data.append('video', videoFile);
     
     try {
@@ -195,19 +186,19 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     }
   };
 
-  // --- JSX (RENDER) ---
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { resetForm(); onClose(); } }}>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
           <DialogTitle>Add New Product</DialogTitle>
-          <DialogDescription>Select the category and fill in the details. * indicates required fields.</DialogDescription>
+          <DialogDescription>Select the product category and fill in the details. * indicates required fields.</DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as 'Clothing' | 'Decorative')} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="Clothing">Clothing</TabsTrigger>
-            <TabsTrigger value="Decorative">Decorative Item</TabsTrigger>
+            <TabsTrigger value="Decorative">Decorative</TabsTrigger>
+            <TabsTrigger value="Other">Other Categories</TabsTrigger>
           </TabsList>
           
           <form onSubmit={handleSubmit}>
@@ -215,33 +206,21 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
               
               <div className="space-y-2"><Label>Product Name *</Label><Input name="name" required /></div>
               <div className="space-y-2"><Label>Description *</Label><Textarea name="description" required /></div>
-              
-              {/* --- BRAND AUR SUB-CATEGORY KA SECTION --- */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>Brand *</Label><Input name="brand" required /></div>
-                <div className="space-y-2">
-                    <Label>Sub-Category</Label>
-                    <Select name="sub_category" value={subCategory} onValueChange={setSubCategory}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a sub-category" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {(activeCategory === 'Clothing' ? clothingSubCategories : decorativeSubCategories).map(sub => (
-                                <SelectItem key={sub} value={sub}>{sub}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-              </div>
-
+              <div className="space-y-2"><Label>Brand *</Label><Input name="brand" required /></div>
               <div className="space-y-2"><Label>Tags (comma-separated)</Label><Input name="tags" placeholder="e.g., Ethnic, Sale, Hot" /></div>
-
               <div className="grid grid-cols-2 gap-4 border-t pt-4">
                 <div><Label>Price (MRP) *</Label><Input name="price" type="number" step="0.01" required /></div>
                 <div><Label>Sale Price</Label><Input name="sale_price" type="number" step="0.01" /></div>
               </div>
 
               <TabsContent value="Clothing" className="space-y-4 border-t pt-4">
+                <div className="space-y-2">
+                  <Label>Sub-Category</Label>
+                  <Select name="sub_category" value={subCategory} onValueChange={setSubCategory}>
+                    <SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger>
+                    <SelectContent>{clothingSubCategories.map(sub => (<SelectItem key={sub} value={sub}>{sub}</SelectItem>))}</SelectContent>
+                  </Select>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div><Label>Gender *</Label><Select name="gender" required><SelectTrigger><SelectValue placeholder="Select Gender" /></SelectTrigger><SelectContent><SelectItem value="Men">Men</SelectItem><SelectItem value="Women">Women</SelectItem><SelectItem value="Unisex">Unisex</SelectItem></SelectContent></Select></div>
                     <div><Label>Fit</Label><Select name="fit"><SelectTrigger><SelectValue placeholder="Select Fit" /></SelectTrigger><SelectContent><SelectItem value="Regular Fit">Regular Fit</SelectItem><SelectItem value="Slim Fit">Slim Fit</SelectItem><SelectItem value="Oversized Fit">Oversized Fit</SelectItem></SelectContent></Select></div>
@@ -250,12 +229,11 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                     <div><Label>Pattern</Label><Select name="pattern"><SelectTrigger><SelectValue placeholder="Select Pattern" /></SelectTrigger><SelectContent><SelectItem value="Solid">Solid</SelectItem><SelectItem value="Printed">Printed</SelectItem><SelectItem value="Striped">Striped</SelectItem></SelectContent></Select></div>
                     <div className="col-span-2"><Label>Care Instructions</Label><Textarea name="careInstructions" placeholder="e.g., Machine wash cold..." /></div>
                 </div>
-                
                 <div className="space-y-2 pt-4 border-t">
                   <Label>Variants * (For Clothing)</Label>
-                  <div className="space-y-3">
-                    {variants.map((variant, index) => (
+                  <div className="space-y-3">{variants.map((variant, index) => (
                       <div key={index} className="grid grid-cols-12 gap-2 p-2 border rounded-md">
+                        {/* ... Variant inputs ... */}
                         <div className="col-span-6 md:col-span-3"><Label className="text-xs">Size*</Label><Input value={variant.size} onChange={e => handleVariantChange(index, 'size', e.target.value)} required /></div>
                         <div className="col-span-6 md:col-span-3"><Label className="text-xs">Color*</Label><Input value={variant.color} onChange={e => handleVariantChange(index, 'color', e.target.value)} required /></div>
                         <div className="col-span-6 md:col-span-3"><Label className="text-xs">Variant Price*</Label><Input type="number" value={variant.price || ''} onChange={e => handleVariantChange(index, 'price', parseFloat(e.target.value) || 0)} required /></div>
@@ -263,55 +241,57 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                         <div className="col-span-6 md:col-span-4"><Label className="text-xs">Stock*</Label><Input type="number" value={variant.stock_quantity} onChange={e => handleVariantChange(index, 'stock_quantity', parseInt(e.target.value) || 0)} required /></div>
                         <div className="col-span-6 md:col-span-7"><Label className="text-xs">SKU*</Label><Input value={variant.sku_variant} onChange={e => handleVariantChange(index, 'sku_variant', e.target.value)} required /></div>
                         <div className="col-span-12 md:col-span-1 flex items-end justify-end"><Button type="button" variant="ghost" size="icon" onClick={() => removeVariant(index)}><Trash2 className="h-4 w-4 text-red-500" /></Button></div>
-                      </div>
-                    ))}
+                      </div>))}
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={addVariant} className="mt-2">Add Variant</Button>
                 </div>
               </TabsContent>
               
+              {/* === DECORATIVE TAB CONTENT === */}
               <TabsContent value="Decorative" className="space-y-4 border-t pt-4">
-                  <div className="col-span-2"><Label>Stock Quantity *</Label><Input name="stock_quantity" type="number" required /></div>
+                  <div className="space-y-2">
+                    <Label>Sub-Category</Label>
+                    <Select name="sub_category" value={subCategory} onValueChange={setSubCategory}>
+                      <SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger>
+                      <SelectContent>{decorativeSubCategories.map(sub => (<SelectItem key={sub} value={sub}>{sub}</SelectItem>))}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2"><Label>Stock Quantity *</Label><Input name="stock_quantity" type="number" required /></div>
+              </TabsContent>
+              
+              {/* === OTHER CATEGORIES TAB CONTENT (NEW) === */}
+              <TabsContent value="Other" className="space-y-4 border-t pt-4">
+                  <div className="space-y-2">
+                    <Label>Category *</Label>
+                    <Select value={selectedDynamicCategory} onValueChange={setSelectedDynamicCategory} required>
+                      <SelectTrigger><SelectValue placeholder="Select from other categories" /></SelectTrigger>
+                      <SelectContent>{dynamicCategories.map(cat => (<SelectItem key={cat._id} value={cat.name}>{cat.name}</SelectItem>))}</SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2"><Label>Stock Quantity *</Label><Input name="stock_quantity" type="number" required /></div>
               </TabsContent>
 
               <div className="space-y-4 border-t pt-4">
                 <div className="space-y-2">
                   <Label>Product Images (up to 5) *</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {[...Array(MAX_IMAGES)].map((_, index) => (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{[...Array(MAX_IMAGES)].map((_, index) => (
                       <div key={index} className="space-y-1">
                         <Label htmlFor={`image-${index}`} className="text-xs text-muted-foreground">Image {index + 1}</Label>
-                        <Input 
-                          id={`image-${index}`}
-                          type="file" 
-                          accept="image/*" 
-                          onChange={(e) => handleSingleImageChange(index, e)}
-                          className="text-xs"
-                        />
-                        {imagePreviews[index] && (
-                          <div className="relative mt-2 w-20 h-20">
+                        <Input id={`image-${index}`} type="file" accept="image/*" onChange={(e) => handleSingleImageChange(index, e)} className="text-xs" />
+                        {imagePreviews[index] && (<div className="relative mt-2 w-20 h-20">
                             <Image src={imagePreviews[index]!} alt={`preview ${index}`} layout="fill" className="object-cover rounded-md" />
-                            <button type="button" onClick={() => removeImage(index)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5">
-                              <XCircle size={16} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                            <button type="button" onClick={() => removeImage(index)} className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-0.5"><XCircle size={16} /></button>
+                          </div>)}
+                      </div>))}
                   </div>
                 </div>
-                
                 <div className="space-y-2">
                   <Label htmlFor="video">Product Video (optional)</Label>
                   <Input id="video" name="video" type="file" accept="video/*" onChange={handleVideoChange} />
-                  {videoPreview && (
-                      <div className="relative w-full aspect-video mt-2">
-                          <video src={videoPreview} controls className="w-full h-full object-cover rounded-md" />
-                           <button type="button" onClick={removeVideo} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5">
-                            <XCircle size={16} />
-                          </button>
-                      </div>
-                  )}
+                  {videoPreview && (<div className="relative w-full aspect-video mt-2">
+                      <video src={videoPreview} controls className="w-full h-full object-cover rounded-md" />
+                      <button type="button" onClick={removeVideo} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"><XCircle size={16} /></button>
+                    </div>)}
                 </div>
               </div>
             </div>

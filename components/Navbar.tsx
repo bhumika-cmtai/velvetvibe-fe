@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { User, Heart, ShoppingCart, ChevronDown, Menu, Loader2, Search } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -24,7 +24,7 @@ import { selectIsAuthenticated, selectCurrentUser, logout } from '@/lib/redux/sl
 import { fetchSearchResults, clearSearchResults } from '@/lib/redux/slices/productSlice';
 import { fetchCart } from '@/lib/redux/slices/cartSlice';
 import { fetchWishlist, selectTotalWishlistItems } from '@/lib/redux/slices/wishlistSlice';
-
+import { fetchCategories } from '@/lib/redux/slices/adminSlice';
 // --- Static Data ---
 const navLinks = [
     { name: "New Arrivals", href: "/shop/new-arrivals" },
@@ -83,14 +83,24 @@ const Navbar = () => {
     const [isMegaMenuOpen, setIsMegaMenuOpen] = useState(false);
     const [isMobileCategoryOpen, setIsMobileCategoryOpen] = useState(false);
 
+    const { categories } = useSelector((state: RootState) => state.admin);
+
+
     const totalItems = isAuthenticated ? dbTotalCartItems : localTotalCartItems;
     const totalWishlistItems = isAuthenticated ? dbTotalWishlistItems : localTotalWishlistItems;
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     useOnClickOutside(searchRef, () => setIsDropdownOpen(false));
 
+    const dynamicCategories = useMemo(() => {
+        // 'Clothing' और 'Decorative Items' जैसी हार्डकोडेड कैटेगरी को हटा दें
+        const hardcodedNames = ["Clothing", "Decorative Items"];
+        return categories.filter(cat => !hardcodedNames.includes(cat.name));
+    }, [categories]);
+
     useEffect(() => {
         // This effect runs whenever the authentication status changes.
+        dispatch(fetchCategories());
         if (isAuthenticated) {
             // If the user is logged in, fetch their cart and wishlist from the database.
              ("Navbar: User is authenticated. Fetching global data...");
@@ -283,7 +293,7 @@ const Navbar = () => {
                             <AnimatePresence>
                                 {isMegaMenuOpen && (
                                     <motion.div variants={megaMenuVariants} initial="hidden" animate="visible" exit="exit" className="absolute top-full left-0 mt-[-1px] w-full bg-white shadow-lg border-t z-50">
-                                        <div className="container mx-auto px-8 py-6 grid grid-cols-4 gap-8">
+                                        <div className="container mx-auto px-8 py-6 grid grid-cols-5 gap-8">
                                             {Object.values(megaMenuData).map(section => (
                                                 <div key={section.title}>
                                                     <h3 className="font-semibold text-gray-800 mb-4">{section.title}</h3>
@@ -292,6 +302,23 @@ const Navbar = () => {
                                                     </ul>
                                                 </div>
                                             ))}
+                                            {dynamicCategories.length > 0 && (
+                                                <div>
+                                                    <h3 className="font-semibold text-gray-800 mb-4">More Categories</h3>
+                                                    <ul className="space-y-2">
+                                                        {dynamicCategories.map(cat => (
+                                                            <li key={cat._id}>
+                                                                <Link 
+                                                                    href={`/shop?category=${encodeURIComponent(cat.name)}`} 
+                                                                    className="text-gray-600 hover:text-black"
+                                                                >
+                                                                    {cat.name}
+                                                                </Link>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            )}
                                             <div className="bg-gray-50 rounded-lg p-6 flex flex-col justify-center bg-[url('https://i.pinimg.com/736x/4b/b9/0b/4bb90b8d41a2c50ddebf86425e5c8072.jpg')] bg-cover bg-center">
                                                 <h3 className="font-semibold text-lg text-white">The Wedding Edit</h3>
                                                 <p className="text-sm text-white mt-1">Stunning outfits for the wedding season.</p>

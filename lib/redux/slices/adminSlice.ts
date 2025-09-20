@@ -12,12 +12,17 @@ import {
   updateUserApi,
   deleteUserApi,
   getWalletConfigApi,
-  updatePointValueApi,
-  addRewardRuleApi,
-  updateRewardRuleApi,
-  deleteRewardRuleApi,
+  setWalletConfigApi,
   type WalletConfig,
-  type RewardRule
+  type RewardRule,
+  getTaxConfigApi,
+  setTaxConfigApi,
+  type TaxConfig,
+  SimpleCategory ,
+  getAllCategoriesApi,
+  createCategoryApi,
+  updateCategoryApi,
+  deleteCategoryApi
 } from '@/lib/api/admin';
 
 import type { Product } from '@/lib/types/product';
@@ -46,6 +51,10 @@ interface AdminState {
   walletConfig: WalletConfig | null;
   walletConfigStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   walletConfigError: string | null;
+  taxConfig: TaxConfig | null;
+  taxConfigStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  categories: SimpleCategory[];
+  categoryStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
 }
 
 const initialState: AdminState = {
@@ -63,6 +72,10 @@ const initialState: AdminState = {
   walletConfig: null,
   walletConfigStatus: 'idle',
   walletConfigError: null,
+  taxConfig: null,
+  taxConfigStatus: 'idle',
+  categories: [],
+  categoryStatus: 'idle',
 };
 
 
@@ -168,57 +181,137 @@ export const fetchWalletConfig = createAsyncThunk(
   }
 );
 
-export const updatePointValue = createAsyncThunk(
-  'admin/updatePointValue',
-  async (rupeesPerPoint: number, { rejectWithValue }) => {
+// export const updatePointValue = createAsyncThunk(
+//   'admin/updatePointValue',
+//   async (rupeesPerPoint: number, { rejectWithValue }) => {
+//     try {
+//       const response = await updatePointValueApi(rupeesPerPoint);
+//       toast.success("Point value updated!");
+//       return response.data.data;
+//     } catch (error: any) {
+//       toast.error(error.response?.data?.message || 'Failed to update point value');
+//       return rejectWithValue(error.response?.data?.message);
+//     }
+//   }
+// );
+
+// export const addRewardRule = createAsyncThunk(
+//   'admin/addRewardRule',
+//   async (rule: RewardRule, { rejectWithValue }) => {
+//     try {
+//       const response = await addRewardRuleApi(rule);
+//       toast.success("Reward rule added!");
+//       return response.data.data;
+//     } catch (error: any) {
+//       toast.error(error.response?.data?.message || 'Failed to add rule');
+//       return rejectWithValue(error.response?.data?.message);
+//     }
+//   }
+// );
+
+export const updateWalletConfig = createAsyncThunk(
+  'admin/updateWalletConfig',
+  async (configData: { rewardRules: RewardRule[], rupeesPerPoint: number }, { rejectWithValue }) => {
     try {
-      const response = await updatePointValueApi(rupeesPerPoint);
-      toast.success("Point value updated!");
+      const response = await setWalletConfigApi(configData);
+      toast.success("Wallet settings saved successfully!");
       return response.data.data;
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update point value');
+      toast.error(error.response?.data?.message || 'Failed to save settings');
       return rejectWithValue(error.response?.data?.message);
     }
   }
 );
 
-export const addRewardRule = createAsyncThunk(
-  'admin/addRewardRule',
-  async (rule: RewardRule, { rejectWithValue }) => {
+// export const deleteRewardRule = createAsyncThunk(
+//   'admin/deleteRewardRule',
+//   async (minSpend: number, { rejectWithValue }) => {
+//     try {
+//       const response = await deleteRewardRuleApi(minSpend);
+//       toast.success("Reward rule deleted!");
+//       return response.data.data; // Return the updated config
+//     } catch (error: any) {
+//       toast.error(error.response?.data?.message || 'Failed to delete rule');
+//       return rejectWithValue(error.response?.data?.message);
+//     }
+//   }
+// );
+
+export const fetchTaxConfig = createAsyncThunk(
+  'admin/fetchTaxConfig',
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await addRewardRuleApi(rule);
-      toast.success("Reward rule added!");
+      const response = await getTaxConfigApi();
       return response.data.data;
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to add rule');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch tax configuration');
+    }
+  }
+);
+
+export const updateTaxConfig = createAsyncThunk(
+  'admin/updateTaxConfig',
+  async (ratePercentage: number, { rejectWithValue }) => {
+    try {
+      const response = await setTaxConfigApi(ratePercentage);
+      toast.success("Tax rate updated successfully!");
+      return response.data.data;
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update tax rate');
       return rejectWithValue(error.response?.data?.message);
     }
   }
 );
 
-export const updateRewardRule = createAsyncThunk(
-  'admin/updateRewardRule',
-  async ({ targetMinSpend, updates }: { targetMinSpend: number, updates: Partial<RewardRule> }, { rejectWithValue }) => {
+export const fetchCategories = createAsyncThunk(
+  'admin/fetchCategories',
+  async (_, { rejectWithValue }) => {
     try {
-      const response = await updateRewardRuleApi(targetMinSpend, updates);
-      toast.success("Reward rule updated!");
+      const response = await getAllCategoriesApi();
       return response.data.data;
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to update rule');
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch categories');
+    }
+  }
+);
+
+export const addCategory = createAsyncThunk(
+  'admin/addCategory',
+  async (name: string, { rejectWithValue }) => {
+    try {
+      const response = await createCategoryApi(name);
+      toast.success("Category added successfully!");
+      return response.data.data;
+    } catch (error: any)      {
+      toast.error(error.response?.data?.message || 'Failed to add category');
       return rejectWithValue(error.response?.data?.message);
     }
   }
 );
 
-export const deleteRewardRule = createAsyncThunk(
-  'admin/deleteRewardRule',
-  async (minSpend: number, { rejectWithValue }) => {
+export const editCategory = createAsyncThunk(
+  'admin/editCategory',
+  async ({ id, name }: { id: string; name: string }, { rejectWithValue }) => {
     try {
-      const response = await deleteRewardRuleApi(minSpend);
-      toast.success("Reward rule deleted!");
-      return response.data.data; // Return the updated config
+      const response = await updateCategoryApi(id, name);
+      toast.success("Category updated successfully!");
+      return response.data.data;
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to delete rule');
+      toast.error(error.response?.data?.message || 'Failed to update category');
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
+export const removeCategory = createAsyncThunk(
+  'admin/removeCategory',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await deleteCategoryApi(id);
+      toast.success("Category deleted successfully!");
+      return id; // Return the ID for removal from state
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete category');
       return rejectWithValue(error.response?.data?.message);
     }
   }
@@ -354,18 +447,49 @@ const adminSlice = createSlice({
       })
 
       // Reducers for updating the state after a successful action
-      .addCase(updatePointValue.fulfilled, (state, action: PayloadAction<WalletConfig>) => {
+      // .addCase(updatePointValue.fulfilled, (state, action: PayloadAction<WalletConfig>) => {
+      //   state.walletConfig = action.payload;
+      // })
+      // .addCase(addRewardRule.fulfilled, (state, action: PayloadAction<WalletConfig>) => {
+      //   state.walletConfig = action.payload;
+      // })
+      .addCase(updateWalletConfig.fulfilled, (state, action: PayloadAction<WalletConfig>) => {
+        state.walletConfigStatus = 'succeeded';
         state.walletConfig = action.payload;
       })
-      .addCase(addRewardRule.fulfilled, (state, action: PayloadAction<WalletConfig>) => {
-        state.walletConfig = action.payload;
+      .addCase(fetchTaxConfig.pending, (state) => { state.taxConfigStatus = 'loading'; })
+      .addCase(fetchTaxConfig.fulfilled, (state, action: PayloadAction<TaxConfig>) => {
+        state.taxConfigStatus = 'succeeded';
+        state.taxConfig = action.payload;
       })
-      .addCase(updateRewardRule.fulfilled, (state, action: PayloadAction<WalletConfig>) => {
-        state.walletConfig = action.payload;
+      .addCase(fetchTaxConfig.rejected, (state) => { state.taxConfigStatus = 'failed'; })
+      
+      .addCase(updateTaxConfig.fulfilled, (state, action: PayloadAction<TaxConfig>) => {
+        state.taxConfig = action.payload;
       })
-      .addCase(deleteRewardRule.fulfilled, (state, action: PayloadAction<WalletConfig>) => {
-        state.walletConfig = action.payload;
+      .addCase(fetchCategories.pending, (state) => {
+        state.categoryStatus = 'loading';
+      })
+      .addCase(fetchCategories.fulfilled, (state, action: PayloadAction<SimpleCategory[]>) => {
+        state.categoryStatus = 'succeeded';
+        state.categories = action.payload;
+      })
+      .addCase(fetchCategories.rejected, (state) => {
+        state.categoryStatus = 'failed';
+      })
+      .addCase(addCategory.fulfilled, (state, action: PayloadAction<SimpleCategory>) => {
+        state.categories.push(action.payload);
+      })
+      .addCase(editCategory.fulfilled, (state, action: PayloadAction<SimpleCategory>) => {
+        const index = state.categories.findIndex(c => c._id === action.payload._id);
+        if (index !== -1) {
+          state.categories[index] = action.payload;
+        }
+      })
+      .addCase(removeCategory.fulfilled, (state, action: PayloadAction<string>) => {
+        state.categories = state.categories.filter(c => c._id !== action.payload);
       });
+      
   },
 });
 

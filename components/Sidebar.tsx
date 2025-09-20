@@ -22,7 +22,7 @@ const navLinks = [
     { href: "/account/admin/products", label: "Products", icon: Gem },
     { href: "/account/admin/contacts", label: "Contacts", icon: MessageSquare },
     { href: "/account/admin/coupon", label: "Manage Coupon", icon: TicketPercent },
-    { href: "/account/admin/reedems", label: "Reedem Settings", icon: Percent },
+    { href: "/account/admin/setting", label: "Settings", icon: Percent },
     { href: "/logout", label: "Logout", icon: LogOut },
 ];
 

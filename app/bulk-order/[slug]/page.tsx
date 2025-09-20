@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation" // Import useRouter
+import { useEffect, useState, useMemo } from "react"
+import { useParams, useRouter } from "next/navigation"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,16 +12,14 @@ import  Footer  from "@/components/Footer"
 import { useToast } from "@/hooks/use-toast"
 import { motion } from "framer-motion"
 
-// --- REDUX IMPORTS ---
 import { useDispatch, useSelector } from "react-redux"
 import { fetchProductBySlug } from "@/lib/redux/slices/productSlice"
 import { RootState, AppDispatch } from "@/lib/redux/store"
-// --- FIX 1: Import the new Redux action ---
 import { createBulkOrderInquiry } from "@/lib/redux/slices/bulkOrderSlice"
 
 export default function BulkOrderPage() {
   const params = useParams()
-  const router = useRouter() // Initialize router for redirection
+  const router = useRouter()
   const slug = params.slug as string
   const dispatch = useDispatch<AppDispatch>()
   const { toast } = useToast()
@@ -31,11 +29,14 @@ export default function BulkOrderPage() {
   )
   const { user } = useSelector((state: RootState) => state.user)
 
+  // --- NEW: Dynamically get the minimum quantity ---
+  const minQuantity = useMemo(() => product?.minQuantity || 10, [product]);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    quantity: 10,
+    quantity: minQuantity, // Set initial quantity to the minimum
     message: ''
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -47,30 +48,33 @@ export default function BulkOrderPage() {
   }, [slug, dispatch])
 
   useEffect(() => {
-    if (user) {
+    // When the product loads, update the form's quantity to the minimum required
+    if (product) {
       setFormData(prev => ({
         ...prev,
-        name: user.fullName || '',
-        email: user.email || ''
+        name: user?.fullName || '',
+        email: user?.email || '',
+        quantity: product.minQuantity || 10
       }))
     }
-  }, [user])
+  }, [product, user])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
-    // Ensure quantity doesn't go below 1, even if the user types it
     if (name === 'quantity') {
-      setFormData(prev => ({ ...prev, [name]: Math.max(1, Number(value)) }))
+      // --- NEW: Prevent typing a value less than the minimum ---
+      const numValue = Number(value);
+      setFormData(prev => ({ ...prev, [name]: isNaN(numValue) ? minQuantity : Math.max(minQuantity, numValue) }))
     } else {
       setFormData(prev => ({ ...prev, [name]: value }))
     }
   }
 
-  // --- FIX 2: Update handleSubmit to dispatch the Redux action ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (formData.quantity < 10) {
-      toast({ title: "Minimum quantity for bulk orders is 10.", variant: "destructive" });
+    // --- NEW: Validate against dynamic minQuantity ---
+    if (formData.quantity < minQuantity) {
+      toast({ title: `Minimum quantity for bulk orders is ${minQuantity}.`, variant: "destructive" });
       return;
     }
     if (!product) {
@@ -80,7 +84,6 @@ export default function BulkOrderPage() {
     
     setIsSubmitting(true)
 
-    // Construct the payload required by the async thunk
     const inquiryPayload = {
       productId: product._id,
       name: formData.name,
@@ -91,23 +94,18 @@ export default function BulkOrderPage() {
     }
 
     try {
-      //  (inquiryPayload)
-      // Dispatch the action and wait for it to complete
       await dispatch(createBulkOrderInquiry(inquiryPayload)).unwrap();
       
       toast({
         title: "Inquiry Submitted!",
-        description: "Thank you. Our team will contact you shortly regarding your request.",
+        description: "Thank you. Our team will contact you shortly.",
       });
-
-      // Redirect to the home page on success
       router.push('/');
 
     } catch (error: any) {
-      // The .unwrap() will throw an error if the thunk is rejected
       toast({
         title: "Submission Failed",
-        description: String(error), // The error message comes from rejectWithValue
+        description: String(error),
         variant: "destructive",
       });
     } finally {
@@ -143,9 +141,9 @@ export default function BulkOrderPage() {
                 />
               </div>
               <h2 className="text-2xl font-bold">{product.name}</h2>
-              <p className="text-2xl font-semibold mt-2" style={{ color: "var(--theme-primary)" }}>
+              <p className="text-2xl font-semibold mt-2 text-primary">
                 ₹{product.price.toLocaleString()}
-                <span className="text-sm text-gray-500 font-normal"> / unit</span>
+                <span className="text-sm text-gray-500 font-normal"> / unit (approx.)</span>
               </p>
               <p className="mt-4 text-sm text-gray-600">
                 Provide your details in the form, and our team will contact you to discuss your bulk order needs, including special pricing and logistics.
@@ -171,8 +169,9 @@ export default function BulkOrderPage() {
                   <Input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleInputChange} required />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="quantity">Quantity (Min: 10)</Label>
-                  <Input id="quantity" name="quantity" type="number" min="10" value={formData.quantity} onChange={handleInputChange} required />
+                  {/* --- NEW: Dynamic Label and Input Min --- */}
+                  <Label htmlFor="quantity">Quantity (Min: {minQuantity})</Label>
+                  <Input id="quantity" name="quantity" type="number" min={minQuantity} value={formData.quantity} onChange={handleInputChange} required />
                 </div>
               </div>
               <div className="space-y-2">

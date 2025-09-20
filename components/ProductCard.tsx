@@ -4,6 +4,7 @@
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Heart, ShoppingBag, Minus, Plus, Check } from 'lucide-react';
 
 // --- UI Components & Hooks ---
@@ -54,6 +55,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const variants = originalProduct.variants || [];
 
   // --- HOOKS & SELECTORS ---
+  const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
   const { toast } = useToast();
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -82,35 +84,50 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     }
     return isAddedToWishlist(originalProduct._id);
   }, [isAddedToWishlist, originalProduct._id, variants]);
+
   const discount = base_price && base_price > price ? Math.round(((base_price - price) / base_price) * 100) : 0;
+
+  const minQuantity = useMemo(() => originalProduct.minQuantity || 1, [originalProduct.minQuantity]);
+  const isBulkOrder = minQuantity > 5;
   
   // --- HANDLER FUNCTIONS ---
 
   // Jab card par "Add to Cart" click hota hai
   const handlePrimaryAddToCartClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // Link par navigate hone se rokein
+    e.stopPropagation();
 
-    // Agar variants hain to dialog kholo, warna seedhe add karo
+    // --- NEW LOGIC: Check for bulk order first ---
+    if (isBulkOrder) {
+      router.push(`/bulk-order/${slug}`);
+      return;
+    }
+
     if (variants && variants.length > 0) {
-      setSelectedVariant(null); // Purana selection reset karo
-      setQuantity(1); // Quantity reset karo
+      // Logic for variable products
+      setSelectedVariant(variants[0]); // Select first variant by default
+      setQuantity(minQuantity); // Set quantity to the minimum
       setIsVariantSelectorOpen(true);
     } else {
-      // Simple product (bina variant ke)
-      if (isAuthenticated) {
-        // Logged-in user ke liye, simple product ke liye default SKU use karein
-        dispatch(addCartToDb({ productId: originalProduct._id, sku_variant: 'default', quantity: 1 }));
-      } else {
-        addCartToLocal(originalProduct);
+      // Logic for Simple Product
+      if ((originalProduct.stock_quantity || 0) < minQuantity) {
+        toast({ title: "Out of Stock", description: "Not enough items to meet minimum quantity.", variant: "destructive" });
+        return;
       }
+
+      // --- FIX: Correctly add simple product to cart ---
+      if (isAuthenticated) {
+        // We don't send sku_variant for simple products
+        dispatch(addCartToDb({ productId: originalProduct._id, quantity: minQuantity }));
+      } else {
+        addCartToLocal(originalProduct, undefined, minQuantity);
+      }
+      
       setIsAddedToCart(true);
       setTimeout(() => setIsAddedToCart(false), 2000);
       toast({ 
         title: "✅ Added to Cart!", 
-        description: `${name} has been added to your cart.`,
-        duration: 3000,
-        className: "bg-green-50 border-green-200 text-green-800"
+        description: `${minQuantity} x ${name} has been added.`,
       });
     }
   };
@@ -156,9 +173,6 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       // Use the first variant (available or not) for wishlist
       const firstVariant = variants[0];
       
-      // Debug logging to see what variant is being used
-       
-      
       if (isAuthenticated) {
         // For authenticated users, we still use the simple product ID approach
         // The backend will handle variant selection
@@ -192,24 +206,24 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
     <>
       <Link href={`/product/${slug || '#'}`} className="group block">
         <div className="relative bg-gray-100 rounded-xl overflow-hidden aspect-[3/4]">
-        <div className="absolute inset-0 transition-transform duration-500 ease-in-out group-hover:scale-105">
-              <Image 
-                src={images[0] || '/placeholder.svg'} 
-                alt={name} 
-                fill 
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                // This image will fade out ONLY if a second image exists
-                className={`object-cover w-full h-full transition-opacity duration-500 ease-in-out ${images[1] ? 'group-hover:opacity-0' : ''}`}
-              />
-              <Image 
-                // If a second image exists, use it. Otherwise, fallback to the first image.
-                src={images[1] || images[0] || '/placeholder.svg'} 
-                alt={`${name} hover view`} 
-                fill 
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                // This image will ONLY fade in if a second image exists
-                className={`object-cover w-full h-full transition-opacity duration-500 ease-in-out ${images[1] ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}`} 
-              />
+          <div className="absolute inset-0 transition-transform duration-500 ease-in-out group-hover:scale-105">
+            <Image 
+              src={images[0] || '/placeholder.svg'} 
+              alt={name} 
+              fill 
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              // This image will fade out ONLY if a second image exists
+              className={`object-cover w-full h-full transition-opacity duration-500 ease-in-out ${images[1] ? 'group-hover:opacity-0' : ''}`}
+            />
+            <Image 
+              // If a second image exists, use it. Otherwise, fallback to the first image.
+              src={images[1] || images[0] || '/placeholder.svg'} 
+              alt={`${name} hover view`} 
+              fill 
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              // This image will ONLY fade in if a second image exists
+              className={`object-cover w-full h-full transition-opacity duration-500 ease-in-out ${images[1] ? 'opacity-0 group-hover:opacity-100' : 'opacity-0'}`} 
+            />
           </div>
           <div className="absolute top-3 left-3 flex flex-col gap-2 z-20">
             {tags?.includes('Sale') && <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full">SALE</span>}
@@ -224,7 +238,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   : 'bg-white text-black hover:bg-gray-200'
               }`}
             >
-              {isAddedToCart ? (
+              {isBulkOrder ? (
+                <>
+                  <ShoppingBag size={18} className="mr-2"/> Bulk Inquiry
+                </>
+              ) : isAddedToCart ? (
                 <>
                   <Check size={18} className="mr-2"/> Added!
                 </>
@@ -258,12 +276,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </div>
         </div>
         <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-800 group-hover:text-primary transition-colors line-clamp-2">{name}</h3>
-            <div className="flex items-center gap-2 mt-1">
+          <h3 className="text-sm font-semibold text-gray-800 group-hover:text-primary transition-colors line-clamp-2">{name}</h3>
+          {/* FIXED PRICING SECTION - Removed duplicate price and improved layout */}
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {isBulkOrder ? (
+              <p className="text-base font-bold text-gray-900">Price on Inquiry</p>
+            ) : (
+              <>
                 <p className="text-base font-bold text-gray-900">₹{price.toFixed(2)}</p>
-                {base_price && <p className="text-sm text-gray-500 line-through">₹{base_price.toFixed(2)}</p>}
-                {discount > 0 && <p className="text-xs font-bold text-red-500">({discount}% off)</p>}
-            </div>
+                {base_price && base_price > price && (
+                  <>
+                    <p className="text-sm text-gray-500 line-through">₹{base_price.toFixed(2)}</p>
+                    <p className="text-xs font-bold text-red-500 bg-red-100 px-2 py-1 rounded-full">
+                      {discount}% off
+                    </p>
+                  </>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </Link>
 
@@ -297,19 +328,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             </div>
 
             <div>
-              <label className="text-sm font-semibold text-gray-700">Quantity:</label>
+              <label className="text-sm font-semibold text-gray-700">Quantity (Min: {minQuantity}):</label>
               <div className="flex items-center border rounded-lg w-fit mt-2">
-                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-r-none" onClick={() => setQuantity(q => Math.max(1, q - 1))}><Minus className="h-4 w-4" /></Button>
-                  <span className="px-4 font-bold text-lg w-16 text-center">{quantity}</span>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-10 w-10 rounded-l-none"
-                    onClick={() => setQuantity(q => Math.min(selectedVariant?.stock_quantity || 1, q + 1))}
-                    disabled={!selectedVariant || quantity >= selectedVariant.stock_quantity}
-                  ><Plus className="h-4 w-4" /></Button>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 rounded-r-none" 
+                  onClick={() => setQuantity(q => Math.max(minQuantity, q - 1))}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <span className="px-4 font-bold text-lg w-16 text-center">{quantity}</span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-10 w-10 rounded-l-none"
+                  onClick={() => setQuantity(q => Math.min(selectedVariant?.stock_quantity || q + 1, q + 1))}
+                  disabled={!selectedVariant || quantity >= selectedVariant.stock_quantity}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
               </div>
-               {selectedVariant && <p className="text-xs text-gray-500 mt-1">{selectedVariant.stock_quantity} pieces available</p>}
+              {selectedVariant && <p className="text-xs text-gray-500 mt-1">{selectedVariant.stock_quantity} pieces available</p>}
             </div>
           </div>
 

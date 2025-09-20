@@ -137,13 +137,13 @@ export const fetchSingleOrder = createAsyncThunk<Order, string, { rejectValue: s
 
 export const placeCodOrder = createAsyncThunk<
   { order: Order },
-  {addressId: string; couponCode?: string},
+  {addressId: string; pointsToRedeem: number},
   { rejectValue: string }
 >(
   'orders/placeCodOrder',
-  async ({ addressId,couponCode  }, { rejectWithValue }) => {
+  async ({ addressId,pointsToRedeem  }, { rejectWithValue }) => {
     try {
-      const response = await apiClient.post('/users/order/cod', { addressId, couponCode  });
+      const response = await apiClient.post('/users/order/cod', { addressId, pointsToRedeem  });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.message || 'Failed to place COD order');

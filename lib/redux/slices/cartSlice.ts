@@ -73,10 +73,11 @@ export const fetchCart = createAsyncThunk<CartItem[], void, { rejectValue: strin
   }
 );
 
-export const addToCart = createAsyncThunk<CartItem[], { productId: string; sku_variant: string; quantity: number }, { rejectValue: string }>(
+export const addToCart = createAsyncThunk<CartItem[], { productId: string; sku_variant?: string; quantity: number }, { rejectValue: string }>(
   'cart/addToCart',
   async (params, { rejectWithValue }) => {
     try {
+      
       const response = await apiClient.post('/users/cart', params);
       return response.data.data;
     } catch (error) {

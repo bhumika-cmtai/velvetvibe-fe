@@ -225,7 +225,11 @@ export default function CheckoutPage() {
     }
 
     setIsProcessing(true);
-    const orderDetails = { addressId: selectedAddressId };
+    const orderDetails = { 
+      addressId: selectedAddressId, 
+      // couponCode: appliedCoupon?.code,
+      pointsToRedeem: appliedPoints 
+    };
 
     if (selectedPaymentMethod === 'cod') {
       try {

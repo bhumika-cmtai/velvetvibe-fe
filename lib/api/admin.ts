@@ -33,17 +33,21 @@ export interface Coupon {
   updatedAt: string;
 }
 
-//coupon wallet 
-export interface RewardRule {
-  minSpend: number;
-  pointsAwarded: number;
+export interface TaxConfig {
+  _id: string;
+  rate: number; // Stored as decimal, e.g., 0.03
 }
 
-export interface WalletConfig {
+export interface SimpleCategory {
   _id: string;
-  rewardRules: RewardRule[];
-  rupeesPerPoint: number;
+  name: string;
+  // slug: string;
 }
+
+//coupon wallet 
+export interface RewardRule { minSpend: number; pointsAwarded: number; }
+export interface WalletConfig { _id: string; rewardRules: RewardRule[]; rupeesPerPoint: number; }
+
 
 // ==========================================================
 // --- PRODUCT API FUNCTIONS ---
@@ -119,19 +123,29 @@ export const getCouponByNameApi = (couponCode: string) => {
 export const getWalletConfigApi = async () => {
   return apiClient.get('/wallet/config');
 };
-
-export const updatePointValueApi = async (rupeesPerPoint: number) => {
-  return apiClient.patch('/wallet/config/point-value', { rupeesPerPoint });
+export const setWalletConfigApi = async (configData: { rewardRules: RewardRule[], rupeesPerPoint: number }) => {
+  return apiClient.put('/wallet/config', configData);
 };
 
-export const addRewardRuleApi = async (rule: RewardRule) => {
-  return apiClient.post('/wallet/config/rules', rule);
+export const getTaxConfigApi = async () => {
+  return apiClient.get('/tax/config');
+};
+export const setTaxConfigApi = async (ratePercentage: number) => {
+  return apiClient.put('/tax/config', { ratePercentage });
 };
 
-export const updateRewardRuleApi = async (targetMinSpend: number, updates: Partial<RewardRule>) => {
-  return apiClient.put(`/wallet/config/rules/${targetMinSpend}`, updates);
+export const getAllCategoriesApi = async () => {
+  return apiClient.get('/categories');
 };
 
-export const deleteRewardRuleApi = async (minSpend: number) => {
-  return apiClient.delete(`/wallet/config/rules/${minSpend}`);
+export const createCategoryApi = async (name: string) => {
+  return apiClient.post('/categories', { name });
+};
+
+export const updateCategoryApi = async (categoryId: string, name: string) => {
+  return apiClient.patch(`/categories/${categoryId}`, { name });
+};
+
+export const deleteCategoryApi = async (categoryId: string) => {
+  return apiClient.delete(`/categories/${categoryId}`);
 };

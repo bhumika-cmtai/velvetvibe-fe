@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
-import { fetchProducts, deleteProduct, createProduct, updateProduct, fetchProductById } from '@/lib/redux/slices/adminSlice';
+import { fetchProducts, deleteProduct, createProduct, updateProduct, fetchProductById, fetchCategories } from '@/lib/redux/slices/adminSlice';
 import { ViewProductModal } from '@/components/ViewProductModal';
 import { Product } from '@/lib/types/product';
 import { EditProductModal } from '@/components/EditProductModal';
@@ -15,6 +15,8 @@ import { AddProductModal } from '@/components/AddProductModal';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { CategoryManager } from '@/components/CategoryManager';
 
 export default function ProductsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -28,8 +30,12 @@ export default function ProductsPage() {
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
+  const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+
+
   useEffect(() => {
     dispatch(fetchProducts({ page: currentPage, limit: 10 }));
+    dispatch(fetchCategories());
   }, [currentPage, dispatch]);
   
   const handleCreateNew = async (formData: FormData) => {
@@ -118,7 +124,10 @@ export default function ProductsPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Products</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>Add New Product</Button>
+        <div className='flex items-center gap-2'>
+          <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)}>Manage Categories</Button>
+          <Button onClick={() => setIsAddDialogOpen(true)}>Add New Product</Button>
+        </div>
       </div>
 
       <div className='bg-white p-4 rounded-md shadow-md'>
@@ -221,6 +230,14 @@ export default function ProductsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={isCategoryManagerOpen} onOpenChange={setIsCategoryManagerOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Manage Categories</DialogTitle>
+          </DialogHeader>
+          <CategoryManager />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

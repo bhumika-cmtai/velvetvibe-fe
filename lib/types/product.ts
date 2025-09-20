@@ -52,7 +52,8 @@ export interface Product {
   averageRating?: number;
   numReviews?: number;
 
-  
+  minQuantity?: number;
+
   createdAt: string;
   updatedAt: string;
 }
