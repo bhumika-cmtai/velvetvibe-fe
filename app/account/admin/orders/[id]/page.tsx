@@ -14,10 +14,7 @@ import { ArrowLeft, ShoppingBag, Loader2, Save, User, Home } from 'lucide-react'
 import { toast } from "sonner";
 
 // --- Import the necessary actions and types from your slices ---
-import { fetchSingleOrderAsAdmin, Order } from '@/lib/redux/slices/orderSlice';
-// We will create this new admin action in the next step
-// import { updateOrderStatus } from '@/lib/redux/slices/adminSlice';
-
+import { fetchSingleOrderAsAdmin, updateOrderStatus, Order } from '@/lib/redux/slices/orderSlice';
 
 // =================================================================
 // --- REUSABLE CARD COMPONENTS (Admin Version) ---
@@ -29,7 +26,7 @@ const CustomerInfoCard = ({ user, address }: { user: Order['user'], address: Ord
     <h2 className="text-xl font-semibold mb-4 flex items-center"><User className="mr-2 h-5 w-5" /> Customer Details</h2>
     <div className="rounded-lg border bg-white p-6 text-sm">
       <p className="font-bold text-gray-800">{user.fullName}</p>
-      {/* <p className="text-gray-600">{user.email || 'No email provided'}</p> */}
+      <p className="text-gray-600">{user.email || 'No email provided'}</p>
       <hr className="my-3"/>
       <div className="space-y-1">
         <p className="font-semibold text-gray-700">Shipping Address</p>
@@ -49,13 +46,18 @@ const OrderSummaryCard = ({ order }: { order: Order }) => (
       <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">₹{order.itemsPrice.toLocaleString()}</span></div>
       <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span className="font-medium">₹{order.shippingPrice.toLocaleString()}</span></div>
       <div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">₹{order.taxPrice.toLocaleString()}</span></div>
+      {order.discountAmount && order.discountAmount > 0 && (
+        <div className="flex justify-between text-green-600"><span>Discount</span><span>-₹{order.discountAmount.toLocaleString()}</span></div>
+      )}
+      {order.couponCode && (
+        <div className="flex justify-between text-blue-600"><span>Coupon Code</span><span>{order.couponCode}</span></div>
+      )}
       <hr className="my-2"/>
       <div className="flex justify-between font-bold text-base"><span>Total</span><span>₹{order.totalPrice.toLocaleString()}</span></div>
       <div className="flex justify-between text-xs text-gray-500 pt-2"><span>Payment Method</span><span>{order.paymentMethod}</span></div>
     </div>
   </div>
 );
-
 
 // =================================================================
 // --- MAIN PAGE COMPONENT ---
@@ -65,8 +67,6 @@ export default function AdminOrderDetailsPage() {
   const router = useRouter();
   const params = useParams();
 
-  // --- THE FIX IS HERE ---
-  // params.orderId ki jagah params.id ka istemaal karein
   const orderId = params.id as string;
 
   // Local state to manage the status dropdown
@@ -75,28 +75,18 @@ export default function AdminOrderDetailsPage() {
 
   // Select state from Redux
   const { currentOrder: order, loading, error } = useSelector((state: RootState) => state.order);
-  const { user: adminUser } = useSelector((state: RootState) => state.auth); // Assuming admin user is in auth slice
-
-   ("AdminOrderDetailsPage rendering...");
-   ("Current adminUser from Redux:", adminUser);
-   ("orderId from params:", orderId);
-   ("Loading state:", loading);
-   ("Current order state:", order);
+  const { user: adminUser } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
     // Basic auth check for admin role
-     ("useEffect is running. Checking conditions...");
-     ("Is adminUser an admin?", adminUser?.role === 'admin');
-     ("Is orderId available?", !!orderId);
-
     if (adminUser && adminUser.role !== 'admin') {
-       ("Redirecting: User is not an admin.");
+      console.log("Redirecting: User is not an admin.");
       router.push('/login');
     } else if (adminUser && orderId) {
-       (`Dispatching fetchSingleOrderAsAdmin with orderId: ₹{orderId}`);
+      console.log(`Dispatching fetchSingleOrderAsAdmin with orderId: ${orderId}`);
       dispatch(fetchSingleOrderAsAdmin(orderId));
     } else {
-       ("Did not dispatch: either adminUser or orderId is missing.");
+      console.log("Did not dispatch: either adminUser or orderId is missing.");
     }
   }, [adminUser, router, orderId, dispatch]);
 
@@ -107,25 +97,22 @@ export default function AdminOrderDetailsPage() {
     }
   }, [order]);
 
-
   const handleStatusUpdate = async () => {
-    // if (!order || selectedStatus === order.orderStatus) {
-    //   toast.info("No changes to save.");
-    //   return;
-    // }
-    // setIsUpdating(true);
-    // try {
-    //   await dispatch(updateOrderStatus({ orderId: order._id, status: selectedStatus })).unwrap();
-    //   toast.success("Order status has been updated successfully.");
-    //   // Optionally re-fetch to confirm, but optimistic update is usually fine
-    //   dispatch(fetchSingleOrder(orderId));
-    // } catch (err: any) {
-    //   toast.error(err || "Failed to update the order status.");
-    // } finally {
-    //   setIsUpdating(false);
-    // }
+    if (!order || selectedStatus === order.orderStatus) {
+      toast.info("No changes to save.");
+      return;
+    }
+    
+    setIsUpdating(true);
+    try {
+      await dispatch(updateOrderStatus({ orderId: order._id, status: selectedStatus })).unwrap();
+      toast.success("Order status has been updated successfully.");
+    } catch (err: any) {
+      toast.error(err || "Failed to update the order status.");
+    } finally {
+      setIsUpdating(false);
+    }
   };
-
 
   if (loading) {
     return <div className="flex min-h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -165,21 +152,21 @@ export default function AdminOrderDetailsPage() {
           {/* Left Column: Items and Status Update */}
           <div className="lg:col-span-2 space-y-8">
             <div className="rounded-lg border bg-white p-6">
-                <h2 className="text-xl font-semibold mb-4">Update Order Status</h2>
-                <div className="flex items-center gap-4">
-                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                        <SelectTrigger><SelectValue placeholder="Select a status..." /></SelectTrigger>
-                        <SelectContent>
-                            {orderStatuses.map(status => (
-                                <SelectItem key={status} value={status}>{status}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <Button onClick={handleStatusUpdate} disabled={isUpdating || selectedStatus === order.orderStatus}>
-                        {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Save Status
-                    </Button>
-                </div>
+              <h2 className="text-xl font-semibold mb-4">Update Order Status</h2>
+              <div className="flex items-center gap-4">
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger><SelectValue placeholder="Select a status..." /></SelectTrigger>
+                  <SelectContent>
+                    {orderStatuses.map(status => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleStatusUpdate} disabled={isUpdating || selectedStatus === order.orderStatus}>
+                  {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                  Save Status
+                </Button>
+              </div>
             </div>
 
             <div>
@@ -189,17 +176,21 @@ export default function AdminOrderDetailsPage() {
                   <div key={index} className="flex items-center space-x-4 p-4 border-b last:border-b-0">
                     <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border">
                       <Image 
-                        src={item.product?.images?.[0] || '/placeholder.svg'} 
-                        alt={item.name} 
+                        src={item.image || item.product_id?.images?.[0] || '/placeholder.svg'} 
+                        alt={item.product_name || item.name || 'Product'} 
                         fill 
                         className="object-cover" 
                       />
                     </div>
                     <div className="flex-grow">
-                      <p className="font-semibold text-gray-800">{item.name}</p>
+                      <p className="font-semibold text-gray-800">{item.product_name || item.name}</p>
                       <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                      {item.size && <p className="text-sm text-gray-500">Size: {item.size}</p>}
+                      {item.color && <p className="text-sm text-gray-500">Color: {item.color}</p>}
                     </div>
-                    <p className="font-semibold text-gray-900">₹{item.price.toLocaleString()}</p>
+                    <p className="font-semibold text-gray-900">
+                      ₹{(item.price_per_item || item.price || 0).toLocaleString()}
+                    </p>
                   </div>
                 ))}
               </div>

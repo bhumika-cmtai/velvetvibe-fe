@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -14,6 +14,9 @@ import {
   Percent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { logoutUserApi } from "@/lib/api/auth";
+import { logout } from "@/lib/redux/slices/authSlice";
+import { useDispatch } from "react-redux";
 
 const navLinks = [
     { href: "/account/admin", label: "Dashboard", icon: LayoutDashboard },
@@ -33,11 +36,23 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const dispatch = useDispatch()
+  const router = useRouter();
   const pathname = usePathname();
 
+  const handleLogout = async () => {
+    try {
+      await logoutUserApi(); // 1. Call API to clear server session/cookie
+    } catch (error) {
+      console.error("Failed to logout from server, but proceeding with client-side cleanup.");
+    } finally {
+      dispatch(logout()); // 2. Clear Redux state and localStorage
+      router.push('/'); // 3. Redirect to the login page
+    }
+  };
+
   return (
-    // The sidebar's visibility is controlled by transform classes.
-    // On 'lg' screens and larger, it is always visible.
+
     <aside
       className={`fixed top-0 left-0 z-40 h-full w-64 bg-white shadow-md transition-transform duration-300 ease-in-out 
       ${isOpen ? "translate-x-0" : "-translate-x-full"}

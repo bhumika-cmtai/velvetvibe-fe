@@ -49,7 +49,7 @@ const CartItemCard = ({ item, onUpdate, onRemove, isGuestCart }: { item: any, on
         >
             {/* Product Details */}
             <div className="col-span-12 md:col-span-6 flex items-center gap-4">
-                <Link href={`/products/${productSlug}`}>
+                <Link href={`/product/${productSlug}`}>
                     <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
                         <Image 
                             src={productImage} 
@@ -250,7 +250,7 @@ export default function CartPage() {
                             <div className="border-t pt-4 mb-6">
                                 <div className="flex justify-between items-center text-lg font-bold text-gray-800">
                                     <span>Estimated Total</span>
-                                    <span>₹{finalTotal.toLocaleString()}</span>
+                                    <span>₹{subTotal.toLocaleString()}</span>
                                 </div>
                             </div>
                             <Link href={isAuthenticated ? "/checkout" : "/login?redirect=/checkout"}>

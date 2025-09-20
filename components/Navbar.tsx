@@ -116,6 +116,8 @@ const Navbar = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    
+
     // Effect for handling debounced search
     useEffect(() => {
         if (debouncedSearchQuery.length > 2) {
