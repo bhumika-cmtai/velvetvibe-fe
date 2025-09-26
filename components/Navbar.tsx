@@ -25,6 +25,7 @@ import { fetchSearchResults, clearSearchResults } from '@/lib/redux/slices/produ
 import { fetchCart } from '@/lib/redux/slices/cartSlice';
 import { fetchWishlist, selectTotalWishlistItems } from '@/lib/redux/slices/wishlistSlice';
 import { fetchCategories } from '@/lib/redux/slices/adminSlice';
+
 // --- Static Data ---
 const navLinks = [
     { name: "New Arrivals", href: "/shop/new-arrivals" },
@@ -85,38 +86,58 @@ const Navbar = () => {
 
     const { categories } = useSelector((state: RootState) => state.admin);
 
+    // Check if user is admin
+    const isAdmin = currentUser?.role === 'admin';
 
-    const totalItems = isAuthenticated ? dbTotalCartItems : localTotalCartItems;
-    const totalWishlistItems = isAuthenticated ? dbTotalWishlistItems : localTotalWishlistItems;
+    // For non-admin users, show cart/wishlist counts
+    const totalItems = isAuthenticated && !isAdmin ? dbTotalCartItems : localTotalCartItems;
+    const totalWishlistItems = isAuthenticated && !isAdmin ? dbTotalWishlistItems : localTotalWishlistItems;
 
     const debouncedSearchQuery = useDebounce(searchQuery, 300);
     useOnClickOutside(searchRef, () => setIsDropdownOpen(false));
 
     const dynamicCategories = useMemo(() => {
-        // 'Clothing' और 'Decorative Items' जैसी हार्डकोडेड कैटेगरी को हटा दें
         const hardcodedNames = ["Clothing", "Decorative Items"];
         return categories.filter(cat => !hardcodedNames.includes(cat.name));
     }, [categories]);
 
     useEffect(() => {
-        // This effect runs whenever the authentication status changes.
         dispatch(fetchCategories());
-        if (isAuthenticated) {
-            // If the user is logged in, fetch their cart and wishlist from the database.
-             ("Navbar: User is authenticated. Fetching global data...");
+        if (isAuthenticated && !isAdmin) {
+            // Only fetch cart and wishlist for non-admin authenticated users
+            console.log("Navbar: User is authenticated (non-admin). Fetching global data...");
             dispatch(fetchCart());
             dispatch(fetchWishlist());
         }
-    }, [isAuthenticated, dispatch]);
+    }, [isAuthenticated, isAdmin, dispatch]);
 
-    // Effect for handling scroll behavior
+    // Effect for handling scroll behavior with throttling to prevent glitches
     useEffect(() => {
-        const handleScroll = () => setIsScrolled(window.scrollY > 10);
-        window.addEventListener('scroll', handleScroll);
+        let ticking = false;
+        
+        const handleScroll = () => {
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    const scrollTop = window.scrollY;
+                    const shouldBeScrolled = scrollTop > 20; // Increased threshold for stability
+                    
+                    setIsScrolled(prev => {
+                        // Only update if the state actually needs to change
+                        if (prev !== shouldBeScrolled) {
+                            return shouldBeScrolled;
+                        }
+                        return prev;
+                    });
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        };
+
+        // Add passive listener for better performance
+        window.addEventListener('scroll', handleScroll, { passive: true });
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
-
-    
 
     // Effect for handling debounced search
     useEffect(() => {
@@ -132,6 +153,10 @@ const Navbar = () => {
     const handleLogout = () => {
         dispatch(logout());
         toast.success("You have been logged out.");
+        // Redirect admin to home page after logout
+        if (isAdmin) {
+            router.push('/');
+        }
     };
 
     const handleSearchSubmit = (e: React.FormEvent) => {
@@ -152,14 +177,30 @@ const Navbar = () => {
                 {isAuthenticated && currentUser ? (
                     <>
                         <DropdownMenuLabel>
-                            My Account
+                            {isAdmin ? "Admin Account" : "My Account"}
                             <p className="text-xs font-normal text-gray-500">{currentUser.email}</p>
                         </DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild><Link href="/account/user">My Profile</Link></DropdownMenuItem>
-                        <DropdownMenuItem asChild><Link href="/account/user/order-history">My Orders</Link></DropdownMenuItem>
+                        {isAdmin ? (
+                            // Admin menu items
+                            <DropdownMenuItem asChild>
+                                <Link href="/account/admin">Admin Dashboard</Link>
+                            </DropdownMenuItem>
+                        ) : (
+                            // Regular user menu items
+                            <>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/account/user">My Profile</Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                    <Link href="/account/user/order-history">My Orders</Link>
+                                </DropdownMenuItem>
+                            </>
+                        )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">Sign Out</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700">
+                            Sign Out
+                        </DropdownMenuItem>
                     </>
                 ) : (
                     <>
@@ -215,28 +256,27 @@ const Navbar = () => {
                                     {!searchLoading && searchResults.length > 0 && (
                                         <ul>
                                             {searchResults.map((product: any) => (
-                                                        <li key={product._id}>
-                                                        {/* --- YEH LINE AAPKA KAAM KAR RAHI HAI --- */}
-                                                        <Link 
+                                                <li key={product._id}>
+                                                    <Link 
                                                         href={`/product/${product.slug}`} 
                                                         onClick={() => setIsDropdownOpen(false)} 
                                                         className="flex items-center p-3 hover:bg-gray-100 transition-colors"
-                                                        >
-                                                            <Image src={product.images[0]} alt={product.name} width={40} height={40} className="object-cover rounded-md" />
-                                                            <div className='ml-3'>
-                                                                <p className="font-semibold text-sm">{product.name}</p>
-                                                                <p className="text-sm font-bold">₹{(product.sale_price ?? product.price).toLocaleString()}</p>
-                                                            </div>
-                                                        </Link>
-                                                    </li>
+                                                    >
+                                                        <Image src={product.images[0]} alt={product.name} width={40} height={40} className="object-cover rounded-md" />
+                                                        <div className='ml-3'>
+                                                            <p className="font-semibold text-sm">{product.name}</p>
+                                                            <p className="text-sm font-bold">₹{(product.sale_price ?? product.price).toLocaleString()}</p>
+                                                        </div>
+                                                    </Link>
+                                                </li>
                                             ))}
                                             <li className="border-t">
-                                                 <Link href={`/shop?search=${encodeURIComponent(searchQuery.trim())}`} onClick={() => setIsDropdownOpen(false)} className="block w-full text-center p-3 font-semibold text-sm text-black hover:bg-gray-100">View all results</Link>
+                                                <Link href={`/shop?search=${encodeURIComponent(searchQuery.trim())}`} onClick={() => setIsDropdownOpen(false)} className="block w-full text-center p-3 font-semibold text-sm text-black hover:bg-gray-100">View all results</Link>
                                             </li>
                                         </ul>
                                     )}
                                     {!searchLoading && searchResults.length === 0 && debouncedSearchQuery.length > 2 && (
-                                         <div className="p-4 text-center text-gray-500 text-sm">No products found for "{debouncedSearchQuery}".</div>
+                                        <div className="p-4 text-center text-gray-500 text-sm">No products found for "{debouncedSearchQuery}".</div>
                                     )}
                                 </motion.div>
                             )}
@@ -245,42 +285,69 @@ const Navbar = () => {
 
                     <div className="flex items-center space-x-3 sm:space-x-5">
                         <div className="hidden sm:block"><UserNav /></div>
-                        <div className="relative">
-                            <Link href="/wishlist" className="text-gray-700 hover:text-black" aria-label="Wishlist"><Heart size={24} /></Link>
-                            <AnimatePresence>
-                                {totalWishlistItems > 0 && (
-                                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{totalWishlistItems}</motion.span>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                        <div className="relative">
-                            <Link href="/cart" className="text-gray-700 hover:text-black" aria-label="Shopping Cart"><ShoppingCart size={24} /></Link>
-                            <AnimatePresence>
-                                {totalItems > 0 && (
-                                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{totalItems}</motion.span>
-                                )}
-                            </AnimatePresence>
-                        </div>
+                        
+                        {/* Only show wishlist and cart for non-admin users */}
+                        {!isAdmin && (
+                            <>
+                                <div className="relative">
+                                    <Link href="/wishlist" className="text-gray-700 hover:text-black" aria-label="Wishlist">
+                                        <Heart size={24} />
+                                    </Link>
+                                    <AnimatePresence>
+                                        {totalWishlistItems > 0 && (
+                                            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                                {totalWishlistItems}
+                                            </motion.span>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                                <div className="relative">
+                                    <Link href="/cart" className="text-gray-700 hover:text-black" aria-label="Shopping Cart">
+                                        <ShoppingCart size={24} />
+                                    </Link>
+                                    <AnimatePresence>
+                                        {totalItems > 0 && (
+                                            <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }} className="absolute -top-2 -right-2 bg-black text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                                {totalItems}
+                                            </motion.span>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </>
+                        )}
+                        
                         <div className="lg:hidden">
                             <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                                 <SheetTrigger asChild><Button variant="ghost" size="icon"><Menu size={26} /></Button></SheetTrigger>
                                 <SheetContent side="right" className="w-full max-w-sm px-6">
                                     <SheetTitle className="text-2xl font-serif mb-8">Menu</SheetTitle>
                                     <div className="flex flex-col space-y-2">
-                                        <button onClick={() => setIsMobileCategoryOpen(!isMobileCategoryOpen)} className="bg-black text-white px-5 py-3 text-left text-base font-semibold rounded-md hover:bg-gray-800 transition-colors">
-                                            <span className='flex justify-between items-center'>SHOP BY CATEGORY <ChevronDown className={`transition-transform ${isMobileCategoryOpen ? 'rotate-180' : ''}`} /></span>
-                                        </button>
-                                        {isMobileCategoryOpen && (
-                                            <div className="pl-4 border-l-2 ml-4">
-                                                {Object.values(megaMenuData).map(section => (
-                                                    <div key={section.title} className="py-2">
-                                                        <h4 className="font-semibold text-gray-800 mb-2">{section.title}</h4>
-                                                        {section.items.map(item => <Link key={item.name} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="block py-1.5 text-gray-600 hover:text-black">{item.name}</Link>)}
+                                        {!isAdmin && (
+                                            <>
+                                                <button onClick={() => setIsMobileCategoryOpen(!isMobileCategoryOpen)} className="bg-black text-white px-5 py-3 text-left text-base font-semibold rounded-md hover:bg-gray-800 transition-colors">
+                                                    <span className='flex justify-between items-center'>SHOP BY CATEGORY <ChevronDown className={`transition-transform ${isMobileCategoryOpen ? 'rotate-180' : ''}`} /></span>
+                                                </button>
+                                                {isMobileCategoryOpen && (
+                                                    <div className="pl-4 border-l-2 ml-4">
+                                                        {Object.values(megaMenuData).map(section => (
+                                                            <div key={section.title} className="py-2">
+                                                                <h4 className="font-semibold text-gray-800 mb-2">{section.title}</h4>
+                                                                {section.items.map(item => <Link key={item.name} href={item.href} onClick={() => setIsMobileMenuOpen(false)} className="block py-1.5 text-gray-600 hover:text-black">{item.name}</Link>)}
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
-                                            </div>
+                                                )}
+                                                {navLinks.map((link) => (<Link key={link.name} href={link.href} className="text-lg text-gray-700 hover:text-black py-2" onClick={() => setIsMobileMenuOpen(false)}>{link.name}</Link>))}
+                                            </>
                                         )}
-                                        {navLinks.map((link) => (<Link key={link.name} href={link.href} className="text-lg text-gray-700 hover:text-black py-2" onClick={() => setIsMobileMenuOpen(false)}>{link.name}</Link>))}
+                                        {isAdmin && (
+                                            <Link href="/account/admin" className="text-lg text-gray-700 hover:text-black py-2" onClick={() => setIsMobileMenuOpen(false)}>
+                                                Admin Dashboard
+                                            </Link>
+                                        )}
+                                        <div className="sm:hidden mt-4">
+                                            <UserNav />
+                                        </div>
                                     </div>
                                 </SheetContent>
                             </Sheet>
@@ -288,53 +355,56 @@ const Navbar = () => {
                     </div>
                 </div>
 
-                <div className={`hidden lg:flex justify-between items-center text-sm font-medium border-t border-gray-200 transition-all duration-300 overflow-hidden ${isScrolled ? 'h-0 py-0 opacity-0' : 'h-auto py-3'}`}>
-                    <div className="flex items-center space-x-8">
-                        <div onMouseEnter={() => setIsMegaMenuOpen(true)} onMouseLeave={() => setIsMegaMenuOpen(false)}>
-                            <button className="bg-black text-white px-5 py-2 hover:bg-gray-800 transition-colors flex items-center gap-1">SHOP BY CATEGORY <ChevronDown /></button>
-                            <AnimatePresence>
-                                {isMegaMenuOpen && (
-                                    <motion.div variants={megaMenuVariants} initial="hidden" animate="visible" exit="exit" className="absolute top-full left-0 mt-[-1px] w-full bg-white shadow-lg border-t z-50">
-                                        <div className="container mx-auto px-8 py-6 grid grid-cols-5 gap-8">
-                                            {Object.values(megaMenuData).map(section => (
-                                                <div key={section.title}>
-                                                    <h3 className="font-semibold text-gray-800 mb-4">{section.title}</h3>
-                                                    <ul className="space-y-2">
-                                                        {section.items.map(item => <li key={item.name}><Link key={item.name} href={item.href} className="text-gray-600 hover:text-black">{item.name}</Link></li>)}
-                                                    </ul>
+                {/* Only show bottom navigation for non-admin users */}
+                {!isAdmin && (
+                    <div className={`hidden lg:flex justify-between items-center text-sm font-medium border-t border-gray-200 transition-all duration-500 ease-in-out ${isScrolled ? 'h-0 py-0 opacity-0 pointer-events-none' : 'h-12 py-3 opacity-100'}`}>
+                        <div className="flex items-center space-x-8">
+                            <div onMouseEnter={() => setIsMegaMenuOpen(true)} onMouseLeave={() => setIsMegaMenuOpen(false)}>
+                                <button className="bg-black text-white px-5 py-2 hover:bg-gray-800 transition-colors flex items-center gap-1">SHOP BY CATEGORY <ChevronDown /></button>
+                                <AnimatePresence>
+                                    {isMegaMenuOpen && !isScrolled && (
+                                        <motion.div variants={megaMenuVariants} initial="hidden" animate="visible" exit="exit" className="absolute top-full left-0 mt-[-1px] w-full bg-white shadow-lg border-t z-50">
+                                            <div className="container mx-auto px-8 py-6 grid grid-cols-5 gap-8">
+                                                {Object.values(megaMenuData).map(section => (
+                                                    <div key={section.title}>
+                                                        <h3 className="font-semibold text-gray-800 mb-4">{section.title}</h3>
+                                                        <ul className="space-y-2">
+                                                            {section.items.map(item => <li key={item.name}><Link key={item.name} href={item.href} className="text-gray-600 hover:text-black">{item.name}</Link></li>)}
+                                                        </ul>
+                                                    </div>
+                                                ))}
+                                                {dynamicCategories.length > 0 && (
+                                                    <div>
+                                                        <h3 className="font-semibold text-gray-800 mb-4">More Categories</h3>
+                                                        <ul className="space-y-2">
+                                                            {dynamicCategories.map(cat => (
+                                                                <li key={cat._id}>
+                                                                    <Link 
+                                                                        href={`/shop?category=${encodeURIComponent(cat.name)}`} 
+                                                                        className="text-gray-600 hover:text-black"
+                                                                    >
+                                                                        {cat.name}
+                                                                    </Link>
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    </div>
+                                                )}
+                                                <div className="bg-gray-50 rounded-lg p-6 flex flex-col justify-center bg-[url('https://i.pinimg.com/736x/4b/b9/0b/4bb90b8d41a2c50ddebf86425e5c8072.jpg')] bg-cover bg-center">
+                                                    <h3 className="font-semibold text-lg text-white">The Wedding Edit</h3>
+                                                    <p className="text-sm text-white mt-1">Stunning outfits for the wedding season.</p>
+                                                    <Link href="/shop?tags=Wedding" className="text-sm font-bold text-black mt-3 hover:underline">Shop Now &rarr;</Link>
                                                 </div>
-                                            ))}
-                                            {dynamicCategories.length > 0 && (
-                                                <div>
-                                                    <h3 className="font-semibold text-gray-800 mb-4">More Categories</h3>
-                                                    <ul className="space-y-2">
-                                                        {dynamicCategories.map(cat => (
-                                                            <li key={cat._id}>
-                                                                <Link 
-                                                                    href={`/shop?category=${encodeURIComponent(cat.name)}`} 
-                                                                    className="text-gray-600 hover:text-black"
-                                                                >
-                                                                    {cat.name}
-                                                                </Link>
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            )}
-                                            <div className="bg-gray-50 rounded-lg p-6 flex flex-col justify-center bg-[url('https://i.pinimg.com/736x/4b/b9/0b/4bb90b8d41a2c50ddebf86425e5c8072.jpg')] bg-cover bg-center">
-                                                <h3 className="font-semibold text-lg text-white">The Wedding Edit</h3>
-                                                <p className="text-sm text-white mt-1">Stunning outfits for the wedding season.</p>
-                                                <Link href="/shop?tags=Wedding" className="text-sm font-bold text-black mt-3 hover:underline">Shop Now &rarr;</Link>
                                             </div>
-                                        </div>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                            {navLinks.map(link => (<Link key={link.name} href={link.href} className="text-gray-600 hover:text-black">{link.name}</Link>))}
                         </div>
-                        {navLinks.map(link => (<Link key={link.name} href={link.href} className="text-gray-600 hover:text-black">{link.name}</Link>))}
+                        <div><span className="text-gray-600">Free Shipping on Orders Over ₹499</span></div>
                     </div>
-                    <div><span className="text-gray-600">Free Shipping on Orders Over ₹499</span></div>
-                </div>
+                )}
             </div>
         </nav>
     );

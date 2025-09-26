@@ -19,6 +19,12 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters long.");
+      return; // Stop the submission if validation fails
+    }
+
     setIsLoading(true);
     // setError(''); // <-- Iski ab zaroorat nahi hai
 
@@ -35,8 +41,8 @@ export default function SignUpPage() {
 
     } catch (err: any) {
       // Error ko toast mein dikhayein
-         ("err.message")
-         (err.message)
+        //  ("err.message")
+        //  (err.message)
       toast.error(err.message || "An unknown error occurred.");
     } finally {
       setIsLoading(false);
