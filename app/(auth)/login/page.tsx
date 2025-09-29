@@ -77,8 +77,9 @@ export default function LoginPage() {
         clearLocalWishlist();
         toast.success("Wishlist synced successfully!");
       }
-
+      console.log("----user----", user)
       if (user.role === 'admin') {
+        console.log("---------user.role---------", user.role)
         router.push('/account/admin'); 
       } else {
         router.push('/'); 
