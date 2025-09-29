@@ -42,7 +42,6 @@ export default function LoginPage() {
     try {
       const response = await loginUserApi({ email, password });
       const { user, accessToken } = response.data;
-
       dispatch(loginSuccess({ user, accessToken }));
       toast.success('Logged in successfully');
       
