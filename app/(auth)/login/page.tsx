@@ -1,4 +1,3 @@
-// login/page.tsx
 "use client";
 
 import { useState } from 'react';
@@ -11,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
-import { loginUserApi } from '@/lib/api/auth'; // Ensure this path is correct
+import { loginUserApi } from '@/lib/api/auth';
 import { loginSuccess } from '@/lib/redux/slices/authSlice';
 import { mergeCarts, fetchCart } from '@/lib/redux/slices/cartSlice';
 import { AppDispatch } from '@/lib/redux/store';
@@ -19,7 +18,6 @@ import { AppDispatch } from '@/lib/redux/store';
 import { useCart } from "@/context/CartContext";
 import { useWishlist as useLocalWishlist } from "@/context/WishlistContext";
 import { mergeWishlist, fetchWishlist } from "@/lib/redux/slices/wishlistSlice";
-
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -33,7 +31,6 @@ export default function LoginPage() {
   const { items: localCartItems, clearCart: clearLocalCart } = useCart();
   const { items: localWishlistItems, clearWishlist: clearLocalWishlist } = useLocalWishlist();
 
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -42,48 +39,55 @@ export default function LoginPage() {
     try {
       const response = await loginUserApi({ email, password });
       const { user, accessToken } = response.data;
+      
+      // First dispatch login success
       dispatch(loginSuccess({ user, accessToken }));
+      
+      // Set cookie for middleware (important for live server)
+      document.cookie = `accessToken=${accessToken}; path=/; secure; SameSite=strict; max-age=${7 * 24 * 60 * 60}`;
+      
       toast.success('Logged in successfully');
       
+      // Handle cart merging
       if (localCartItems && localCartItems.length > 0) {
         toast.info("Syncing your cart...");
         const itemsToMerge = localCartItems.map(item => ({ 
-          productId: item.productId, // Use productId instead of _id
-          sku_variant: item.sku_variant || 'default', // Include sku_variant
+          productId: item.productId,
+          sku_variant: item.sku_variant || 'default',
           quantity: item.quantity 
         }));
         
         await dispatch(mergeCarts(itemsToMerge));
-
         await dispatch(fetchCart());
-
         clearLocalCart();
-         ("Local cart cleared after successful merge.");
         toast.success("Cart synced successfully!");
       }
-      else{
-         ("No local cart items found. Skipping merge.");
-      }
 
+      // Handle wishlist merging
       if (localWishlistItems && localWishlistItems.length > 0) {
         toast.info("Syncing your wishlist...");
         const productIdsToMerge = localWishlistItems.map(item => item._id);
         
         await dispatch(mergeWishlist(productIdsToMerge));
-
-        // Refresh wishlist from server to ensure it's up to date
         await dispatch(fetchWishlist());
-
         clearLocalWishlist();
         toast.success("Wishlist synced successfully!");
       }
-      console.log("----user----", user)
-      if (user.role === 'admin') {
-        console.log("---------user.role---------", user.role)
-        router.push('/account/admin'); 
-      } else {
-        router.push('/'); 
-      }
+
+      console.log("----user----", user);
+      console.log("----user role----", user.role);
+      
+      // Add a small delay to ensure cookie is set
+      setTimeout(() => {
+        if (user.role === 'admin') {
+          console.log("---------Redirecting to admin dashboard---------");
+          // Use window.location for more reliable redirect on live server
+          window.location.href = '/account/admin';
+        } else {
+          console.log("---------Redirecting to home---------");
+          window.location.href = '/';
+        }
+      }, 500);
 
     } catch (err: any) {
       const errorMessage = err.response?.data?.message || err.message || 'An unknown error occurred.';
