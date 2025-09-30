@@ -284,7 +284,7 @@ const Navbar = () => {
                     </div>
 
                     <div className="flex items-center space-x-3 sm:space-x-5">
-                        <div className="hidden sm:block"><UserNav /></div>
+                        <UserNav />
                         
                         {/* Only show wishlist and cart for non-admin users */}
                         {!isAdmin && (
@@ -345,9 +345,9 @@ const Navbar = () => {
                                                 Admin Dashboard
                                             </Link>
                                         )}
-                                        <div className="sm:hidden mt-4">
+                                        {/* <div className="sm:hidden mt-4">
                                             <UserNav />
-                                        </div>
+                                        </div> */}
                                     </div>
                                 </SheetContent>
                             </Sheet>
