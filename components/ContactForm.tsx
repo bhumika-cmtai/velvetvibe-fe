@@ -83,6 +83,7 @@ export function ContactForm() {
       transition={{ duration: 0.6 }}
       viewport={{ once: true }}
       className="max-w-2xl mx-auto"
+      id="contactus"
     >
       <div
         className="rounded-2xl p-8 border bg-background"

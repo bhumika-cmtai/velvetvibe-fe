@@ -5,18 +5,18 @@ import { Facebook, Instagram, Twitter, Youtube, ArrowRight } from 'lucide-react'
 
 // --- UPDATED Data for footer links based on your file structure ---
 const infoLinks = [
-  { name: 'My Account', href: '/account' },
-  { name: 'Order History', href: '/account/orders' }, // Assuming this route exists under account
-  { name: 'Bulk Orders', href: '/bulk-order' },
-  // { name: 'Contact Us', href: '/' }, // Assuming a contact page
+  { name: 'My Account', href: '/user/account' },
+  { name: 'Order History', href: '/user/account/orders' }, // Assuming this route exists under account
+  // { name: 'Bulk Orders', href: '/bulk-order' },
+  // { name: 'Contact Us', href: '/#contactus' }, // Assuming a contact page
 ];
 
 const quickShopLinks = [
-  { name: 'New Arrivals', href: '/new-arrivals' },
-  { name: 'Best Sellers', href: '/best-sellers' },
-  { name: 'Sale', href: '/sale' },
+  { name: 'New Arrivals', href: '/shop/new-arrivals' },
+  { name: 'Best Sellers', href: '/shop/best-sellers' },
+  { name: 'Sale', href: '/shop/sale' },
   { name: 'All Products', href: '/shop' },
-  { name: 'Ethnic Wear', href: '/ethnic-wear' },
+  { name: 'Decoratives', href: '/decoratives' },
 ];
 
 const customerServiceLinks = [
