@@ -5,8 +5,8 @@ import { Facebook, Instagram, Twitter, Youtube, ArrowRight } from 'lucide-react'
 
 // --- UPDATED Data for footer links based on your file structure ---
 const infoLinks = [
-  { name: 'My Account', href: '/user/account' },
-  { name: 'Order History', href: '/user/account/orders' }, // Assuming this route exists under account
+  { name: 'My Account', href: '/account/user' },
+  { name: 'Order History', href: '/account/user/orders' }, // Assuming this route exists under account
   // { name: 'Bulk Orders', href: '/bulk-order' },
   // { name: 'Contact Us', href: '/#contactus' }, // Assuming a contact page
 ];
