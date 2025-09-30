@@ -53,6 +53,7 @@ export const fetchDashboardData = createAsyncThunk<
         apiClient.get('/admin/sales-overview'), // Your sales chart endpoint
         apiClient.get('/admin/orders/recent'),  // Your recent orders endpoint
       ]);
+      // console.log("this is data", statsRes.data.data);
 
       return {
         stats: statsRes.data.data,

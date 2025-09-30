@@ -3,7 +3,7 @@ import type { RootState } from '@/lib/redux/store'; // Adjust path if needed
 import { store } from '@/lib/redux/store'; // Import the store itself
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000/api/v1', // Your API's base URL
+  baseURL: process.env.NEXT_PUBLIC_API_URL ? `${process.env.NEXT_PUBLIC_API_URL}/api/v1` : 'http://localhost:8000/api/v1',
   withCredentials: true, // Important for cookies, if you use them
 });
 
