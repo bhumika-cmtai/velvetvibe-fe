@@ -22,11 +22,19 @@ import {
   getAllCategoriesApi,
   createCategoryApi,
   updateCategoryApi,
-  deleteCategoryApi
+  deleteCategoryApi,
+
+    // subcategory
+    SimpleSubcategory,
+    getAllSubcategoriesApi,
+    createSubcategoryApi,
+    updateSubcategoryApi,
+    deleteSubcategoryApi
+  
 } from '@/lib/api/admin';
 
 import type { Product } from '@/lib/types/product';
-import type { AdminUser } from '@/lib/api/admin';
+import type { AdminUser } from '@/lib/api/admin'; 
 
 interface AdminState {
   products: Product[];
@@ -55,6 +63,8 @@ interface AdminState {
   taxConfigStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
   categories: SimpleCategory[];
   categoryStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
+  subcategories: SimpleSubcategory[];
+  subcategoryStatus: 'idle' | 'loading' | 'succeeded' | 'failed';
 }
 
 const initialState: AdminState = {
@@ -76,6 +86,8 @@ const initialState: AdminState = {
   taxConfigStatus: 'idle',
   categories: [],
   categoryStatus: 'idle',
+  subcategories: [],
+  subcategoryStatus: 'idle',
 };
 
 
@@ -317,6 +329,62 @@ export const removeCategory = createAsyncThunk(
   }
 );
 
+
+//subcategory
+export const fetchSubcategories = createAsyncThunk(
+  'admin/fetchSubcategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await getAllSubcategoriesApi();
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch subcategories');
+    }
+  }
+);
+
+export const addSubcategory = createAsyncThunk(
+  'admin/addSubcategory',
+  async (name: string, { rejectWithValue }) => {
+    try {
+      const response = await createSubcategoryApi(name);
+      toast.success("Subcategory added successfully!");
+      return response.data.data;
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to add subcategory');
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
+export const editSubcategory = createAsyncThunk(
+  'admin/editSubcategory',
+  async ({ id, name }: { id: string; name: string }, { rejectWithValue }) => {
+    try {
+      const response = await updateSubcategoryApi(id, name);
+      toast.success("Subcategory updated successfully!");
+      return response.data.data;
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update subcategory');
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
+export const removeSubcategory = createAsyncThunk(
+  'admin/removeSubcategory',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await deleteSubcategoryApi(id);
+      toast.success("Subcategory deleted successfully!");
+      return id; // Return the ID for removal from state
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete subcategory');
+      return rejectWithValue(error.response?.data?.message);
+    }
+  }
+);
+
 const adminSlice = createSlice({
   name: 'admin',
   initialState,
@@ -488,6 +556,29 @@ const adminSlice = createSlice({
       })
       .addCase(removeCategory.fulfilled, (state, action: PayloadAction<string>) => {
         state.categories = state.categories.filter(c => c._id !== action.payload);
+      })
+      // subcategories ------
+      .addCase(fetchSubcategories.pending, (state) => {
+        state.subcategoryStatus = 'loading';
+      })
+      .addCase(fetchSubcategories.fulfilled, (state, action: PayloadAction<SimpleSubcategory[]>) => {
+        state.subcategoryStatus = 'succeeded';
+        state.subcategories = action.payload;
+      })
+      .addCase(fetchSubcategories.rejected, (state) => {
+        state.subcategoryStatus = 'failed';
+      })
+      .addCase(addSubcategory.fulfilled, (state, action: PayloadAction<SimpleSubcategory>) => {
+        state.subcategories.push(action.payload);
+      })
+      .addCase(editSubcategory.fulfilled, (state, action: PayloadAction<SimpleSubcategory>) => {
+        const index = state.subcategories.findIndex(sc => sc._id === action.payload._id);
+        if (index !== -1) {
+          state.subcategories[index] = action.payload;
+        }
+      })
+      .addCase(removeSubcategory.fulfilled, (state, action: PayloadAction<string>) => {
+        state.subcategories = state.subcategories.filter(sc => sc._id !== action.payload);
       });
       
   },

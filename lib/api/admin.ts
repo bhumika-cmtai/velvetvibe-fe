@@ -44,6 +44,13 @@ export interface SimpleCategory {
   // slug: string;
 }
 
+export interface SimpleSubcategory {
+  _id: string;
+  name: string;
+  // slug: string;
+}
+
+
 //coupon wallet 
 export interface RewardRule { minSpend: number; pointsAwarded: number; }
 export interface WalletConfig { _id: string; rewardRules: RewardRule[]; rupeesPerPoint: number; }
@@ -148,4 +155,21 @@ export const updateCategoryApi = async (categoryId: string, name: string) => {
 
 export const deleteCategoryApi = async (categoryId: string) => {
   return apiClient.delete(`/categories/${categoryId}`);
+};
+
+// subcategory api
+export const getAllSubcategoriesApi = async () => {
+  return apiClient.get('/subcategories');
+};
+
+export const createSubcategoryApi = async (name: string) => {
+  return apiClient.post('/subcategories', { name });
+};
+
+export const updateSubcategoryApi = async (categoryId: string, name: string) => {
+  return apiClient.patch(`/subcategories/${categoryId}`, { name });
+};
+
+export const deleteSubcategoryApi = async (categoryId: string) => {
+  return apiClient.delete(`/subcategories/${categoryId}`);
 };

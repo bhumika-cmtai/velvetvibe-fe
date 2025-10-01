@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, AppDispatch } from '@/lib/redux/store';
-import { fetchProducts, deleteProduct, createProduct, updateProduct, fetchProductById, fetchCategories } from '@/lib/redux/slices/adminSlice';
+import { fetchProducts, deleteProduct, createProduct, updateProduct, fetchProductById, fetchCategories, fetchSubcategories } from '@/lib/redux/slices/adminSlice';
 import { ViewProductModal } from '@/components/ViewProductModal';
 import { Product } from '@/lib/types/product';
 import { EditProductModal } from '@/components/EditProductModal';
@@ -17,6 +17,8 @@ import { Loader2 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CategoryManager } from '@/components/CategoryManager';
+import { SubcategoryManager } from '@/components/SubcategoryManager';
+
 
 export default function ProductsPage() {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,11 +33,15 @@ export default function ProductsPage() {
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
 
   const [isCategoryManagerOpen, setIsCategoryManagerOpen] = useState(false);
+  const [isSubcategoryManagerOpen, setIsSubcategoryManagerOpen] = useState(false);
+
 
 
   useEffect(() => {
     dispatch(fetchProducts({ page: currentPage, limit: 10 }));
     dispatch(fetchCategories());
+    dispatch(fetchSubcategories());
+
   }, [currentPage, dispatch]);
   
   const handleCreateNew = async (formData: FormData) => {
@@ -125,6 +131,7 @@ export default function ProductsPage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Products</h1>
         <div className='flex items-center gap-2'>
+        <Button variant="outline" onClick={() => setIsSubcategoryManagerOpen(true)}>Manage Subcategories</Button>
           <Button variant="outline" onClick={() => setIsCategoryManagerOpen(true)}>Manage Categories</Button>
           <Button onClick={() => setIsAddDialogOpen(true)}>Add New Product</Button>
         </div>
@@ -236,6 +243,14 @@ export default function ProductsPage() {
             <DialogTitle>Manage Categories</DialogTitle>
           </DialogHeader>
           <CategoryManager />
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isSubcategoryManagerOpen} onOpenChange={setIsSubcategoryManagerOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Manage Subcategories</DialogTitle>
+          </DialogHeader>
+          <SubcategoryManager />
         </DialogContent>
       </Dialog>
     </div>

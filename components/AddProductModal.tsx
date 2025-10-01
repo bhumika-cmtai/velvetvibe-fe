@@ -47,7 +47,7 @@ const decorativeSubCategories = [
 
 export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProps) {
   // --- States ---
-  const { categories } = useSelector((state: RootState) => state.admin);
+  const { categories, subcategories } = useSelector((state: RootState) => state.admin);
 
   const [activeTab, setActiveTab] = useState('Clothing');
   const [selectedDynamicCategory, setSelectedDynamicCategory] = useState('');
@@ -216,10 +216,17 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
               <TabsContent value="Clothing" className="space-y-4 border-t pt-4">
                 <div className="space-y-2">
                   <Label>Sub-Category</Label>
-                  <Select name="sub_category" value={subCategory} onValueChange={setSubCategory}>
-                    <SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger>
-                    <SelectContent>{clothingSubCategories.map(sub => (<SelectItem key={sub} value={sub}>{sub}</SelectItem>))}</SelectContent>
+                  <div className="space-y-2">
+                  <Label>Subcategory (optional)</Label>
+                  <Select name="sub_category">
+                    <SelectTrigger><SelectValue placeholder="Select a subcategory" /></SelectTrigger>
+                    <SelectContent>
+                      {subcategories.map(subcat => (
+                        <SelectItem key={subcat._id} value={subcat.name}>{subcat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
+                </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div><Label>Gender *</Label><Select name="gender" required><SelectTrigger><SelectValue placeholder="Select Gender" /></SelectTrigger><SelectContent><SelectItem value="Men">Men</SelectItem><SelectItem value="Women">Women</SelectItem><SelectItem value="Unisex">Unisex</SelectItem></SelectContent></Select></div>

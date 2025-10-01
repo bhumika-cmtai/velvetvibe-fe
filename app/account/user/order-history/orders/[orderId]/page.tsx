@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef } from 'react'; // Import useRef
+import { useEffect, useRef, useState } from 'react'; // Import useRef
 import { useSelector, useDispatch } from 'react-redux';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
@@ -9,9 +9,11 @@ import Navbar  from '@/components/Navbar';
 import Footer  from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ArrowLeft, ShoppingBag, Home, Truck, FileDown } from 'lucide-react';
+import { Loader2, ArrowLeft, ShoppingBag, Home, Truck, FileDown, XCircle, RefreshCw } from 'lucide-react';
 
-import { fetchSingleOrder, Order } from '@/lib/redux/slices/orderSlice';
+import { fetchSingleOrder,cancelOrder ,Order } from '@/lib/redux/slices/orderSlice';
+import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 // ===================================================================================
 // 1. DEDICATED PRINT STYLESHEET COMPONENT
@@ -125,6 +127,47 @@ const InvoiceTemplate = ({ order }: { order: Order }) => {
 };
 
 // =================================================================
+// --- NEW INFO CARD COMPONENTS (For Cancelled Orders) ---
+// =================================================================
+
+const CancellationInfoCard = ({ details }: { details: Order['cancellationDetails'] }) => {
+  if (!details) return null;
+
+  return (
+      <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center text-red-600"><XCircle className="mr-2 h-5 w-5" /> Order Cancelled</h2>
+          <div className="rounded-lg border bg-white p-6 text-sm">
+              <div className="space-y-2">
+                  <p><span className="font-semibold text-gray-700">Cancelled By:</span> {details.cancelledBy}</p>
+                  <p><span className="font-semibold text-gray-700">Reason:</span> {details.reason}</p>
+                  <p><span className="font-semibold text-gray-700">Date:</span> {new Date(details.cancellationDate).toLocaleString()}</p>
+              </div>
+          </div>
+      </div>
+  );
+};
+
+
+const RefundInfoCard = ({ details }: { details: Order['refundDetails'] }) => {
+  if (!details) return null;
+
+  return (
+      <div>
+          <h2 className="text-xl font-semibold mb-4 flex items-center text-blue-600"><RefreshCw className="mr-2 h-5 w-5" /> Refund Status</h2>
+          <div className="rounded-lg border bg-white p-6 text-sm">
+              <div className="space-y-2">
+                  <p className="font-bold text-gray-800">A refund of ₹{details.amount.toLocaleString()} has been processed.</p>
+                  <div><span className="font-semibold text-gray-700">Status:</span> <Badge variant="secondary">{details.status}</Badge></div>
+                  <p className="text-xs text-gray-500">Refund ID: {details.refundId}</p>
+                  <p className="text-xs text-gray-500 pt-2">Please allow 5-7 business days for the amount to reflect in your account.</p>
+              </div>
+          </div>
+      </div>
+  );
+};
+
+
+// =================================================================
 // --- REUSABLE CARD COMPONENTS ---
 // =================================================================
 const ShippingInfoCard = ({ address }: { address: Order['shippingAddress'] }) => (
@@ -188,6 +231,8 @@ export default function UserOrderDetailsPage() {
 
   const { currentOrder: order, loading, error } = useSelector((state: RootState) => state.order);
   const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [isCancelling, setIsCancelling] = useState(false)
+
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -200,6 +245,21 @@ export default function UserOrderDetailsPage() {
   const handleDownloadInvoice = () => {
     window.print();
   };
+
+  const handleCancelOrder = async () => {
+    if (!order) return;
+    setIsCancelling(true);
+    try {
+      await dispatch(cancelOrder({ orderId: order._id })).unwrap();
+      toast.success("Your order has been cancelled successfully.");
+    } catch (err: any) {
+      toast.error(err || "Failed to cancel the order. Please try again.");
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+  const isCancellable = order && !['Shipped', 'Delivered', 'Cancelled'].includes(order.orderStatus);
+
 
   if (loading && !order) {
     return (
@@ -248,14 +308,14 @@ export default function UserOrderDetailsPage() {
               </div>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-8">
                 {/* --- ACTION BUTTONS ADDED HERE --- */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Button variant="outline" className="w-full justify-center py-6 text-base" disabled>
+                    {/* <Button variant="outline" className="w-full justify-center py-6 text-base" disabled>
                         <Truck size={18} className="mr-2" />
                         Track Order (Coming Soon)
-                    </Button>
+                    </Button> */}
                     <Button 
                         variant="outline" 
                         className="w-full justify-center py-6 text-base"
@@ -264,6 +324,36 @@ export default function UserOrderDetailsPage() {
                         <FileDown size={18} className="mr-2" />
                         Download Invoice
                     </Button>
+
+                    {/* --- NEW: CANCEL ORDER BUTTON WITH DIALOG --- */}
+                    {isCancellable && (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="w-full justify-center py-6 text-base sm:col-span-2">
+                                    {isCancelling ? (
+                                        <Loader2 size={18} className="mr-2 animate-spin" />
+                                    ) : (
+                                        <XCircle size={18} className="mr-2" />
+                                    )}
+                                    Cancel Order
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure you want to cancel?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. If you've already paid, a refund will be initiated automatically.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>No, Keep It</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleCancelOrder}>
+                                    Yes, Cancel Order
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    )}
                 </div>
 
                 <div>
@@ -291,7 +381,17 @@ export default function UserOrderDetailsPage() {
                 </div>
               </div>
 
+              <div className="lg:col-span-2 space-y-8">
+                  <ShippingInfoCard address={order.shippingAddress} />
+                  <OrderSummaryCard order={order} />
+              </div>
               <div className="lg:col-span-1 space-y-8">
+              {order.orderStatus === 'Cancelled' && (
+                      <>
+                          <CancellationInfoCard details={order.cancellationDetails} />
+                          <RefundInfoCard details={order.refundDetails} />
+                      </>
+                  )}
                   <ShippingInfoCard address={order.shippingAddress} />
                   <OrderSummaryCard order={order} />
               </div>
