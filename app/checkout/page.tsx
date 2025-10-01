@@ -77,10 +77,10 @@ export default function CheckoutPage() {
   const [newAddressFormData, setNewAddressFormData] = useState<NewAddressPayload>(initialAddressFormState);
 
   const { shippingPrice, taxAmount, finalCheckoutTotal } = useMemo(() => {
-    const shippingPrice = 0; // Hardcoded 90, bilkul backend ki tarah
+    const shippingPrice = 90; // Hardcoded 90, bilkul backend ki tarah
 
     const taxableAmount = subTotal - discountAmount;
-    const taxAmount = 0// 3% tax, bilkul backend ki tarah
+    const taxAmount = taxableAmount * 0.03; // 3% tax, bilkul backend ki tarah
 
     const finalCheckoutTotal = taxableAmount + shippingPrice + taxAmount;
 

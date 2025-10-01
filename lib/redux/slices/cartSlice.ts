@@ -156,7 +156,7 @@ const cartSlice = createSlice({
       // Points discount: 1 point = 1 rupee
       const discountAmount = state.appliedPoints;
       
-      const shippingCost = 0;
+      const shippingCost = 90;
       const finalTotal = Math.max(0, subTotal - discountAmount + shippingCost);
       
       state.subTotal = subTotal;
