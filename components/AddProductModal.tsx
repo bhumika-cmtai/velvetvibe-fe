@@ -14,7 +14,7 @@ import Image from 'next/image';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/redux/store';
 
-// --- Interfaces aur Constants ---
+// --- Interfaces and Constants ---
 interface VariantState {
   size: string;
   color: string;
@@ -31,8 +31,9 @@ interface AddProductModalProps {
 }
 
 const MAX_IMAGES = 5;
+const MAX_TOTAL_SIZE = 4 * 1024 * 1024; // 4 MB
 
-// --- Sub-Category ka Data ---
+// --- Sub-Category Data ---
 const clothingSubCategories = [
   "Tops & T-shirts", "Dresses", "Co-ords", "Jumpsuits", "Jeans & Trousers",
   "Skirts", "Shorts", "Outwear", "Jackets", "Activewear", "Kurta", "Kurti",
@@ -91,13 +92,47 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
     }
   };
 
+  const calculateTotalSize = (files: (File | null)[], newFile: File | null = null, replacingIndex: number = -1): number => {
+      let total = files.reduce((acc, file, index) => {
+          if (file && index !== replacingIndex) {
+              return acc + file.size;
+          }
+          return acc;
+      }, 0);
+  
+      if (videoFile && replacingIndex === -1) { // When checking a new image, include the video
+          total += videoFile.size;
+      }
+      
+      if (newFile) {
+          total += newFile.size;
+      }
+      return total;
+  };
+
   const handleSingleImageChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    const newFiles = [...imageFiles]; const newPreviews = [...imagePreviews];
+    if (!file) return;
+
+    const otherImageFiles = imageFiles.filter((_, i) => i !== index);
+    const currentSize = calculateTotalSize([...otherImageFiles, videoFile]);
+
+    if (currentSize + file.size > MAX_TOTAL_SIZE) {
+        toast.error("Content Too Large: Maximum total upload size is 4MB.");
+        e.target.value = ""; // Clear the input
+        return;
+    }
+
+    const newFiles = [...imageFiles]; 
+    const newPreviews = [...imagePreviews];
+    
     if (newPreviews[index]) URL.revokeObjectURL(newPreviews[index]!);
-    if (file) { newFiles[index] = file; newPreviews[index] = URL.createObjectURL(file); } 
-    else { newFiles[index] = null; newPreviews[index] = null; }
-    setImageFiles(newFiles); setImagePreviews(newPreviews);
+    
+    newFiles[index] = file; 
+    newPreviews[index] = URL.createObjectURL(file);
+    
+    setImageFiles(newFiles); 
+    setImagePreviews(newPreviews);
   };
 
   const removeImage = (index: number) => {
@@ -109,10 +144,19 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
   
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
-    if (file) {
-      if (videoFile && videoPreview) URL.revokeObjectURL(videoPreview);
-      setVideoFile(file); setVideoPreview(URL.createObjectURL(file));
+    if (!file) return;
+
+    const currentImageSize = calculateTotalSize(imageFiles);
+    
+    if (currentImageSize + file.size > MAX_TOTAL_SIZE) {
+        toast.error("Content Too Large: Maximum total upload size is 4MB.");
+        e.target.value = ""; // Clear the input
+        return;
     }
+    
+    if (videoFile && videoPreview) URL.revokeObjectURL(videoPreview);
+    setVideoFile(file); 
+    setVideoPreview(URL.createObjectURL(file));
   };
   
   const removeVideo = () => {
@@ -127,9 +171,11 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
       setSelectedDynamicCategory('');
       setVariants([{ size: '', color: '', price: 0, sale_price: 0, stock_quantity: 0, sku_variant: '' }]);
       imagePreviews.forEach(url => { if (url) URL.revokeObjectURL(url); });
-      setImageFiles(new Array(MAX_IMAGES).fill(null)); setImagePreviews(new Array(MAX_IMAGES).fill(null));
+      setImageFiles(new Array(MAX_IMAGES).fill(null)); 
+      setImagePreviews(new Array(MAX_IMAGES).fill(null));
       if (videoPreview) URL.revokeObjectURL(videoPreview);
-      setVideoFile(null); setVideoPreview(null);
+      setVideoFile(null); 
+      setVideoPreview(null);
       setIsSubmitting(false);
   };
 
@@ -139,6 +185,14 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
         toast.error("Please upload at least one product image.");
         return;
     }
+
+    // Final size check before submission
+    const totalSize = calculateTotalSize(imageFiles, videoFile);
+    if (totalSize > MAX_TOTAL_SIZE) {
+        toast.error("413 Content Too Large: Your files exceed the 4MB limit.");
+        return;
+    }
+
     setIsSubmitting(true);
     
     const form = e.currentTarget as HTMLFormElement;
@@ -289,7 +343,7 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
 
               <div className="space-y-4 border-t pt-4">
                 <div className="space-y-2">
-                  <Label>Product Images (up to 5) *</Label>
+                  <Label>Product Images <span className='text-red-800'>(up to 5, max 4MB total)</span> *</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{[...Array(MAX_IMAGES)].map((_, index) => (
                       <div key={index} className="space-y-1">
                         <Label htmlFor={`image-${index}`} className="text-xs text-muted-foreground">Image {index + 1}</Label>

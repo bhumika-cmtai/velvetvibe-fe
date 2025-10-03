@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -9,13 +9,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Product, Variant } from '@/lib/types/product';
 import { Loader2, Trash2, UploadCloud } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface EditProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   product: Product | null;
-  onSave: (formData: FormData) => Promise<void>; // Expects a function that handles FormData
+  onSave: (formData: FormData) => Promise<void>;
 }
+
+// --- Constants ---
+const MAX_TOTAL_SIZE = 4 * 1024 * 1024; // 4 MB
 
 export function EditProductModal({ isOpen, onClose, product, onSave }: EditProductModalProps) {
   const [formData, setFormData] = useState<Partial<Product>>({});
@@ -23,11 +27,22 @@ export function EditProductModal({ isOpen, onClose, product, onSave }: EditProdu
   const [variants, setVariants] = useState<Partial<Variant>[]>([]);
   const [tagsString, setTagsString] = useState("");
   
+  // --- State for new/updated files ---
   const [imagePreviews, setImagePreviews] = useState<(string | File)[]>([]);
   const [newVideoFile, setNewVideoFile] = useState<File | null>(null);
 
   const imageReplaceRefs = useRef<Array<HTMLInputElement | null>>([]);
   const imageAddRef = useRef<HTMLInputElement | null>(null);
+
+  // --- Calculate the total size of all NEW files being uploaded ---
+  const newFilesTotalSize = useMemo(() => {
+    const imageSize = imagePreviews.reduce((acc, img) => {
+      return img instanceof File ? acc + img.size : acc;
+    }, 0);
+    const videoSize = newVideoFile?.size || 0;
+    return imageSize + videoSize;
+  }, [imagePreviews, newVideoFile]);
+
 
   useEffect(() => {
     if (product) {
@@ -35,7 +50,7 @@ export function EditProductModal({ isOpen, onClose, product, onSave }: EditProdu
       setTagsString(product.tags?.join(', ') || "");
       setVariants(product.category === 'Clothing' ? product.variants || [] : []);
       setImagePreviews(product.images || []);
-      setNewVideoFile(null);
+      setNewVideoFile(null); // Reset video on product change
     }
   }, [product]);
 
@@ -60,24 +75,62 @@ export function EditProductModal({ isOpen, onClose, product, onSave }: EditProdu
   const removeVariant = (index: number) => setVariants(variants.filter((_, i) => i !== index));
 
   const handleReplaceImage = (index: number, file: File) => {
+    const currentSizeWithoutOld = imagePreviews.reduce((acc, img, i) => {
+        if (i !== index && img instanceof File) return acc + img.size;
+        return acc;
+    }, 0) + (newVideoFile?.size || 0);
+
+    if (currentSizeWithoutOld + file.size > MAX_TOTAL_SIZE) {
+        toast.error("Content Too Large: Maximum total upload size is 4MB.");
+        return;
+    }
+
     const newPreviews = [...imagePreviews];
     newPreviews[index] = file;
     setImagePreviews(newPreviews);
   };
 
   const handleAddNewImages = (files: FileList) => {
-    if (files) {
-      const newFiles = Array.from(files);
-      setImagePreviews(prev => [...prev, ...newFiles]);
+    if (!files) return;
+    const newFilesArray = Array.from(files);
+    const addedSize = newFilesArray.reduce((acc, file) => acc + file.size, 0);
+
+    if (newFilesTotalSize + addedSize > MAX_TOTAL_SIZE) {
+        toast.error("Content Too Large: Maximum total upload size is 4MB.");
+        return;
     }
+
+    setImagePreviews(prev => [...prev, ...newFilesArray]);
   };
   
   const handleRemoveImage = (index: number) => {
     setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0] || null;
+      if (!file) return;
+
+      const currentImageFilesSize = imagePreviews.reduce((acc, img) => (img instanceof File ? acc + img.size : acc), 0);
+
+      if (currentImageFilesSize + file.size > MAX_TOTAL_SIZE) {
+          toast.error("Content Too Large: Maximum total upload size is 4MB.");
+          e.target.value = ""; // Clear the input
+          return;
+      }
+      setNewVideoFile(file);
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Final size check before submission
+    if (newFilesTotalSize > MAX_TOTAL_SIZE) {
+      toast.error("413 Content Too Large: Your new files exceed the 4MB limit.");
+      return;
+    }
+
     setIsSubmitting(true);
     
     const finalFormData = new FormData();
@@ -99,10 +152,10 @@ export function EditProductModal({ isOpen, onClose, product, onSave }: EditProdu
 
     imagePreviews.forEach(img => {
       if (typeof img === 'string') {
-        finalImageOrder.push(img);
+        finalImageOrder.push(img); // Existing image URL
       } else {
-        newImageFiles.push(img);
-        finalImageOrder.push('NEW_FILE_PLACEHOLDER');
+        newImageFiles.push(img); // New file
+        finalImageOrder.push('NEW_FILE_PLACEHOLDER'); // Placeholder for backend logic
       }
     });
 
@@ -185,14 +238,15 @@ export function EditProductModal({ isOpen, onClose, product, onSave }: EditProdu
             )}
             
             <div className="space-y-4 border-t pt-4">
-              <Label>Product Images</Label>
+              <Label>Product Images (max 4MB total for new uploads)</Label>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 {imagePreviews.map((img, index) => (
                   <div key={index} className="relative group aspect-square border rounded-md">
                     <img
-                      src={typeof img === 'string' ? img : URL.createObjectURL(img)}
+                      src={img instanceof File ? URL.createObjectURL(img) : img}
                       alt={`Product image ${index + 1}`}
                       className="object-cover w-full h-full rounded-md"
+                      onLoad={e => { if (img instanceof File) URL.revokeObjectURL(e.currentTarget.src) }}
                     />
                     <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all flex items-center justify-center gap-2">
                        <Button
@@ -219,7 +273,6 @@ export function EditProductModal({ isOpen, onClose, product, onSave }: EditProdu
                      <input
                       type="file"
                       accept="image/*"
-                      // THIS IS THE CORRECTED LINE
                       ref={el => { imageReplaceRefs.current[index] = el; }}
                       className="hidden"
                       onChange={(e) => e.target.files?.[0] && handleReplaceImage(index, e.target.files[0])}
@@ -248,7 +301,7 @@ export function EditProductModal({ isOpen, onClose, product, onSave }: EditProdu
             
             <div className="space-y-2 border-t pt-4">
               <Label htmlFor='video'>New Video (optional, replaces old one)</Label>
-              <Input id="video" type="file" accept="video/*" onChange={(e) => setNewVideoFile(e.target.files?.[0] || null)} />
+              <Input id="video" type="file" accept="video/*" onChange={handleVideoChange} />
             </div>
           </div>
 
