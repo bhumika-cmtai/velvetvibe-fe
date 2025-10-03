@@ -22,6 +22,8 @@ import { fetchCart, clearLocalCartState, applyPoints, removePoints } from "@/lib
 import { fetchUserProfile, addUserAddress, NewAddressPayload, type Address } from "@/lib/redux/slices/userSlice"
 import { placeCodOrder, createRazorpayOrder, verifyRazorpayPayment } from "@/lib/redux/slices/orderSlice"
 import { selectIsAuthenticated } from "@/lib/redux/slices/authSlice"
+import { fetchTaxConfig } from "@/lib/redux/slices/taxSlice"
+
 
 // Custom hook to load external scripts like Razorpay
 const useScript = (src: string) => {
@@ -41,7 +43,7 @@ export default function CheckoutPage() {
   const { toast } = useToast();
 
   // --- Read all data directly from Redux slices ---
-  const { items, subTotal, shippingCost, discountAmount, finalTotal, appliedPoints, loading: cartLoading } = useSelector((state: RootState) => state.cart);
+  const { items, subTotal, shippingCost, discountAmount, finalTotal, appliedPoints,taxAmount ,loading: cartLoading } = useSelector((state: RootState) => state.cart);
   const { user, addresses, status: userStatus } = useSelector((state: RootState) => state.user);
   const { walletConfig } = useSelector((state: RootState) => state.admin);
   const isAuthenticated = useSelector(selectIsAuthenticated);
@@ -76,20 +78,21 @@ export default function CheckoutPage() {
 
   const [newAddressFormData, setNewAddressFormData] = useState<NewAddressPayload>(initialAddressFormState);
 
-  const { shippingPrice, taxAmount, finalCheckoutTotal } = useMemo(() => {
+  const { shippingPrice, finalCheckoutTotal } = useMemo(() => {
     const shippingPrice = 90; // Hardcoded 90, bilkul backend ki tarah
 
-    const taxableAmount = subTotal - discountAmount;
-    const taxAmount = taxableAmount * 0.03; // 3% tax, bilkul backend ki tarah
+    // const taxableAmount = subTotal - discountAmount;
+    // const taxAmount = taxableAmount * 0.03; // 3% tax, bilkul backend ki tarah
 
-    const finalCheckoutTotal = taxableAmount + shippingPrice + taxAmount;
+    const finalCheckoutTotal = taxAmount + shippingPrice + taxAmount;
 
-    return { shippingPrice, taxAmount, finalCheckoutTotal };
+    return { shippingPrice, finalCheckoutTotal };
   }, [subTotal, discountAmount]);
 
   // Initial data fetch
   useEffect(() => {
     if (isAuthenticated) {
+      dispatch(fetchTaxConfig());
       dispatch(fetchCart());
       dispatch(fetchUserProfile());
       dispatch(fetchWalletConfig()); // Fetch wallet configuration
@@ -510,12 +513,15 @@ export default function CheckoutPage() {
                 <div className="flex justify-between"><span className="text-gray-600">Shipping</span><span>₹{shippingPrice.toLocaleString()}</span></div>
 
                 {/* --- NAYI TAX LINE ADD KI GAYI HAI --- */}
-                <div className="flex justify-between"><span className="text-gray-600">Taxes (3%)</span><span>₹{taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                {/* <div className="flex justify-between"><span className="text-gray-600">Taxes (3%)</span><span>₹{taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div> */}
+                {taxAmount > 0 && (
+                   <div className="flex justify-between"><span className="text-gray-600">Tax</span><span>₹{taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                )}
 
                 <hr className="my-4" />
 
                 {/* --- TOTAL PRICE AB NAYE CALCULATION SE AAYEGA --- */}
-                <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-black">₹{finalCheckoutTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
+                <div className="flex justify-between text-lg font-bold"><span>Total</span><span className="text-black">₹{finalTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></div>
               </div>
 
               <Button type="submit" disabled={isProcessing || !selectedAddressId} className="w-full py-3 h-12 mt-6 font-semibold text-base bg-black text-white hover:bg-gray-800">

@@ -3,6 +3,10 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { AxiosError } from 'axios'; // Import AxiosError for better type checking
 import apiClient from '@/lib/api/auth'; 
+import { fetchTaxConfig } from './taxSlice';
+import { fetchWalletConfig } from './adminSlice';
+import type  {WalletConfig} from '@/lib/api/admin'
+
 // Removed coupon import - using points system instead 
 
 interface LocalCartItem {
@@ -31,9 +35,13 @@ interface CartState {
   appliedPoints: number; // Points applied for discount
   totalItems: number;
   subTotal: number;
+  taxAmount: number; // --- NEW: To store the calculated tax amount ---
+  taxRate: number;
   shippingCost: number;
   discountAmount: number;
   finalTotal: number;
+  rupeesPerPoint: number;
+
 }
 
 const initialState: CartState = {
@@ -43,9 +51,12 @@ const initialState: CartState = {
   appliedPoints: 0,
   totalItems: 0,
   subTotal: 0,
+  taxAmount: 0, // --- NEW: Initialize tax amount ---
+  taxRate: 0, // --- NEW: Initialize tax rate ---
   shippingCost: 0,
   discountAmount: 0,
   finalTotal: 0,
+  rupeesPerPoint: 1,
 };
 
 interface ApiResponse {
@@ -154,20 +165,39 @@ const cartSlice = createSlice({
       const totalItems = state.items.reduce((total, item) => total + item.quantity, 0);
       
       // Points discount: 1 point = 1 rupee
-      const discountAmount = state.appliedPoints;
+      // const discountAmount = state.appliedPoints;
+      const discountAmount = state.appliedPoints * state.rupeesPerPoint;
+      console.log(discountAmount)
       
-      const shippingCost = 90;
-      const finalTotal = Math.max(0, subTotal - discountAmount + shippingCost);
+      const shippingCost =  90; //temprory
+      const taxAmount = (subTotal-discountAmount) * state.taxRate;
+      // console.log("----taxAmount----")
+      // console.log(taxAmount)
+      const finalTotal = Math.max(0, subTotal - discountAmount + shippingCost + taxAmount );
+      console.log(finalTotal)
       
       state.subTotal = subTotal;
       state.totalItems = totalItems;
       state.discountAmount = discountAmount;
       state.shippingCost = shippingCost;
       state.finalTotal = finalTotal;
+      state.taxAmount = taxAmount; // --- NEW: Set the calculated tax amount in state ---
+      state.finalTotal = finalTotal
+      
     },
   },
   extraReducers: (builder) => {
     builder
+    .addCase(fetchWalletConfig.fulfilled, (state, action: PayloadAction<WalletConfig>) => {
+      state.rupeesPerPoint = action.payload.rupeesPerPoint || 1; // Update rate from API
+      cartSlice.caseReducers.calculateTotals(state); // Recalculate totals immediately
+    })
+    .addCase(fetchTaxConfig.fulfilled, (state, action: PayloadAction<number>) => {
+      // When fetchTaxConfig is successful, its payload is the rate (e.g., 0.03)
+      state.taxRate = action.payload;
+      // After updating the rate, immediately recalculate the cart totals.
+      cartSlice.caseReducers.calculateTotals(state);
+    })
       .addMatcher(
         (action) => action.type.startsWith('cart/') && action.type.endsWith('/pending'),
         (state) => {

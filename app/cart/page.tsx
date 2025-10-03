@@ -245,7 +245,7 @@ export default function CartPage() {
                             <h2 className="text-2xl font-serif font-bold text-gray-800 mb-6">Order Summary</h2>
                             <div className="space-y-3 mb-6 text-gray-700">
                                 <div className="flex justify-between items-center"><span className="text-gray-500">Subtotal</span><span className="font-semibold">₹{subTotal.toLocaleString()}</span></div>
-                                <div className="flex justify-between items-center"><span className="text-gray-500">Shipping</span><span className="font-semibold text-green-600">FREE</span></div>
+                                {/* <div className="flex justify-between items-center"><span className="text-gray-500">Shipping</span><span className="font-semibold text-green-600">FREE</span></div> */}
                             </div>
                             <div className="border-t pt-4 mb-6">
                                 <div className="flex justify-between items-center text-lg font-bold text-gray-800">

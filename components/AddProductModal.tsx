@@ -260,7 +260,11 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                     <Label>Sub-Category</Label>
                     <Select name="sub_category" value={subCategory} onValueChange={setSubCategory}>
                       <SelectTrigger><SelectValue placeholder="Select a sub-category" /></SelectTrigger>
-                      <SelectContent>{decorativeSubCategories.map(sub => (<SelectItem key={sub} value={sub}>{sub}</SelectItem>))}</SelectContent>
+                      <SelectContent>
+                      {subcategories.map(subcat => (
+                        <SelectItem key={subcat._id} value={subcat.name}>{subcat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2"><Label>Stock Quantity *</Label><Input name="stock_quantity" type="number" required /></div>
@@ -274,6 +278,11 @@ export function AddProductModal({ isOpen, onClose, onSave }: AddProductModalProp
                       <SelectTrigger><SelectValue placeholder="Select from other categories" /></SelectTrigger>
                       <SelectContent>{dynamicCategories.map(cat => (<SelectItem key={cat._id} value={cat.name}>{cat.name}</SelectItem>))}</SelectContent>
                     </Select>
+                    <SelectContent>
+                      {subcategories.map(subcat => (
+                        <SelectItem key={subcat._id} value={subcat.name}>{subcat.name}</SelectItem>
+                      ))}
+                    </SelectContent>
                   </div>
                   <div className="space-y-2"><Label>Stock Quantity *</Label><Input name="stock_quantity" type="number" required /></div>
               </TabsContent>
